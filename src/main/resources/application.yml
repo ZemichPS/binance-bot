@@ -1,0 +1,47 @@
+
+spring:
+
+  # jackson config
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+      write-enums-using-to-string: false
+    property-naming-strategy: SNAKE_CASE
+
+  # datasource config
+  datasource:
+    hikari:
+      schema: app
+      driver-class-name: org.postgresql.Driver
+      username: postgres
+      password: postgres
+      auto-commit: true
+      maximum-pool-size: 20
+    url: jdbc:postgresql://localhost:5432/binance
+
+  # JAP config
+  jpa:
+    database: POSTGRESQL
+    show-sql: true
+    properties:
+      hibernate.default_schema: app
+
+  config:
+    import: private-config.yml
+
+# management config
+management:
+  endpoints:
+    web:
+      exposure:
+        include: heath, prometheus, info, metric
+  endpoint:
+    health:
+      show-details: always
+    shutdown:
+      enabled: true
+
+
+# server config
+server:
+  port: 8081
