@@ -1,12 +1,13 @@
 package by.zemich.binancebot.endpoint.web.controller;
 
 import by.zemich.binancebot.core.dto.BarDto;
+import by.zemich.binancebot.core.dto.ChangePriceDTO;
 import by.zemich.binancebot.core.enums.EInterval;
 import by.zemich.binancebot.core.enums.ESymbol;
+import by.zemich.binancebot.service.impl.CryptoCalculator;
 import by.zemich.binancebot.service.impl.chein.RSICalculator;
 import com.binance.connector.client.SpotClient;
 import com.binance.connector.client.WebSocketApiClient;
-import org.springframework.boot.json.JacksonJsonParser;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -15,14 +16,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
-import java.math.MathContext;
 import java.math.RoundingMode;
-import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneId;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @RestController
 @RequestMapping("/spot")
@@ -32,11 +27,14 @@ public class SpotClientController {
     private final WebSocketApiClient webSocketApiClient;
     private final ConversionService conversionService;
 
+    private final CryptoCalculator cryptoCalculator;
 
-    public SpotClientController(SpotClient spotClient, WebSocketApiClient webSocketApiClient, ConversionService conversionService) {
+
+    public SpotClientController(SpotClient spotClient, WebSocketApiClient webSocketApiClient, ConversionService conversionService, CryptoCalculator cryptoCalculator) {
         this.spotClient = spotClient;
         this.webSocketApiClient = webSocketApiClient;
         this.conversionService = conversionService;
+        this.cryptoCalculator = cryptoCalculator;
     }
 
     @GetMapping
@@ -58,9 +56,9 @@ public class SpotClientController {
     }
 
     @GetMapping("/percent")
-    private ResponseEntity<BigDecimal> getPercentDifference(@RequestParam String symbol,
-                                                            @RequestParam String interval,
-                                                            @RequestParam Integer limit) {
+    private ResponseEntity<ChangePriceDTO> getPercentDifference(@RequestParam String symbol,
+                                                                @RequestParam String interval,
+                                                                @RequestParam Integer limit) {
 
         parameters.put("symbol", symbol);
         parameters.put("interval", interval);
@@ -69,23 +67,50 @@ public class SpotClientController {
         String result = spotClient.createMarket().klines(parameters);
         List<BarDto> barDtoList = conversionService.convert(result, List.class);
 
-        BigDecimal currentPrice = barDtoList.get(barDtoList.size() - 1).closePrice();
-        BigDecimal firstBarHighPrice = barDtoList.get(0).highPrice();
+        List<Integer> indexesList = new ArrayList<>();
+        int caseCounter = 0;
+        List<BigDecimal> percentageResult = new ArrayList<>();
 
-        BigDecimal difference = currentPrice.subtract(firstBarHighPrice);
+        for (int i = 0; i < barDtoList.size(); i++) {
+            BigDecimal percentageDifference = cryptoCalculator.getPercentDifference(
+                    barDtoList.get(i).openPrice(),
+                    barDtoList.get(i).closePrice()
+            );
 
-        BigDecimal x = difference.multiply(BigDecimal.valueOf(100)).setScale(2, RoundingMode.HALF_UP);
-        BigDecimal resultPercent = x.divide(currentPrice, 2, RoundingMode.HALF_UP);
+            if (percentageDifference.doubleValue() < -2.0) {
+                caseCounter++;
 
 
+                try {
+                    System.out.println("разница в % (open-close) свечи №" + i + ": " + percentageDifference);
+                    BigDecimal nextElementPercentDifference = cryptoCalculator.getPercentDifference(
+                            barDtoList.get(i + 1).openPrice(),
+                            barDtoList.get(i + 1).closePrice()
+                    );
+                    System.out.println("разница в % (open-close) следующей свечи: " + nextElementPercentDifference);
 
-        System.out.println("high price: " + firstBarHighPrice);
-        System.out.println("current price: " + currentPrice);
-        System.out.println("difference: " + difference);
-        System.out.println("x = " + x);
-        System.out.println("result = " + resultPercent);
+                    BigDecimal highResult = cryptoCalculator.getPercentDifference(
+                            barDtoList.get(i + 1).openPrice(),
+                            barDtoList.get(i + 1).highPrice());
 
-        return ResponseEntity.ok(resultPercent);
+                    System.out.println("разница в % (open-high) следующей свечи достигала: " + highResult);
+
+                    percentageResult.add(highResult);
+
+                } catch (IndexOutOfBoundsException ex) {
+                    System.out.println("достигнут предел набора. Анализа больше нет.");
+                }
+
+                System.out.println("----------------------------------");
+            }
+        }
+
+        System.out.println("всего случаев: " + caseCounter);
+        BigDecimal minimalElement = percentageResult.stream().min(Comparator.comparing(BigDecimal::doubleValue)).get();
+        System.out.println("Минимальный результат: " + minimalElement);
+
+
+        return ResponseEntity.ok(null);
     }
 
     @GetMapping("/ticker")
