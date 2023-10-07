@@ -11,8 +11,12 @@ import org.springframework.core.convert.ConversionService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
@@ -51,6 +55,37 @@ public class SpotClientController {
         Double calculatedResult = rsiCalculator.calculate();
         return ResponseEntity.ok(calculatedResult);
 
+    }
+
+    @GetMapping("/percent")
+    private ResponseEntity<BigDecimal> getPercentDifference(@RequestParam String symbol,
+                                                            @RequestParam String interval,
+                                                            @RequestParam Integer limit) {
+
+        parameters.put("symbol", symbol);
+        parameters.put("interval", interval);
+        parameters.put("limit", limit);
+
+        String result = spotClient.createMarket().klines(parameters);
+        List<BarDto> barDtoList = conversionService.convert(result, List.class);
+
+        BigDecimal currentPrice = barDtoList.get(barDtoList.size() - 1).closePrice();
+        BigDecimal firstBarHighPrice = barDtoList.get(0).highPrice();
+
+        BigDecimal difference = currentPrice.subtract(firstBarHighPrice);
+
+        BigDecimal x = difference.multiply(BigDecimal.valueOf(100)).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal resultPercent = x.divide(currentPrice, 2, RoundingMode.HALF_UP);
+
+
+
+        System.out.println("high price: " + firstBarHighPrice);
+        System.out.println("current price: " + currentPrice);
+        System.out.println("difference: " + difference);
+        System.out.println("x = " + x);
+        System.out.println("result = " + resultPercent);
+
+        return ResponseEntity.ok(resultPercent);
     }
 
     @GetMapping("/ticker")
