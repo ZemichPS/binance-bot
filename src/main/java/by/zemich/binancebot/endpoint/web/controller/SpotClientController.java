@@ -17,6 +17,9 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.math.BigDecimal;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.*;
 
 @RestController
@@ -115,7 +118,10 @@ public class SpotClientController {
     @GetMapping("/red_bars")
     private ResponseEntity<String> getLastRedsBar(@RequestParam String symbol,
                                                   @RequestParam String interval,
-                                                  @RequestParam Integer limit) {
+                                                  @RequestParam Integer limit,
+                                                  @RequestParam Integer x
+
+    ) {
 
         parameters.put("symbol", symbol);
         parameters.put("interval", interval);
@@ -138,26 +144,22 @@ public class SpotClientController {
                 if (rangeBars.size() == 3) {
                     BigDecimal percentage = cryptoCalculator.getPercentDifference(rangeBars, 3);
                     barRangeDtoList.add(new BarRangeDto(i - 2, i, percentage));
+                    LocalDateTime caseDate = barDtoList.get(i).openTime();
+                    System.out.println("Время свечи: " + caseDate);
                     rangeBars.clear();
                 }
             } else {
                 rangeBars.clear();
             }
         }
+
         System.out.println("Всего диапозонов: " + barRangeDtoList.size());
 
         barRangeDtoList.stream()
-                .filter(range-> range.percentage().doubleValue() < -4)
+                .filter(range -> range.percentage().doubleValue() < x)
                 .forEach(range -> System.out.println("разница в процентах: " + range.percentage()));
 
         System.out.println("-----------------------------");
-
-        for (int i = 0; i < barRangeDtoList.size(); i++) {
-            BigDecimal percentage = cryptoCalculator.getPercentDifference(
-                    barDtoList.get()
-            );
-
-        }
 
         return ResponseEntity.ok("Complete");
     }
