@@ -1,4 +1,4 @@
-package by.zemich.binancebot.core.dto;
+package by.zemich.binancebot.core.enums;
 
 public enum EFilterType {
     PRICE_FILTER,

@@ -1,6 +1,6 @@
 package by.zemich.binancebot.core.dto;
 
-import jakarta.persistence.criteria.CriteriaBuilder;
+import by.zemich.binancebot.core.enums.ERateLimitType;
 import lombok.Data;
 
 @Data

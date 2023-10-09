@@ -1,14 +1,15 @@
 package by.zemich.binancebot.core.dto;
 
-import by.zemich.binancebot.core.enums.ESymbol;
+import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 
 @Data
 public class CancelOrderDto {
-    private ESymbol symbol;
+    @NotEmpty(message = "symbol is mandatory")
+    private String symbol;
     private Long orderId;
     private String origClientOrderId;
+    private String newClientOrderId;
     private Long recvWindow;
-    private Long timestamp;
 
 }

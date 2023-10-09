@@ -1,15 +1,11 @@
 package by.zemich.binancebot.core.dto;
 
-
 import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 
 @Data
-public class QueryOrderDto {
-    @NotEmpty(message = "symbol is mandatory")
+public class CurrentOpenOrderQueryDto {
+    @NotEmpty(message = "Symbol is mandatory")
     private String symbol;
-    private Long orderId;
-    private String origClientOrderId;
     private Long recvWindow;
-
 }

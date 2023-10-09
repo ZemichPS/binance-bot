@@ -1,16 +1,21 @@
 package by.zemich.binancebot.core.dto;
+
 import by.zemich.binancebot.core.enums.*;
 import lombok.Data;
+
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
+import java.util.List;
 
 @Data
-public class QueryOrderResponseDto {
+public class NewOrderFullResponseDto {
+
     private String symbol;
     private Long orderId;
     private Long orderListId;
     private String clientOrderId;
+    private Timestamp transactTime;
     private BigDecimal price;
     private BigDecimal origQty;
     private BigDecimal executedQty;
@@ -19,13 +24,9 @@ public class QueryOrderResponseDto {
     private ETimeInForce timeInForce;
     private EOrderType type;
     private ESide side;
-    private BigDecimal stopPrice;
-    private BigDecimal icebergQty;
-    private Timestamp time;
-    private Timestamp updateTime;
-    private boolean isWorking;
     private Timestamp workingTime;
-    private BigDecimal origQuoteOrderQty;
     private String selfTradePreventionMode;
+    private List<FillsDto> fills;
+
 
 }

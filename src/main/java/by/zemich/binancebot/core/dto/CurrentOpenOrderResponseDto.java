@@ -1,12 +1,16 @@
 package by.zemich.binancebot.core.dto;
-import by.zemich.binancebot.core.enums.*;
+
+import by.zemich.binancebot.core.enums.EOrderStatus;
+import by.zemich.binancebot.core.enums.EOrderType;
+import by.zemich.binancebot.core.enums.ESide;
+import by.zemich.binancebot.core.enums.ETimeInForce;
 import lombok.Data;
+
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
-
 @Data
-public class QueryOrderResponseDto {
+public class CurrentOpenOrderResponseDto {
     private String symbol;
     private Long orderId;
     private Long orderListId;

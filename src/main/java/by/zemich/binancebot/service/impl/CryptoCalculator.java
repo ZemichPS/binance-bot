@@ -11,13 +11,49 @@ import java.util.List;
 
 @Component
 public class CryptoCalculator {
-    public BigDecimal getPercentDifference(List<BarDto> bars, int interval) {
+
+    // РАЗНИЦА ЦЕНЫ НАБОРА СВЕЧЕЙ
+    public BigDecimal getPriceChange(List<BarDto> bars) {
+
+        BigDecimal result = bars.get(0).closePrice()
+                .subtract(bars.get(bars.size() - 1).closePrice(), MathContext.UNLIMITED);
+        return result;
+    }
+
+    // РАЗНИЦА ЦЕНЫ НАБОРА СВЕЧЕЙ С ОПРЕДЕЛЁННЫМ ИНТЕРВАЛОМ
+    public BigDecimal getPriceChange(List<BarDto> bars, int interval) {
         if (interval > bars.size()) {
             throw new IllegalArgumentException("interval cannot be larger then bar set count.");
         }
 
         int offset = bars.size() - interval;
-        BigDecimal firstBarHighPrice = bars.get(offset).highPrice();
+        BigDecimal result = bars.get(offset).closePrice()
+                .subtract(bars.get(bars.size() - 1).closePrice(), MathContext.UNLIMITED);
+        return result;
+    }
+    // РАЗНИЦА ЦЕНЫ НАБОРА СВЕЧЕЙ В ПРОЦЕНТАХ С ОПРЕДЕЛЁННЫМ ИНТЕРВАЛОМ
+    public BigDecimal getPercentDifference(List<BarDto> bars, int interval) {
+
+        if (interval > bars.size()) {
+            throw new IllegalArgumentException("interval cannot be larger then bar set count.");
+        }
+
+        int offset = bars.size() - interval;
+        BigDecimal firstBarHighPrice = bars.get(offset).openPrice();
+        BigDecimal currentPrice = bars.get(bars.size() - 1).closePrice();
+
+        BigDecimal difference = currentPrice.subtract(firstBarHighPrice);
+
+        BigDecimal resultPercent = difference.multiply(BigDecimal.valueOf(100))
+                .setScale(2, RoundingMode.HALF_UP)
+                .divide(currentPrice, 2, RoundingMode.HALF_UP);
+        return resultPercent;
+    }
+
+    // РАЗНИЦА ЦЕНЫ НАБОРА СВЕЧЕЙ В ПРОЦЕНТАХ
+    public BigDecimal getPercentDifference(List<BarDto> bars) {
+
+        BigDecimal firstBarHighPrice = bars.get(0).openPrice();
         BigDecimal currentPrice = bars.get(bars.size() - 1).closePrice();
 
         BigDecimal difference = currentPrice.subtract(firstBarHighPrice);
@@ -29,6 +65,8 @@ public class CryptoCalculator {
         return resultPercent;
     }
 
+
+    // РАЗНИЦА ЦЕНЫ В ПРОЦЕНТАХ
     public BigDecimal getPercentDifference(BigDecimal firstBarPrice, BigDecimal secondBarPrice) {
 
         BigDecimal difference = secondBarPrice.subtract(firstBarPrice);
@@ -40,21 +78,6 @@ public class CryptoCalculator {
         return resultPercent;
     }
 
-
-    public BigDecimal getPriceChange(List<BarDto> bars, int interval) {
-        if (interval > bars.size()) {
-            throw new IllegalArgumentException("interval cannot be larger then bar set count.");
-        }
-
-        int offset = bars.size() - interval;
-        BigDecimal result = bars.get(offset).closePrice()
-                .subtract(bars.get(bars.size() - 1).closePrice(), MathContext.UNLIMITED);
-        return result;
-    }
-
-    public ChangePriceDTO getPriceChanges(List<BarDto> bars, int interval) {
-        return new ChangePriceDTO(getPriceChange(bars, interval), getPercentDifference(bars, interval));
-    }
 
 
 }
