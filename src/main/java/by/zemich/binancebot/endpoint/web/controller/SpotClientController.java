@@ -17,9 +17,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.ta4j.core.Bar;
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.RSIIndicator;
+import org.ta4j.core.num.DecimalNum;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -70,8 +72,9 @@ public class SpotClientController {
         query.setSymbol(symbol);
         query.setLimit(limit);
         List<BarDto> barList = stockMarketService.getBars(query).get();
-        BarSeries
-
+        //DecimalNum
+        //BarSeries
+        //Bar
 
         return ResponseEntity.ok(barList.toString());
     }

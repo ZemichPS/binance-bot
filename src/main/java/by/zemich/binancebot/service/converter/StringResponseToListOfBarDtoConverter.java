@@ -26,13 +26,13 @@ public class StringResponseToListOfBarDtoConverter implements Converter<String, 
 
             barDtos.add(
                     new BarDto(
-                            Instant.ofEpochMilli(openTimeTimestamp).atZone(ZoneId.systemDefault()).toLocalDateTime(),
+                            new Timestamp(openTimeTimestamp),
                             new BigDecimal(rawCandleList.get(1).toString()),
                             new BigDecimal(rawCandleList.get(2).toString()),
                             new BigDecimal(rawCandleList.get(3).toString()),
                             new BigDecimal(rawCandleList.get(4).toString()),
                             new BigDecimal(rawCandleList.get(5).toString()),
-                            Instant.ofEpochMilli(closeTimeTimestamp).atZone(ZoneId.systemDefault()).toLocalDateTime(),
+                            new Timestamp(closeTimeTimestamp),
                             new BigDecimal(rawCandleList.get(7).toString()),
                             (Integer) rawCandleList.get(8),
                             new BigDecimal(rawCandleList.get(9).toString()),
