@@ -11,6 +11,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Service;
+import org.ta4j.core.BaseBar;
 
 import java.util.List;
 import java.util.Optional;
@@ -34,6 +35,12 @@ public class StockMarketServiceImpl implements IStockMarketService {
         String result = spotClient.createMarket().klines(converter.dtoToMap(klineQuery));
         return Optional.of(conversionService.convert(result, List.class));
 
+    }
+
+    @Override
+    public Optional<List<BaseBar>> getBaseBars(KlineQueryDto klineQuery) {
+        String result = spotClient.createMarket().klines(converter.dtoToMap(klineQuery));
+        return Optional.of(conversionService.convert(result, List<BaseBar>.class));
     }
 
     @Override
