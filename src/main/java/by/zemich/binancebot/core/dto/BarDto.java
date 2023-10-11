@@ -11,7 +11,7 @@ public record BarDto(
         BigDecimal highPrice,
         BigDecimal lowPrice,
         BigDecimal closePrice,
-        BigDecimal volumePrice,
+        BigDecimal volume,
         Timestamp closeTime,
         BigDecimal quoteAssetVolume,
         Integer numberOfTrades,

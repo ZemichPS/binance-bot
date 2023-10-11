@@ -74,7 +74,7 @@ public class SpotClientController {
         query.setLimit(limit);
         List<BarDto> barList = stockMarketService.getBars(query).get();
 
-        List<BaseBar> baseBarList
+      //  List<BaseBar> baseBarList
 
         //DecimalNum
         //BarSeries
