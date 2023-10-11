@@ -1,14 +1,13 @@
 package by.zemich.binancebot.endpoint.web.controller;
 
 import by.zemich.binancebot.core.dto.*;
-import by.zemich.binancebot.core.enums.EInterval;
 import by.zemich.binancebot.service.api.IAccountService;
 import by.zemich.binancebot.service.api.IConverter;
 import by.zemich.binancebot.service.api.IOrderService;
 import by.zemich.binancebot.service.api.IStockMarketService;
 import by.zemich.binancebot.service.impl.CryptoCalculator;
 
-import by.zemich.binancebot.service.impl.chein.RSICalculator;
+import by.zemich.binancebot.service.strategy.RSI2Strategy;
 import com.binance.connector.client.SpotClient;
 import com.binance.connector.client.WebSocketApiClient;
 import org.springframework.core.convert.ConversionService;
@@ -17,15 +16,11 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.ta4j.core.Bar;
-import org.ta4j.core.BarSeries;
-import org.ta4j.core.BaseBar;
-import org.ta4j.core.indicators.EMAIndicator;
+import org.ta4j.core.*;
 import org.ta4j.core.indicators.RSIIndicator;
-import org.ta4j.core.num.DecimalNum;
+import org.ta4j.core.indicators.SMAIndicator;
+import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 import java.util.*;
 
 @RestController
@@ -40,10 +35,10 @@ public class SpotClientController {
     private final IAccountService accountService;
     private final IConverter converter;
     private final IStockMarketService stockMarketService;
-
+    private final RSI2Strategy rsi2Strategy;
     private final IOrderService orderService;
 
-    public SpotClientController(SpotClient spotClient, WebSocketApiClient webSocketApiClient, ConversionService conversionService, CryptoCalculator cryptoCalculator, IAccountService accountService, IConverter converter, IStockMarketService stockMarketService, IOrderService orderService) {
+    public SpotClientController(SpotClient spotClient, WebSocketApiClient webSocketApiClient, ConversionService conversionService, CryptoCalculator cryptoCalculator, IAccountService accountService, IConverter converter, IStockMarketService stockMarketService, RSI2Strategy rsi2Strategy, IOrderService orderService) {
         this.spotClient = spotClient;
         this.webSocketApiClient = webSocketApiClient;
         this.conversionService = conversionService;
@@ -52,6 +47,7 @@ public class SpotClientController {
         this.accountService = accountService;
         this.converter = converter;
         this.stockMarketService = stockMarketService;
+        this.rsi2Strategy = rsi2Strategy;
         this.orderService = orderService;
     }
 
@@ -72,15 +68,28 @@ public class SpotClientController {
         query.setInterval(interval);
         query.setSymbol(symbol);
         query.setLimit(limit);
-       // List<BarDto> barList = stockMarketService.getBars(query).get();
+        // List<BarDto> barList = stockMarketService.getBars(query).get();
 
         List<BaseBar> baseBarList = stockMarketService.getBaseBars(query).get();
 
         //DecimalNum
-        //BarSeries
-        //Bar
+        BarSeries series = new BaseBarSeries();
+        for (BaseBar bar : baseBarList) {
+            series.addBar(bar);
+        }
 
-        return ResponseEntity.ok(baseBarList.toString());
+        Strategy strategy = rsi2Strategy.buildStrategy(series);
+        BarSeriesManager seriesManager = new BarSeriesManager(series);
+        TradingRecord tradingRecord = seriesManager.run(strategy);
+
+        System.out.println("Number of positions for the strategy: " + tradingRecord.getPositionCount());
+
+        // Analysis
+       // System.out.println("Total return for the strategy: " + new ReturnCriterion().calculate(series, tradingRecord));
+
+
+
+        return ResponseEntity.ok(series.toString());
     }
 
 
