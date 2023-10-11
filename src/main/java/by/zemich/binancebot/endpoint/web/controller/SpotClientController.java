@@ -72,15 +72,15 @@ public class SpotClientController {
         query.setInterval(interval);
         query.setSymbol(symbol);
         query.setLimit(limit);
-        List<BarDto> barList = stockMarketService.getBars(query).get();
+       // List<BarDto> barList = stockMarketService.getBars(query).get();
 
-      //  List<BaseBar> baseBarList
+        List<BaseBar> baseBarList = stockMarketService.getBaseBars(query).get();
 
         //DecimalNum
         //BarSeries
         //Bar
 
-        return ResponseEntity.ok(barList.toString());
+        return ResponseEntity.ok(baseBarList.toString());
     }
 
 
