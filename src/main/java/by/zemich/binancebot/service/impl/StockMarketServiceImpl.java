@@ -69,9 +69,10 @@ public class StockMarketServiceImpl implements IStockMarketService {
         BarSeries series = new BaseBarSeries("my_live_series");
         barDtoList.forEach(candle-> {
             ZonedDateTime closeTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(candle.getCloseTime().getTime()), ZoneId.of("Europe/Minsk"));
+            ZonedDateTime openTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(candle.getCloseTime().getTime()), ZoneId.of("Europe/Minsk"));
 
             Bar bar = new BaseBar(
-                    Duration.ofMinutes(15),
+                    Duration.between(closeTime, openTime),
                     closeTime,
                     candle.getOpenPrice(),
                     candle.getHighPrice(),

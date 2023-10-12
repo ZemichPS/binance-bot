@@ -86,6 +86,10 @@ public class SpotClientController {
 
         PPOIndicator ppo = new PPOIndicator(closePrice, 12, 26);
 
+        StochasticRSIIndicator stochasticRSIIndicator = new StochasticRSIIndicator(series, 500);
+
+        SMAIndicator shortSma = new SMAIndicator(closePrice, 5);
+        SMAIndicator longSma = new SMAIndicator(closePrice, 200);
 
 
 
@@ -93,13 +97,15 @@ public class SpotClientController {
         Num RSIResult = rsiIndicator.getValue(series.getEndIndex());
         Num rocResult = roc.getValue(series.getEndIndex());
         Num williamsRResult = williamsR.getValue(series.getEndIndex());
-        Num ppoRezult = ppo.getValue(series.getEndIndex());
+        Num ppoRezult = shortSma.getValue(series.getEndIndex());
+        Num longSmaRezult = longSma.getValue(series.getEndIndex());
+        Num stochasticRSIIndicatorRezult = stochasticRSIIndicator.getValue(series.getEndIndex());
 
 
 
 
 
-        return ResponseEntity.ok(ppoRezult.toString());
+        return ResponseEntity.ok(stochasticRSIIndicatorRezult.toString());
     }
 
 
