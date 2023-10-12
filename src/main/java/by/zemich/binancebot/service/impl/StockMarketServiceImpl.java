@@ -48,7 +48,8 @@ public class StockMarketServiceImpl implements IStockMarketService {
 
         String result = spotClient.createMarket().klines(converter.dtoToMap(klineQuery));
         List<BarDto> barsList = stringResponseToListOfBarsDto(result);
-        Collections.reverse(barsList);
+        //Collections.reverse(barsList);
+
         BarSeries series = getCusomBarSeries(barsList);
         return Optional.of(series);
     }
@@ -66,40 +67,23 @@ public class StockMarketServiceImpl implements IStockMarketService {
 
     private BarSeries getCusomBarSeries(List<BarDto> barDtoList) {
         BarSeries series = new BaseBarSeries("my_live_series");
+        barDtoList.forEach(candle-> {
+            ZonedDateTime closeTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(candle.getCloseTime().getTime()), ZoneId.of("Europe/Minsk"));
 
-        ZonedDateTime endTime = ZonedDateTime.now();
-
-        int counter = 1;
-
-        for (int i = 1; i < barDtoList.size(); i++) {
-            BarDto barDtoN = barDtoList.get(i);
-
-            Bar bar = BaseBar.builder(DecimalNum::valueOf, Double.class)
-                    .timePeriod(Duration.ofMinutes(15))
-                    .endTime(endTime.plusMinutes(counter))
-                    .openPrice(barDtoN.getOpenPrice().doubleValue())
-                    .highPrice(barDtoN.getHighPrice().doubleValue())
-                    .lowPrice(barDtoN.getLowPrice().doubleValue())
-                    .closePrice(barDtoN.getClosePrice().doubleValue())
-                    .volume(barDtoN.getVolume().doubleValue())
-                    .build();
-
-            series.addBar(bar);
-            counter = counter + 15;
-
-/*
-            series.addBar(
-                    endTime.plusMinutes(counter),
-                    bardto.getOpenPrice(),
-                    bardto.getHighPrice(),
-                    bardto.getLowPrice(),
-                    bardto.getClosePrice(),
-                    bardto.getVolume()
+            Bar bar = new BaseBar(
+                    Duration.ofMinutes(15),
+                    closeTime,
+                    candle.getOpenPrice(),
+                    candle.getHighPrice(),
+                    candle.getLowPrice(),
+                    candle.getClosePrice(),
+                    candle.getVolume()
             );
 
- */
+            series.addBar(bar);
 
-        }
+        });
+
         return series;
     }
 

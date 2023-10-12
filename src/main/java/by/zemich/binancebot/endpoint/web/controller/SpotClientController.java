@@ -17,10 +17,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.ta4j.core.*;
-import org.ta4j.core.indicators.RSIIndicator;
-import org.ta4j.core.indicators.SMAIndicator;
-import org.ta4j.core.indicators.StochasticOscillatorKIndicator;
-import org.ta4j.core.indicators.StochasticRSIIndicator;
+import org.ta4j.core.indicators.*;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.num.DecimalNum;
 import org.ta4j.core.num.Num;
@@ -77,18 +74,32 @@ public class SpotClientController {
         query.setSymbol(symbol);
         query.setLimit(limit);
 
-
         BarSeries series = stockMarketService.getBaseBars(query).get();
 
         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
 
-        series.getBarData().stream().forEach(e-> System.out.println(e.getBeginTime().toString() +" : "+ e.getOpenPrice()));
+        RSIIndicator rsiIndicator = new RSIIndicator(closePrice, series.getBarCount());
 
-        RSIIndicator rsiIndicator = new RSIIndicator(closePrice, 2);
-        Num resultOriginalIndicator = rsiIndicator.getValue(20);
+        ROCIndicator roc = new ROCIndicator(closePrice, 100);
+
+        WilliamsRIndicator williamsR = new WilliamsRIndicator(series, 20);
+
+        PPOIndicator ppo = new PPOIndicator(closePrice, 12, 26);
 
 
-        return ResponseEntity.ok(resultOriginalIndicator.toString());
+
+
+
+        Num RSIResult = rsiIndicator.getValue(series.getEndIndex());
+        Num rocResult = roc.getValue(series.getEndIndex());
+        Num williamsRResult = williamsR.getValue(series.getEndIndex());
+        Num ppoRezult = ppo.getValue(series.getEndIndex());
+
+
+
+
+
+        return ResponseEntity.ok(ppoRezult.toString());
     }
 
 
