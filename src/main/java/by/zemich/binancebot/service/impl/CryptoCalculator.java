@@ -15,8 +15,8 @@ public class CryptoCalculator {
     // РАЗНИЦА ЦЕНЫ НАБОРА СВЕЧЕЙ
     public BigDecimal getPriceChange(List<BarDto> bars) {
 
-        BigDecimal result = bars.get(0).closePrice()
-                .subtract(bars.get(bars.size() - 1).closePrice(), MathContext.UNLIMITED);
+        BigDecimal result = bars.get(0).getClosePrice()
+                .subtract(bars.get(bars.size() - 1).getClosePrice(), MathContext.UNLIMITED);
         return result;
     }
 
@@ -27,8 +27,8 @@ public class CryptoCalculator {
         }
 
         int offset = bars.size() - interval;
-        BigDecimal result = bars.get(offset).closePrice()
-                .subtract(bars.get(bars.size() - 1).closePrice(), MathContext.UNLIMITED);
+        BigDecimal result = bars.get(offset).getClosePrice()
+                .subtract(bars.get(bars.size() - 1).getClosePrice(), MathContext.UNLIMITED);
         return result;
     }
     // РАЗНИЦА ЦЕНЫ НАБОРА СВЕЧЕЙ В ПРОЦЕНТАХ С ОПРЕДЕЛЁННЫМ ИНТЕРВАЛОМ
@@ -39,8 +39,8 @@ public class CryptoCalculator {
         }
 
         int offset = bars.size() - interval;
-        BigDecimal firstBarHighPrice = bars.get(offset).openPrice();
-        BigDecimal currentPrice = bars.get(bars.size() - 1).closePrice();
+        BigDecimal firstBarHighPrice = bars.get(offset).getOpenPrice();
+        BigDecimal currentPrice = bars.get(bars.size() - 1).getClosePrice();
 
         BigDecimal difference = currentPrice.subtract(firstBarHighPrice);
 
@@ -53,8 +53,8 @@ public class CryptoCalculator {
     // РАЗНИЦА ЦЕНЫ НАБОРА СВЕЧЕЙ В ПРОЦЕНТАХ
     public BigDecimal getPercentDifference(List<BarDto> bars) {
 
-        BigDecimal firstBarHighPrice = bars.get(0).openPrice();
-        BigDecimal currentPrice = bars.get(bars.size() - 1).closePrice();
+        BigDecimal firstBarHighPrice = bars.get(0).getOpenPrice();
+        BigDecimal currentPrice = bars.get(bars.size() - 1).getClosePrice();
 
         BigDecimal difference = currentPrice.subtract(firstBarHighPrice);
 

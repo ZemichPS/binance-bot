@@ -17,6 +17,26 @@ import java.util.List;
 public class BarDtoToBaseBarConverter implements Converter<BarDto, BaseBar> {
     @Override
     public BaseBar convert(BarDto source) {
+        ZonedDateTime endTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(source.getCloseTime().getTime()), ZoneId.systemDefault());
+        ZonedDateTime beginTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(source.getOpenTime().getTime()), ZoneId.systemDefault());
+        Duration timePeriod = Duration.between(beginTime, endTime);
+
+
+        return BaseBar.builder(DecimalNum::valueOf, Number.class)
+                .timePeriod(Duration.ofMinutes(15))
+                .endTime(endTime)
+                .openPrice(source.getOpenPrice())
+                .highPrice(source.getHighPrice())
+                .lowPrice(source.getLowPrice())
+                .closePrice(source.getClosePrice())
+                .volume(source.getVolume())
+                .trades(source.getNumberOfTrades().longValue())
+                .build();
+    }
+}
+
+/*
+    public BaseBar convert(BarDto source) {
         ZonedDateTime endTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(source.closeTime().getTime()), ZoneId.systemDefault());
         ZonedDateTime beginTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(source.openTime().getTime()), ZoneId.systemDefault());
         Duration timePeriod = Duration.between(beginTime, endTime);
@@ -28,9 +48,8 @@ public class BarDtoToBaseBarConverter implements Converter<BarDto, BaseBar> {
                 .closePrice(DecimalNum.valueOf(source.closePrice()))
                 .highPrice(DecimalNum.valueOf(source.highPrice()))
                 .lowPrice(DecimalNum.valueOf(source.lowPrice()))
-                .amount(DecimalNum.valueOf(source.quoteAssetVolume()))
+                .amount(DecimalNum.valueOf(0))
                 .volume(DecimalNum.valueOf(source.volume()))
                 .trades(source.numberOfTrades().longValue())
                 .build();
-    }
-}
+    }*/

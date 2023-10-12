@@ -1,19 +1,24 @@
 package by.zemich.binancebot.core.dto;
 
+import lombok.Data;
+
 import java.math.BigDecimal;
 import java.sql.Timestamp;
-import java.time.LocalDateTime;
 
 
-public record BarDto(
-        Timestamp openTime,
-        BigDecimal openPrice,
-        BigDecimal highPrice,
-        BigDecimal lowPrice,
-        BigDecimal closePrice,
-        BigDecimal volume,
-        Timestamp closeTime,
-        BigDecimal quoteAssetVolume,
-        Integer numberOfTrades,
-        BigDecimal takerBuyBaseAssetVolume,
-        BigDecimal takerBuyQuoteAssetVolume) {}
+
+@Data
+public class BarDto{
+        private Timestamp openTime;
+        private BigDecimal openPrice;
+        private BigDecimal highPrice;
+        private BigDecimal lowPrice;
+        private BigDecimal closePrice;
+        private BigDecimal volume;
+        private Timestamp closeTime;
+        private BigDecimal quoteAssetVolume;
+        private Integer numberOfTrades;
+        private BigDecimal takerBuyBaseAssetVolume;
+        private BigDecimal takerBuyQuoteAssetVolume;
+
+}

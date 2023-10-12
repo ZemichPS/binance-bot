@@ -19,8 +19,16 @@ import org.springframework.web.bind.annotation.RestController;
 import org.ta4j.core.*;
 import org.ta4j.core.indicators.RSIIndicator;
 import org.ta4j.core.indicators.SMAIndicator;
+import org.ta4j.core.indicators.StochasticOscillatorKIndicator;
+import org.ta4j.core.indicators.StochasticRSIIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
+import org.ta4j.core.num.DecimalNum;
+import org.ta4j.core.num.Num;
+import org.ta4j.core.rules.CrossedDownIndicatorRule;
 
+import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.ZonedDateTime;
 import java.util.*;
 
 @RestController
@@ -68,28 +76,19 @@ public class SpotClientController {
         query.setInterval(interval);
         query.setSymbol(symbol);
         query.setLimit(limit);
-        // List<BarDto> barList = stockMarketService.getBars(query).get();
-
-        List<BaseBar> baseBarList = stockMarketService.getBaseBars(query).get();
-
-        //DecimalNum
-        BarSeries series = new BaseBarSeries();
-        for (BaseBar bar : baseBarList) {
-            series.addBar(bar);
-        }
-
-        Strategy strategy = rsi2Strategy.buildStrategy(series);
-        BarSeriesManager seriesManager = new BarSeriesManager(series);
-        TradingRecord tradingRecord = seriesManager.run(strategy);
-
-        System.out.println("Number of positions for the strategy: " + tradingRecord.getPositionCount());
-
-        // Analysis
-       // System.out.println("Total return for the strategy: " + new ReturnCriterion().calculate(series, tradingRecord));
 
 
+        BarSeries series = stockMarketService.getBaseBars(query).get();
 
-        return ResponseEntity.ok(series.toString());
+        ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
+
+        series.getBarData().stream().forEach(e-> System.out.println(e.getBeginTime().toString() +" : "+ e.getOpenPrice()));
+
+        RSIIndicator rsiIndicator = new RSIIndicator(closePrice, 2);
+        Num resultOriginalIndicator = rsiIndicator.getValue(20);
+
+
+        return ResponseEntity.ok(resultOriginalIndicator.toString());
     }
 
 

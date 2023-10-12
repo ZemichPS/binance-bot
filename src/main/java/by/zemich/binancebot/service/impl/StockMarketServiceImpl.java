@@ -12,14 +12,16 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.boot.json.JacksonJsonParser;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Service;
-import org.ta4j.core.BaseBar;
+import org.ta4j.core.*;
+import org.ta4j.core.num.DecimalNum;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.time.*;
+import java.util.*;
 import java.util.stream.Collectors;
+
+import static com.fasterxml.jackson.databind.type.LogicalType.Collection;
 
 @Service
 public class StockMarketServiceImpl implements IStockMarketService {
@@ -42,15 +44,13 @@ public class StockMarketServiceImpl implements IStockMarketService {
     }
 
     @Override
-    public Optional<List<BaseBar>> getBaseBars(KlineQueryDto klineQuery) {
+    public Optional<BarSeries> getBaseBars(KlineQueryDto klineQuery) {
+
         String result = spotClient.createMarket().klines(converter.dtoToMap(klineQuery));
-        List<BaseBar> baseBarList = new ArrayList<>();
-
-        baseBarList = stringResponseToListOfBarsDto(result).stream()
-                .map(barDto -> conversionService.convert(barDto, BaseBar.class))
-                .collect(Collectors.toList());
-
-        return Optional.of(baseBarList);
+        List<BarDto> barsList = stringResponseToListOfBarsDto(result);
+        Collections.reverse(barsList);
+        BarSeries series = getCusomBarSeries(barsList);
+        return Optional.of(series);
     }
 
     @Override
@@ -64,31 +64,77 @@ public class StockMarketServiceImpl implements IStockMarketService {
         }
     }
 
+    private BarSeries getCusomBarSeries(List<BarDto> barDtoList) {
+        BarSeries series = new BaseBarSeries("my_live_series");
+
+        ZonedDateTime endTime = ZonedDateTime.now();
+
+        int counter = 1;
+
+        for (int i = 1; i < barDtoList.size(); i++) {
+            BarDto barDtoN = barDtoList.get(i);
+
+            Bar bar = BaseBar.builder(DecimalNum::valueOf, Double.class)
+                    .timePeriod(Duration.ofMinutes(15))
+                    .endTime(endTime.plusMinutes(counter))
+                    .openPrice(barDtoN.getOpenPrice().doubleValue())
+                    .highPrice(barDtoN.getHighPrice().doubleValue())
+                    .lowPrice(barDtoN.getLowPrice().doubleValue())
+                    .closePrice(barDtoN.getClosePrice().doubleValue())
+                    .volume(barDtoN.getVolume().doubleValue())
+                    .build();
+
+            series.addBar(bar);
+            counter = counter + 15;
+
+/*
+            series.addBar(
+                    endTime.plusMinutes(counter),
+                    bardto.getOpenPrice(),
+                    bardto.getHighPrice(),
+                    bardto.getLowPrice(),
+                    bardto.getClosePrice(),
+                    bardto.getVolume()
+            );
+
+ */
+
+        }
+        return series;
+    }
+
+
     private List<BarDto> stringResponseToListOfBarsDto(String response) {
-        List<BarDto> barDtos = new ArrayList<>();
+        List<BarDto> barsList = new ArrayList<>();
+
         List<Object> objectList = new JacksonJsonParser().parseList(response);
 
         objectList.stream().forEach(object -> {
+
             List<Object> rawCandleList = (List<Object>) object;
-            Long openTimeTimestamp = Long.valueOf(rawCandleList.get(0).toString());
-            Long closeTimeTimestamp = Long.valueOf(rawCandleList.get(6).toString());
-            barDtos.add(
-                    new BarDto(
-                            new Timestamp(openTimeTimestamp),
-                            new BigDecimal(rawCandleList.get(1).toString()),
-                            new BigDecimal(rawCandleList.get(2).toString()),
-                            new BigDecimal(rawCandleList.get(3).toString()),
-                            new BigDecimal(rawCandleList.get(4).toString()),
-                            new BigDecimal(rawCandleList.get(5).toString()),
-                            new Timestamp(closeTimeTimestamp),
-                            new BigDecimal(rawCandleList.get(7).toString()),
-                            (Integer) rawCandleList.get(8),
-                            new BigDecimal(rawCandleList.get(9).toString()),
-                            new BigDecimal(rawCandleList.get(10).toString())
-                    )
-            );
+
+            Long openTime = Long.valueOf(rawCandleList.get(0).toString());
+            Long closeTime = Long.valueOf(rawCandleList.get(6).toString());
+
+            BarDto barDto = new BarDto();
+
+            barDto.setOpenTime(new Timestamp(openTime));
+            barDto.setOpenPrice(new BigDecimal(rawCandleList.get(1).toString()));
+            barDto.setHighPrice(new BigDecimal(rawCandleList.get(2).toString()));
+            barDto.setLowPrice(new BigDecimal(rawCandleList.get(3).toString()));
+            barDto.setClosePrice(new BigDecimal(rawCandleList.get(4).toString()));
+            barDto.setVolume(new BigDecimal(rawCandleList.get(5).toString()));
+            barDto.setCloseTime(new Timestamp(closeTime));
+            barDto.setQuoteAssetVolume(new BigDecimal(rawCandleList.get(7).toString()));
+            barDto.setNumberOfTrades(Integer.parseInt(rawCandleList.get(8).toString()));
+            barDto.setTakerBuyBaseAssetVolume(new BigDecimal(rawCandleList.get(9).toString()));
+            barDto.setTakerBuyQuoteAssetVolume(new BigDecimal(rawCandleList.get(10).toString()));
+
+            barsList.add(barDto);
+
+
         });
-        return barDtos;
+        return barsList;
     }
 
 }
