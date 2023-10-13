@@ -1,5 +1,6 @@
 package by.zemich.binancebot.service.strategy;
 
+
 import org.springframework.stereotype.Component;
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.BaseStrategy;
@@ -13,9 +14,14 @@ import org.ta4j.core.rules.CrossedUpIndicatorRule;
 import org.ta4j.core.rules.OverIndicatorRule;
 import org.ta4j.core.rules.UnderIndicatorRule;
 
+
 @Component
 public class RSI2Strategy {
     public Strategy buildStrategy(BarSeries series) {
+        if (series == null) {
+            throw new IllegalArgumentException("Series cannot be null");
+        }
+
         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
         SMAIndicator shortSma = new SMAIndicator(closePrice, 5);
         SMAIndicator longSma = new SMAIndicator(closePrice, 200);
