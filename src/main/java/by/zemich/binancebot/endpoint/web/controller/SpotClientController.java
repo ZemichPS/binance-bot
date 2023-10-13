@@ -19,6 +19,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.ta4j.core.*;
 import org.ta4j.core.indicators.*;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
+import org.ta4j.core.indicators.helpers.TypicalPriceIndicator;
+import org.ta4j.core.indicators.statistics.StandardDeviationIndicator;
 import org.ta4j.core.num.DecimalNum;
 import org.ta4j.core.num.Num;
 import org.ta4j.core.rules.CrossedDownIndicatorRule;
@@ -76,36 +78,48 @@ public class SpotClientController {
 
         BarSeries series = stockMarketService.getBaseBars(query).get();
 
+        /*
+         * Creating indicators
+         */
+        // Close price
         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
-
-        RSIIndicator rsiIndicator = new RSIIndicator(closePrice, series.getBarCount());
-
-        ROCIndicator roc = new ROCIndicator(closePrice, 100);
-
-        WilliamsRIndicator williamsR = new WilliamsRIndicator(series, 20);
-
+        // Typical price
+        TypicalPriceIndicator typicalPrice = new TypicalPriceIndicator(series);
+        // Price variation
+      //  ClosePriceRatioIndicator closePriceRatioIndicator = new ClosePriceRatioIndicator(series);
+        // Simple moving averages
+        SMAIndicator shortSma = new SMAIndicator(closePrice, 8);
+        SMAIndicator longSma = new SMAIndicator(closePrice, 20);
+        // Exponential moving averages
+        EMAIndicator shortEma = new EMAIndicator(closePrice, 8);
+        EMAIndicator longEma = new EMAIndicator(closePrice, 20);
+        // Percentage price oscillator
         PPOIndicator ppo = new PPOIndicator(closePrice, 12, 26);
-
-        StochasticRSIIndicator stochasticRSIIndicator = new StochasticRSIIndicator(series, 500);
-
-        SMAIndicator shortSma = new SMAIndicator(closePrice, 5);
-        SMAIndicator longSma = new SMAIndicator(closePrice, 200);
-
-
-
-
-        Num RSIResult = rsiIndicator.getValue(series.getEndIndex());
-        Num rocResult = roc.getValue(series.getEndIndex());
-        Num williamsRResult = williamsR.getValue(series.getEndIndex());
-        Num ppoRezult = shortSma.getValue(series.getEndIndex());
-        Num longSmaRezult = longSma.getValue(series.getEndIndex());
-        Num stochasticRSIIndicatorRezult = stochasticRSIIndicator.getValue(series.getEndIndex());
+        // Rate of change
+        ROCIndicator roc = new ROCIndicator(closePrice, 100);
+        // Relative strength index
+        RSIIndicator rsi = new RSIIndicator(closePrice, 14);
+        // Williams %R
+        WilliamsRIndicator williamsR = new WilliamsRIndicator(series, 20);
+        // Average true range
+        ATRIndicator atr = new ATRIndicator(series, 20);
+        // Standard deviation
+        StandardDeviationIndicator sd = new StandardDeviationIndicator(closePrice, 14);
 
 
+        Map<String, String> indicatorResultMap = new HashMap<>();
+        indicatorResultMap.put("ClosePriceIndicator", closePrice.getValue(series.getEndIndex()).toString());
+        indicatorResultMap.put("TypicalPriceIndicator", typicalPrice.getValue(series.getEndIndex()).toString());
+        indicatorResultMap.put("SMAIndicator", shortSma.getValue(series.getEndIndex()).toString());
+        indicatorResultMap.put("SMAIndicator", longSma.getValue(series.getEndIndex()).toString());
+        indicatorResultMap.put("PPOIndicator", ppo.getValue(series.getEndIndex()).toString());
+        indicatorResultMap.put("ROCIndicator", roc.getValue(series.getEndIndex()).toString());
+        indicatorResultMap.put("RSIIndicator", rsi.getValue(series.getEndIndex()).toString());
+        indicatorResultMap.put("WilliamsRIndicator", williamsR.getValue(series.getEndIndex()).toString());
+        indicatorResultMap.put("ATRIndicator", atr.getValue(series.getEndIndex()).toString());
+        indicatorResultMap.put("StandardDeviationIndicator", sd.getValue(series.getEndIndex()).toString());
 
-
-
-        return ResponseEntity.ok(stochasticRSIIndicatorRezult.toString());
+        return ResponseEntity.ok(indicatorResultMap.toString());
     }
 
 
