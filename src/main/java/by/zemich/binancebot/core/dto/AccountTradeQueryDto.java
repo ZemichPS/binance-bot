@@ -14,6 +14,5 @@ public class AccountTradeQueryDto {
     private Long fromId;
     private Integer limit;
     private Long recvWindow;
-    @NotEmpty(message = "Time is mandatory")
-    private Long timestamp;
+
 }

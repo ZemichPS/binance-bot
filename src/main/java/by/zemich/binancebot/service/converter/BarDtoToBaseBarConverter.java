@@ -23,7 +23,7 @@ public class BarDtoToBaseBarConverter implements Converter<BarDto, BaseBar> {
 
 
         return BaseBar.builder(DecimalNum::valueOf, Number.class)
-                .timePeriod(Duration.ofMinutes(15))
+                .timePeriod(timePeriod)
                 .endTime(endTime)
                 .openPrice(source.getOpenPrice())
                 .highPrice(source.getHighPrice())

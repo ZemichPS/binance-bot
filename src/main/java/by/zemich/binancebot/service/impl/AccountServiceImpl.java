@@ -46,7 +46,10 @@ public class AccountServiceImpl implements IAccountService {
     public Optional<List<AccountTradeResponseDto>> getTradeList(AccountTradeQueryDto tradeQuery) {
         String response = spotClient.createTrade().myTrades(converter.dtoToMap(tradeQuery));
         try {
+
             List<AccountTradeResponseDto> accountTradeList = objectMapper.readValue(response, List.class);
+
+
             return Optional.of(accountTradeList);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);

@@ -1,11 +1,9 @@
 package by.zemich.binancebot.service.impl;
 
-import by.zemich.binancebot.core.dto.BarDto;
-import by.zemich.binancebot.core.dto.ExchangeInfoResponseDto;
-import by.zemich.binancebot.core.dto.ExchangeInfoQueryDto;
-import by.zemich.binancebot.core.dto.KlineQueryDto;
+import by.zemich.binancebot.core.dto.*;
 import by.zemich.binancebot.service.api.IConverter;
 import by.zemich.binancebot.service.api.IStockMarketService;
+import by.zemich.binancebot.core.dto.TickerSymbolShortQuery;
 import com.binance.connector.client.SpotClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -13,15 +11,11 @@ import org.springframework.boot.json.JacksonJsonParser;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Service;
 import org.ta4j.core.*;
-import org.ta4j.core.num.DecimalNum;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.*;
 import java.util.*;
-import java.util.stream.Collectors;
-
-import static com.fasterxml.jackson.databind.type.LogicalType.Collection;
 
 @Service
 public class StockMarketServiceImpl implements IStockMarketService {
@@ -48,7 +42,7 @@ public class StockMarketServiceImpl implements IStockMarketService {
 
         String result = spotClient.createMarket().klines(converter.dtoToMap(klineQuery));
         List<BarDto> barsList = stringResponseToListOfBarsDto(result);
-        //Collections.reverse(barsList);
+
 
         BarSeries series = getCusomBarSeries(barsList);
         return Optional.of(series);
@@ -65,9 +59,17 @@ public class StockMarketServiceImpl implements IStockMarketService {
         }
     }
 
+    @Override
+    public Optional<List<SymbolShortDto>> getAllSymbols(TickerSymbolShortQuery query) {
+        String result = spotClient.createMarket().tickerSymbol(converter.dtoToMap(query));
+
+        List<SymbolShortDto> accountTradeList = symbolConverter(result);
+        return Optional.ofNullable(accountTradeList);
+    }
+
     private BarSeries getCusomBarSeries(List<BarDto> barDtoList) {
         BarSeries series = new BaseBarSeries("my_live_series");
-        barDtoList.forEach(candle-> {
+        barDtoList.forEach(candle -> {
             ZonedDateTime closeTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(candle.getCloseTime().getTime()), ZoneId.of("Europe/Minsk"));
             ZonedDateTime openTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(candle.getCloseTime().getTime()), ZoneId.of("Europe/Minsk"));
 
@@ -120,6 +122,24 @@ public class StockMarketServiceImpl implements IStockMarketService {
 
         });
         return barsList;
+    }
+
+    private List<SymbolShortDto> symbolConverter(String response) {
+        List<SymbolShortDto> symbols = new ArrayList<>();
+        List<Object> objectList = new JacksonJsonParser().parseList(response);
+        objectList.stream().forEach(object -> {
+
+            LinkedHashMap<String, String> map = (LinkedHashMap<String, String>) object;
+
+            String symbol = map.get("symbol").toString();
+            BigDecimal price = new BigDecimal(map.get("price").toString());
+            SymbolShortDto symbolShort = new SymbolShortDto();
+            symbolShort.setSymbol(symbol);
+            symbolShort.setPrice(price);
+            symbols.add(symbolShort);
+        });
+
+        return symbols;
     }
 
 }

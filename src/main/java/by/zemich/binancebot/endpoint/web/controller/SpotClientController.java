@@ -1,16 +1,23 @@
 package by.zemich.binancebot.endpoint.web.controller;
 
 import by.zemich.binancebot.core.dto.*;
+import by.zemich.binancebot.core.enums.EInterval;
+import by.zemich.binancebot.service.api.IAccountService;
 import by.zemich.binancebot.service.api.IOrderService;
 import by.zemich.binancebot.service.api.IStockMarketService;
 
+import by.zemich.binancebot.core.dto.TickerSymbolShortQuery;
 import by.zemich.binancebot.service.strategy.RSI2Strategy;
+import com.binance.connector.client.exceptions.BinanceClientException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.ta4j.core.*;
+import org.ta4j.core.indicators.RSIIndicator;
+import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
+import org.ta4j.core.num.Num;
 
 import java.util.*;
 
@@ -20,14 +27,16 @@ public class SpotClientController {
     private final Map<String, Object> parameters = new HashMap<>();
     private final RSI2Strategy strategy;
     private final IStockMarketService stockMarketService;
+    private final IOrderService orderService;
+    private final IAccountService accountService;
 
-    public SpotClientController(RSI2Strategy strategy, IStockMarketService stockMarketService, IOrderService orderService) {
+
+    public SpotClientController(RSI2Strategy strategy, IStockMarketService stockMarketService, IOrderService orderService, IAccountService accountService) {
         this.strategy = strategy;
         this.stockMarketService = stockMarketService;
         this.orderService = orderService;
+        this.accountService = accountService;
     }
-
-    private final IOrderService orderService;
 
 
     @GetMapping("/history")
@@ -38,26 +47,81 @@ public class SpotClientController {
         return ResponseEntity.ok(list);
     }
 
-    @GetMapping("/rsi")
-    private ResponseEntity<String> exchangeInfo(@RequestParam String symbol,
-                                                @RequestParam String interval,
-                                                @RequestParam Integer limit) {
+    @GetMapping("/account")
+    private ResponseEntity<AccountInformationResponseDto> accountInf() {
+        AccountInformationQueryDto query = new AccountInformationQueryDto();
+        query.setTimestamp(new Date().getTime());
 
-        KlineQueryDto query = new KlineQueryDto();
-        query.setInterval(interval);
-        query.setSymbol(symbol);
-        query.setLimit(limit);
-
-        BarSeries series = stockMarketService.getBaseBars(query).get();
-
-        BarSeriesManager seriesManager = new BarSeriesManager(series);
-
-        TradingRecord tradingRecord = seriesManager.run(strategy.buildStrategy(series));
-        Integer count = tradingRecord.getPositionCount();
-        List<Position> positions = tradingRecord.getPositions();
-        return ResponseEntity.ok(positions.toString());
+        return ResponseEntity.ok(accountService.getInformation(query).get());
     }
 
+    @GetMapping("/indicators")
+    private ResponseEntity<String> exchangeInfo(@RequestParam String symbol,
+                                                @RequestParam String interval,
+                                                @RequestParam Integer limit,
+                                                @RequestParam Integer period) {
+
+        KlineQueryDto query = new KlineQueryDto();
+        query.setLimit(limit);
+
+        BarSeries series15m = null;
+        BarSeries series4h = null;
+
+        AccountInformationQueryDto accountInformationQueryDto = new AccountInformationQueryDto();
+        accountInformationQueryDto.setTimestamp(new Date().getTime());
+
+        List<SymbolShortDto> symbols = stockMarketService.getAllSymbols(new TickerSymbolShortQuery()).get();
+        String rsiResult = null;
+
+        for (int i = 0; i < symbols.size(); i++) {
+
+            String symbolQuery = symbols.get(i).getSymbol();
+
+            if(!symbolQuery.contains("USDT")){
+                continue;
+            }
+
+            query.setSymbol(symbolQuery);
+            query.setInterval(EInterval.M15.toString());
+
+            try {
+                series15m = stockMarketService.getBaseBars(query).get();
+            } catch (BinanceClientException exception) {
+                System.out.println(exception.getErrMsg());
+                continue;
+            }
+
+
+            query.setInterval(EInterval.H4.toString());
+            series4h = stockMarketService.getBaseBars(query).get();
+
+
+            ClosePriceIndicator closePrice15m = new ClosePriceIndicator(series15m);
+            RSIIndicator rsi15m = new RSIIndicator(closePrice15m, 6);
+
+            ClosePriceIndicator closePrice4h = new ClosePriceIndicator(series4h);
+            RSIIndicator rsi4h = new RSIIndicator(closePrice4h, 6);
+
+            Num rsi15mRes = rsi15m.getValue(series15m.getEndIndex());
+            Num rsi4hRes = rsi4h.getValue(series4h.getEndIndex());
+
+            if (rsi4hRes.doubleValue() <= 15 && rsi15mRes.doubleValue() <= 15) {
+                rsiResult = rsiResult + "Symbol: " + symbolQuery + ". RSI 15m: " + rsi15m.getValue(series15m.getEndIndex()).toString() + "RSI 4H: " + rsi4h.getValue(series4h.getEndIndex()) + "\n";
+            }
+
+
+        }
+
+        return ResponseEntity.ok(rsiResult);
+    }
+
+    @GetMapping("/other")
+    private ResponseEntity<String> getInfo() {
+        List<SymbolShortDto> response = stockMarketService.getAllSymbols(new TickerSymbolShortQuery()).get();
+
+
+        return ResponseEntity.ok(response.toString());
+    }
 
 }
 
