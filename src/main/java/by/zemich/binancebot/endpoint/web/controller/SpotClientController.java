@@ -105,7 +105,7 @@ public class SpotClientController {
             Num rsi15mRes = rsi15m.getValue(series15m.getEndIndex());
             Num rsi4hRes = rsi4h.getValue(series4h.getEndIndex());
 
-            if (rsi4hRes.doubleValue() <= 15 && rsi15mRes.doubleValue() <= 15) {
+            if (rsi4hRes.doubleValue() <= 10 && rsi15mRes.doubleValue() <= 15) {
                 rsiResult = rsiResult + "Symbol: " + symbolQuery + ". RSI 15m: " + rsi15m.getValue(series15m.getEndIndex()).toString() + "RSI 4H: " + rsi4h.getValue(series4h.getEndIndex()) + "\n";
             }
 
