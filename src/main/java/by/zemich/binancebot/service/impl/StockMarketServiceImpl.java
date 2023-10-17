@@ -38,7 +38,7 @@ public class StockMarketServiceImpl implements IStockMarketService {
     }
 
     @Override
-    public Optional<BarSeries> getBaseBars(KlineQueryDto klineQuery) {
+    public Optional<BarSeries> getBarSeries(KlineQueryDto klineQuery) {
 
         String result = spotClient.createMarket().klines(converter.dtoToMap(klineQuery));
         List<BarDto> barsList = stringResponseToListOfBarsDto(result);

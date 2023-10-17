@@ -8,7 +8,6 @@ import by.zemich.binancebot.service.api.IStockMarketService;
 
 import by.zemich.binancebot.core.dto.TickerSymbolShortQuery;
 import by.zemich.binancebot.service.strategy.RSI2Strategy;
-import com.binance.connector.client.exceptions.BinanceClientException;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -16,10 +15,15 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.ta4j.core.*;
 import org.ta4j.core.indicators.RSIIndicator;
+import org.ta4j.core.indicators.SMAIndicator;
+import org.ta4j.core.indicators.bollinger.*;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
+import org.ta4j.core.indicators.statistics.StandardDeviationIndicator;
 import org.ta4j.core.indicators.volume.ChaikinMoneyFlowIndicator;
+import org.ta4j.core.num.DecimalNum;
 import org.ta4j.core.num.Num;
 
+import java.math.BigDecimal;
 import java.util.*;
 
 @RestController
@@ -57,63 +61,54 @@ public class SpotClientController {
     }
 
     @GetMapping("/indicators")
-    private ResponseEntity<List<String>> exchangeInfo(@RequestParam String symbol,
+    private ResponseEntity<BollingerStrategyReport> exchangeInfo(@RequestParam String symbol,
                                                 @RequestParam String interval,
                                                 @RequestParam Integer limit,
                                                 @RequestParam Integer period) {
 
         KlineQueryDto query = new KlineQueryDto();
-        query.setLimit(100);
-        query.setInterval(EInterval.M15.toString());
+        query.setLimit(limit);
+        query.setInterval(interval);
+        query.setSymbol(symbol);
 
 
-        BarSeries series = null;
+        BarSeries series = stockMarketService.getBarSeries(query).get();
 
-        ChaikinMoneyFlowIndicator chaikinMoneyFlowIndicator = null;
-        ClosePriceIndicator closePriceIndicator = null;
-        RSIIndicator rsiIndicator = null;
+        ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
+        SMAIndicator longSma = new SMAIndicator(closePrice, 20);
+        // Standard deviation
+        StandardDeviationIndicator sd = new StandardDeviationIndicator(closePrice, 20);
 
-        List<SymbolShortDto> symbols = stockMarketService.getAllSymbols(new TickerSymbolShortQuery()).get();
+        RSIIndicator rsiIndicator = new RSIIndicator(closePrice, 14);
 
-        List<String> resultList = new ArrayList<>();
+        BollingerBandsMiddleIndicator bbm = new BollingerBandsMiddleIndicator(longSma);
+        BollingerBandsLowerIndicator bbl = new BollingerBandsLowerIndicator(bbm, sd);
+        BollingerBandsUpperIndicator bbu = new BollingerBandsUpperIndicator(bbm, sd);
+        BollingerBandWidthIndicator bbw = new BollingerBandWidthIndicator(bbu, bbm, bbl);
+        PercentBIndicator percentB = new PercentBIndicator(closePrice, 20, 2.0);
 
-        for (int i = 0; i < symbols.size(); i++) {
-            String symbolQuery = symbols.get(i).getSymbol();
+        int endIndex = series.getEndIndex();
 
-            if(!symbolQuery.contains("USDT")) continue;
-            if(symbolQuery.startsWith("USDT")) continue;
-
-            // подготавливает запрос
-            query.setSymbol(symbolQuery);
-
-            //делаем запрос и получаем series
-            series = stockMarketService.getBaseBars(query).get();
-
-            // создаём индикаторы
-            chaikinMoneyFlowIndicator = new ChaikinMoneyFlowIndicator(series, 20);
-            closePriceIndicator = new ClosePriceIndicator(series);
-            rsiIndicator = new RSIIndicator(closePriceIndicator, 6);
-
-            // получаем значение индикаторов
-            Num chaikinMoneyFlowIndicatorResult = chaikinMoneyFlowIndicator.getValue(series.getEndIndex());
-            Num rsiIndicatorResult = rsiIndicator.getValue(series.getEndIndex());
+        BollingerStrategyReport report = BollingerStrategyReport.builder()
+                .percentBIndicatorValue(new BigDecimal(percentB.getValue(endIndex).toString()))
+                .bollingerBandWidthValue(new BigDecimal(bbw.getValue(endIndex).toString()))
+                .bollingerBandsUpperValue(new BigDecimal(bbu.getValue(endIndex).toString()))
+                .bollingerBandsMiddleValue(new BigDecimal(bbm.getValue(endIndex).toString()))
+                .bollingerBandsLowerValue(new BigDecimal(bbl.getValue(endIndex).toString()))
+                .rsiValue(new BigDecimal(rsiIndicator.getValue(endIndex).toString()))
+                .currentPriceValue(new BigDecimal(series.getBar(endIndex).getClosePrice().toString()))
+                .build();
 
 
-
-            if (chaikinMoneyFlowIndicatorResult.doubleValue() <= -0.30){
-                if(rsiIndicatorResult.doubleValue() <= 29){
-                    resultList.add("rsi: " + rsiIndicatorResult.doubleValue()+"; flowIndicator: " + chaikinMoneyFlowIndicatorResult.doubleValue()+"; " + "coin: " + symbolQuery);
-               
-                }
-            }
-
-        }
-
-        return ResponseEntity.ok(resultList);
+        return ResponseEntity.ok(report);
     }
 
     @GetMapping("/other")
     private ResponseEntity<String> getInfo() {
+       /* TODO
+       BollingerBand(20) + Volume + RSI STRATEGY.
+        */
+
         List<SymbolShortDto> response = stockMarketService.getAllSymbols(new TickerSymbolShortQuery()).get();
         return ResponseEntity.ok(response.toString());
     }
