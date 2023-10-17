@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.ta4j.core.*;
 import org.ta4j.core.indicators.RSIIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
+import org.ta4j.core.indicators.volume.ChaikinMoneyFlowIndicator;
 import org.ta4j.core.num.Num;
 
 import java.util.*;
@@ -56,70 +57,64 @@ public class SpotClientController {
     }
 
     @GetMapping("/indicators")
-    private ResponseEntity<String> exchangeInfo(@RequestParam String symbol,
+    private ResponseEntity<List<String>> exchangeInfo(@RequestParam String symbol,
                                                 @RequestParam String interval,
                                                 @RequestParam Integer limit,
                                                 @RequestParam Integer period) {
 
         KlineQueryDto query = new KlineQueryDto();
-        query.setLimit(limit);
+        query.setLimit(100);
+        query.setInterval(EInterval.M15.toString());
 
-        BarSeries series15m = null;
-        BarSeries series4h = null;
 
-        AccountInformationQueryDto accountInformationQueryDto = new AccountInformationQueryDto();
-        accountInformationQueryDto.setTimestamp(new Date().getTime());
+        BarSeries series = null;
+
+        ChaikinMoneyFlowIndicator chaikinMoneyFlowIndicator = null;
+        ClosePriceIndicator closePriceIndicator = null;
+        RSIIndicator rsiIndicator = null;
 
         List<SymbolShortDto> symbols = stockMarketService.getAllSymbols(new TickerSymbolShortQuery()).get();
-        String rsiResult = null;
+
+        List<String> resultList = new ArrayList<>();
 
         for (int i = 0; i < symbols.size(); i++) {
-
             String symbolQuery = symbols.get(i).getSymbol();
 
-            if(!symbolQuery.contains("USDT")){
-                continue;
-            }
+            if(!symbolQuery.contains("USDT")) continue;
+            if(symbolQuery.startsWith("USDT")) continue;
 
+            // подготавливает запрос
             query.setSymbol(symbolQuery);
-            query.setInterval(EInterval.M15.toString());
 
-            try {
-                series15m = stockMarketService.getBaseBars(query).get();
-            } catch (BinanceClientException exception) {
-                System.out.println(exception.getErrMsg());
-                continue;
+            //делаем запрос и получаем series
+            series = stockMarketService.getBaseBars(query).get();
+
+            // создаём индикаторы
+            chaikinMoneyFlowIndicator = new ChaikinMoneyFlowIndicator(series, 20);
+            closePriceIndicator = new ClosePriceIndicator(series);
+            rsiIndicator = new RSIIndicator(closePriceIndicator, 6);
+
+            // получаем значение индикаторов
+            Num chaikinMoneyFlowIndicatorResult = chaikinMoneyFlowIndicator.getValue(series.getEndIndex());
+            Num rsiIndicatorResult = rsiIndicator.getValue(series.getEndIndex());
+
+
+
+            if (chaikinMoneyFlowIndicatorResult.doubleValue() <= -0.30){
+                if(rsiIndicatorResult.doubleValue() <= 29){
+                    resultList.add("rsi: " + rsiIndicatorResult.doubleValue()+"; flowIndicator: " + chaikinMoneyFlowIndicatorResult.doubleValue()+"; " + "coin: " + symbolQuery);
+               
+                }
             }
-
-
-            query.setInterval(EInterval.H4.toString());
-            series4h = stockMarketService.getBaseBars(query).get();
-
-
-            ClosePriceIndicator closePrice15m = new ClosePriceIndicator(series15m);
-            RSIIndicator rsi15m = new RSIIndicator(closePrice15m, 6);
-
-            ClosePriceIndicator closePrice4h = new ClosePriceIndicator(series4h);
-            RSIIndicator rsi4h = new RSIIndicator(closePrice4h, 6);
-
-            Num rsi15mRes = rsi15m.getValue(series15m.getEndIndex());
-            Num rsi4hRes = rsi4h.getValue(series4h.getEndIndex());
-
-            if (rsi4hRes.doubleValue() <= 10 && rsi15mRes.doubleValue() <= 15) {
-                rsiResult = rsiResult + "Symbol: " + symbolQuery + ". RSI 15m: " + rsi15m.getValue(series15m.getEndIndex()).toString() + "RSI 4H: " + rsi4h.getValue(series4h.getEndIndex()) + "\n";
-            }
-
 
         }
 
-        return ResponseEntity.ok(rsiResult);
+        return ResponseEntity.ok(resultList);
     }
 
     @GetMapping("/other")
     private ResponseEntity<String> getInfo() {
         List<SymbolShortDto> response = stockMarketService.getAllSymbols(new TickerSymbolShortQuery()).get();
-
-
         return ResponseEntity.ok(response.toString());
     }
 

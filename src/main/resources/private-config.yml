@@ -1,3 +1,6 @@
 binance:
-  apiKey: 
-  secretKey: 
+  apiKey: 5HuOTl8uyFXdbXGmLfQjxam8Cmsd76Q6Fsaz5aCoHXpBBFQvFnDDnsCm9129ceFb
+  secretKey: MssC9TgPjLzYOz0Xf4lRq3tF8REALWtX9vun13DligrVdGHthIeDk74y1iZlko3E
+
+telegram:
+  token: 6502879208:AAHlbkMm5w1BmRokuiN2ACq0FpfAJMG_WUw
