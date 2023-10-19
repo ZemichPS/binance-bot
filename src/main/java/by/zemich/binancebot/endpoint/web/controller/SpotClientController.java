@@ -70,6 +70,8 @@ public class SpotClientController {
         List<SymbolShortDto> response = stockMarketService.getAllSymbols(new TickerSymbolShortQuery()).get();
 
 
+
+
         List<BollingerStrategyReport> reports = findAndReport(response);
         return ResponseEntity.ok(reports);
     }
@@ -91,7 +93,6 @@ public class SpotClientController {
         query.setInterval("15m");
 
         List<BollingerStrategyReport> reports = new ArrayList<>();
-
 
 
         for (int i = 0; i < symbols.size(); i++) {
@@ -121,23 +122,28 @@ public class SpotClientController {
             ADXIndicator adxIndicator = new ADXIndicator(series, 20);
             int endIndex = series.getEndIndex();
 
+            try {
+                if (rsiIndicator.getValue(endIndex).doubleValue() <= 31) { //RSI condition
+                    if (percentB.getValue(endIndex).doubleValue() <= 0) { // BB condition
 
-            if (rsiIndicator.getValue(endIndex).doubleValue() < 30 & percentB.getValue(endIndex).doubleValue() <= 0) {
+                        BollingerStrategyReport report = BollingerStrategyReport.builder()
+                                .percentBIndicatorValue(new BigDecimal(percentB.getValue(endIndex).toString()))
+                                .bollingerBandWidthValue(new BigDecimal(bbw.getValue(endIndex).toString()))
+                                .bollingerBandsUpperValue(new BigDecimal(bbu.getValue(endIndex).toString()))
+                                .bollingerBandsMiddleValue(new BigDecimal(bbm.getValue(endIndex).toString()))
+                                .bollingerBandsLowerValue(new BigDecimal(bbl.getValue(endIndex).toString()))
+                                .rsiValue(new BigDecimal(rsiIndicator.getValue(endIndex).toString()))
+                                .currentPriceValue(new BigDecimal(series.getBar(endIndex).getClosePrice().toString()))
+                                .adxValue(new BigDecimal(adxIndicator.getValue(endIndex).toString()))
+                                .symbolName(symbol)
+                                .build();
 
-                BollingerStrategyReport report = BollingerStrategyReport.builder()
-                        .percentBIndicatorValue(new BigDecimal(percentB.getValue(endIndex).toString()))
-                        .bollingerBandWidthValue(new BigDecimal(bbw.getValue(endIndex).toString()))
-                        .bollingerBandsUpperValue(new BigDecimal(bbu.getValue(endIndex).toString()))
-                        .bollingerBandsMiddleValue(new BigDecimal(bbm.getValue(endIndex).toString()))
-                        .bollingerBandsLowerValue(new BigDecimal(bbl.getValue(endIndex).toString()))
-                        .rsiValue(new BigDecimal(rsiIndicator.getValue(endIndex).toString()))
-                        .currentPriceValue(new BigDecimal(series.getBar(endIndex).getClosePrice().toString()))
-                        .adxValue(new BigDecimal(adxIndicator.getValue(endIndex).toString()))
-                        .symbolName(symbol)
-                        .build();
+                        reports.add(report);
+                    }
 
-                reports.add(report);
-
+                }
+            } catch (Exception exception) {
+                System.out.println(exception.getMessage());
             }
 
         }
