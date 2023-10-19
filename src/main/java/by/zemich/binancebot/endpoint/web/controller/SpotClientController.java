@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.ta4j.core.*;
 import org.ta4j.core.indicators.RSIIndicator;
 import org.ta4j.core.indicators.SMAIndicator;
+import org.ta4j.core.indicators.adx.ADXIndicator;
 import org.ta4j.core.indicators.bollinger.*;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.indicators.statistics.StandardDeviationIndicator;
@@ -61,46 +62,16 @@ public class SpotClientController {
     }
 
     @GetMapping("/indicators")
-    private ResponseEntity<BollingerStrategyReport> exchangeInfo(@RequestParam String symbol,
-                                                @RequestParam String interval,
-                                                @RequestParam Integer limit,
-                                                @RequestParam Integer period) {
+    private ResponseEntity<List<BollingerStrategyReport>> exchangeInfo(@RequestParam String symbol,
+                                                                       @RequestParam String interval,
+                                                                       @RequestParam Integer limit,
+                                                                       @RequestParam Integer period) {
 
-        KlineQueryDto query = new KlineQueryDto();
-        query.setLimit(limit);
-        query.setInterval(interval);
-        query.setSymbol(symbol);
+        List<SymbolShortDto> response = stockMarketService.getAllSymbols(new TickerSymbolShortQuery()).get();
 
 
-        BarSeries series = stockMarketService.getBarSeries(query).get();
-
-        ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
-        SMAIndicator longSma = new SMAIndicator(closePrice, 20);
-        // Standard deviation
-        StandardDeviationIndicator sd = new StandardDeviationIndicator(closePrice, 20);
-
-        RSIIndicator rsiIndicator = new RSIIndicator(closePrice, 14);
-
-        BollingerBandsMiddleIndicator bbm = new BollingerBandsMiddleIndicator(longSma);
-        BollingerBandsLowerIndicator bbl = new BollingerBandsLowerIndicator(bbm, sd);
-        BollingerBandsUpperIndicator bbu = new BollingerBandsUpperIndicator(bbm, sd);
-        BollingerBandWidthIndicator bbw = new BollingerBandWidthIndicator(bbu, bbm, bbl);
-        PercentBIndicator percentB = new PercentBIndicator(closePrice, 20, 2.0);
-
-        int endIndex = series.getEndIndex();
-
-        BollingerStrategyReport report = BollingerStrategyReport.builder()
-                .percentBIndicatorValue(new BigDecimal(percentB.getValue(endIndex).toString()))
-                .bollingerBandWidthValue(new BigDecimal(bbw.getValue(endIndex).toString()))
-                .bollingerBandsUpperValue(new BigDecimal(bbu.getValue(endIndex).toString()))
-                .bollingerBandsMiddleValue(new BigDecimal(bbm.getValue(endIndex).toString()))
-                .bollingerBandsLowerValue(new BigDecimal(bbl.getValue(endIndex).toString()))
-                .rsiValue(new BigDecimal(rsiIndicator.getValue(endIndex).toString()))
-                .currentPriceValue(new BigDecimal(series.getBar(endIndex).getClosePrice().toString()))
-                .build();
-
-
-        return ResponseEntity.ok(report);
+        List<BollingerStrategyReport> reports = findAndReport(response);
+        return ResponseEntity.ok(reports);
     }
 
     @GetMapping("/other")
@@ -112,6 +83,69 @@ public class SpotClientController {
         List<SymbolShortDto> response = stockMarketService.getAllSymbols(new TickerSymbolShortQuery()).get();
         return ResponseEntity.ok(response.toString());
     }
+
+    private List<BollingerStrategyReport> findAndReport(List<SymbolShortDto> symbols) {
+
+        KlineQueryDto query = new KlineQueryDto();
+        query.setLimit(100);
+        query.setInterval("15m");
+
+        List<BollingerStrategyReport> reports = new ArrayList<>();
+
+
+
+        for (int i = 0; i < symbols.size(); i++) {
+
+            String symbol = symbols.get(i).getSymbol();
+            query.setSymbol(symbol);
+
+            if (!symbol.contains("USDT")) continue;
+            if (symbol.startsWith("USDT")) continue;
+
+            BarSeries series = stockMarketService.getBarSeries(query).get();
+
+            ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
+            SMAIndicator longSma = new SMAIndicator(closePrice, 20);
+
+            // Standard deviation
+            StandardDeviationIndicator sd = new StandardDeviationIndicator(closePrice, 20);
+            RSIIndicator rsiIndicator = new RSIIndicator(closePrice, 14);
+
+
+            BollingerBandsMiddleIndicator bbm = new BollingerBandsMiddleIndicator(longSma);
+            BollingerBandsLowerIndicator bbl = new BollingerBandsLowerIndicator(bbm, sd);
+            BollingerBandsUpperIndicator bbu = new BollingerBandsUpperIndicator(bbm, sd);
+            BollingerBandWidthIndicator bbw = new BollingerBandWidthIndicator(bbu, bbm, bbl);
+            PercentBIndicator percentB = new PercentBIndicator(closePrice, 20, 2.0);
+
+            ADXIndicator adxIndicator = new ADXIndicator(series, 20);
+            int endIndex = series.getEndIndex();
+
+
+            if (rsiIndicator.getValue(endIndex).doubleValue() < 30 & percentB.getValue(endIndex).doubleValue() <= 0) {
+
+                BollingerStrategyReport report = BollingerStrategyReport.builder()
+                        .percentBIndicatorValue(new BigDecimal(percentB.getValue(endIndex).toString()))
+                        .bollingerBandWidthValue(new BigDecimal(bbw.getValue(endIndex).toString()))
+                        .bollingerBandsUpperValue(new BigDecimal(bbu.getValue(endIndex).toString()))
+                        .bollingerBandsMiddleValue(new BigDecimal(bbm.getValue(endIndex).toString()))
+                        .bollingerBandsLowerValue(new BigDecimal(bbl.getValue(endIndex).toString()))
+                        .rsiValue(new BigDecimal(rsiIndicator.getValue(endIndex).toString()))
+                        .currentPriceValue(new BigDecimal(series.getBar(endIndex).getClosePrice().toString()))
+                        .adxValue(new BigDecimal(adxIndicator.getValue(endIndex).toString()))
+                        .symbolName(symbol)
+                        .build();
+
+                reports.add(report);
+
+            }
+
+        }
+
+        return reports;
+
+    }
+
 
 }
 

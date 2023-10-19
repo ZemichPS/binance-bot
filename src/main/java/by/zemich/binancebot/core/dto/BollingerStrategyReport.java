@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 @Builder
 @Data
 public class BollingerStrategyReport {
+    private String symbolName;
     private BigDecimal percentBIndicatorValue;
     private BigDecimal bollingerBandWidthValue;
     private BigDecimal bollingerBandsUpperValue;
@@ -17,5 +18,7 @@ public class BollingerStrategyReport {
     private BigDecimal bollingerBandsLowerValue;
     private BigDecimal rsiValue;
     private BigDecimal currentPriceValue;
+    private BigDecimal adxValue;
+
 
 }
