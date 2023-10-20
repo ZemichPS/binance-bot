@@ -123,7 +123,7 @@ public class SpotClientController {
             int endIndex = series.getEndIndex();
 
             try {
-                if (rsiIndicator.getValue(endIndex).doubleValue() <= 31) { //RSI condition
+                if (rsiIndicator.getValue(endIndex).doubleValue() <= 38) { //RSI condition
                     if (percentB.getValue(endIndex).doubleValue() <= 0) { // BB condition
 
                         BollingerStrategyReport report = BollingerStrategyReport.builder()
