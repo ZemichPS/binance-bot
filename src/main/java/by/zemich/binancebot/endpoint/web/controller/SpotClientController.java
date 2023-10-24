@@ -95,7 +95,7 @@ public class SpotClientController {
     private ResponseEntity<List<String>> getSymbols() {
         List<String> symbolsList = stockMarketService.getSpotSymbols().get();
         // getter fuck
-
+        Rule rule;
         // symbolsList.stream().filter(s -> s.startsWith("USDT")).collect(Collectors.toList());
         return ResponseEntity.ok(symbolsList.stream().filter(s -> !s.startsWith("USDT"))
                 .filter(s -> s.contains("USDT"))
