@@ -19,13 +19,13 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-public class StockMarketServiceImpl implements IStockMarketService {
+public class BinanceMarketServiceImpl implements IStockMarketService {
     private final SpotClient spotClient;
     private final IConverter converter;
     private final ConversionService conversionService;
     private final ObjectMapper objectMapper;
 
-    public StockMarketServiceImpl(SpotClient spotClient, IConverter converter, ConversionService conversionService, ObjectMapper objectMapper) {
+    public BinanceMarketServiceImpl(SpotClient spotClient, IConverter converter, ConversionService conversionService, ObjectMapper objectMapper) {
         this.spotClient = spotClient;
         this.converter = converter;
         this.conversionService = conversionService;
@@ -84,6 +84,19 @@ public class StockMarketServiceImpl implements IStockMarketService {
                 .map(symbolDto -> symbolDto.getSymbol()).collect(Collectors.toList());
 
         return Optional.of(symbolsList);
+    }
+
+    @Override
+    public Optional<NewOrderFullResponseDto> createOrder(Map<String, Object> params) {
+        String responseResult = spotClient.createTrade().newOrder(params);
+
+        try {
+            NewOrderFullResponseDto orderFullResponseDto = objectMapper.readValue(responseResult, NewOrderFullResponseDto.class);
+            return Optional.of(orderFullResponseDto);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
     }
 
     private BarSeries getCusomBarSeries(List<BarDto> barDtoList) {

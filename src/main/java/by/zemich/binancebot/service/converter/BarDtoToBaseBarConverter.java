@@ -35,21 +35,3 @@ public class BarDtoToBaseBarConverter implements Converter<BarDto, BaseBar> {
     }
 }
 
-/*
-    public BaseBar convert(BarDto source) {
-        ZonedDateTime endTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(source.closeTime().getTime()), ZoneId.systemDefault());
-        ZonedDateTime beginTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(source.openTime().getTime()), ZoneId.systemDefault());
-        Duration timePeriod = Duration.between(beginTime, endTime);
-
-        return BaseBar.builder()
-                .timePeriod(timePeriod)
-                .endTime(endTime)
-                .openPrice(DecimalNum.valueOf(source.openPrice()))
-                .closePrice(DecimalNum.valueOf(source.closePrice()))
-                .highPrice(DecimalNum.valueOf(source.highPrice()))
-                .lowPrice(DecimalNum.valueOf(source.lowPrice()))
-                .amount(DecimalNum.valueOf(0))
-                .volume(DecimalNum.valueOf(source.volume()))
-                .trades(source.numberOfTrades().longValue())
-                .build();
-    }*/

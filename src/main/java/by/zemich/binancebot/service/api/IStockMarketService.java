@@ -4,6 +4,7 @@ import by.zemich.binancebot.core.dto.*;
 import org.ta4j.core.BarSeries;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 public interface IStockMarketService {
@@ -12,4 +13,6 @@ public interface IStockMarketService {
     Optional<ExchangeInfoResponseDto> getExchangeInfo(ExchangeInfoQueryDto queryDto);
     Optional<List<SymbolShortDto>> getAllSymbols(TickerSymbolShortQuery query);
     Optional<List<String>> getSpotSymbols();
+    Optional<NewOrderFullResponseDto> createOrder(Map<String, Object> params);
+
 }

@@ -1,11 +1,14 @@
 package by.zemich.binancebot.service.impl;
 
+import by.zemich.binancebot.DAO.api.IOrderDao;
+import by.zemich.binancebot.DAO.entity.OrderEntity;
 import by.zemich.binancebot.core.dto.*;
 import by.zemich.binancebot.service.api.IConverter;
 import by.zemich.binancebot.service.api.IOrderService;
-import com.binance.connector.client.SpotClient;
+import by.zemich.binancebot.service.api.IStockMarketService;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -15,21 +18,26 @@ import java.util.Optional;
 public class OrderServiceImpl implements IOrderService {
 
     private final IConverter converter;
-    private final ObjectMapper objectMappermapper;
-    private final SpotClient spotClient;
+    private final ObjectMapper objectMapper;
+    private final IOrderDao orderDao;
+    private final ConversionService conversionService;
+    private final IStockMarketService stockMarketService;
 
-    public OrderServiceImpl(IConverter converter, ObjectMapper objectMappermapper, SpotClient spotClient) {
+    public OrderServiceImpl(IConverter converter, ObjectMapper objectMapper, IOrderDao orderDao, ConversionService conversionService, IStockMarketService stockMarketService) {
         this.converter = converter;
-        this.objectMappermapper = objectMappermapper;
-        this.spotClient = spotClient;
+        this.objectMapper = objectMapper;
+        this.orderDao = orderDao;
+        this.conversionService = conversionService;
+        this.stockMarketService = stockMarketService;
     }
 
 
     @Override
-    public Optional<NewOrderFullResponseDto> create(NewOrderDTO newOrder) {
-
-
-        return Optional.empty();
+    public Optional<OrderEntity> create(NewOrderDTO newOrder) {
+        NewOrderFullResponseDto responseDto = stockMarketService.createOrder(converter.dtoToMap(newOrder)).orElseThrow(RuntimeException::new);
+        OrderEntity entity = conversionService.convert(responseDto, OrderEntity.class);
+        orderDao.save(entity);
+        return Optional.of(entity);
     }
 
     @Override
@@ -54,7 +62,8 @@ public class OrderServiceImpl implements IOrderService {
 
     @Override
     public Optional<List<HistoricalOrderResponseDto>> getAll(HistoricalOrderQueryDto historicalOrderQuery) {
-
+        return Optional.ofNullable(null);
+/*
         String result = spotClient.createTrade().getOrders(converter.dtoToMap(historicalOrderQuery));
         try {
             List<HistoricalOrderResponseDto> historicalOrderResponses = objectMappermapper.readValue(result, List.class);
@@ -62,5 +71,8 @@ public class OrderServiceImpl implements IOrderService {
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
+    */
     }
+
+
 }
