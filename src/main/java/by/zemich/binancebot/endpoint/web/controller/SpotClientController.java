@@ -94,6 +94,7 @@ public class SpotClientController {
     @GetMapping("/symbols")
     private ResponseEntity<List<String>> getSymbols() {
         List<String> symbolsList = stockMarketService.getSpotSymbols().get();
+        // getter fuck
 
         // symbolsList.stream().filter(s -> s.startsWith("USDT")).collect(Collectors.toList());
         return ResponseEntity.ok(symbolsList.stream().filter(s -> !s.startsWith("USDT"))
@@ -178,6 +179,7 @@ public class SpotClientController {
                     if(percentB.getValue(endIndex).doubleValue() <= 0.17) // BBP Condition
                     if (rsiIndicator.getValue(endIndex).doubleValue() <= 50) {// RSI <=50
                         BollingerStrategyReport report = BollingerStrategyReport.builder()
+
                                 .percentBIndicatorValue(new BigDecimal(percentB.getValue(endIndex).toString()))
                                 .bollingerBandWidthValue(new BigDecimal(bbw.getValue(endIndex).toString()))
                                 .bollingerBandsUpperValue(new BigDecimal(bbu.getValue(endIndex).toString()))
