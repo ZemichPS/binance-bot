@@ -1,10 +1,11 @@
 package by.zemich.binancebot.core.dto;
 
-import lombok.Data;
+import lombok.*;
 
 import java.util.OptionalLong;
 
 @Data
+@Builder
 public class KlineQueryDto {
     private String symbol;
     private String interval;

@@ -14,17 +14,20 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.ta4j.core.*;
+import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.RSIIndicator;
 import org.ta4j.core.indicators.SMAIndicator;
 import org.ta4j.core.indicators.adx.ADXIndicator;
 import org.ta4j.core.indicators.bollinger.*;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
+import org.ta4j.core.indicators.helpers.CombineIndicator;
 import org.ta4j.core.indicators.statistics.CorrelationCoefficientIndicator;
 import org.ta4j.core.indicators.statistics.StandardDeviationIndicator;
 import org.ta4j.core.indicators.volume.ChaikinMoneyFlowIndicator;
+import org.ta4j.core.indicators.volume.OnBalanceVolumeIndicator;
 import org.ta4j.core.num.DecimalNum;
 import org.ta4j.core.num.Num;
-import org.ta4j.core.rules.IsRisingRule;
+import org.ta4j.core.rules.*;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -64,16 +67,53 @@ public class SpotClientController {
         return ResponseEntity.ok(accountService.getInformation(query).get());
     }
 
-    @GetMapping("/indicators")
-    private ResponseEntity<List<BollingerStrategyReport>> exchangeInfo(@RequestParam String symbol,
-                                                                       @RequestParam String interval,
-                                                                       @RequestParam Integer limit,
-                                                                       @RequestParam Integer period) {
+    @GetMapping("/rule_test")
+    private ResponseEntity<String> rule(@RequestParam String symbol,
+                                        @RequestParam String interval,
+                                        @RequestParam Integer limit,
+                                        @RequestParam Integer nthPrevious,
+                                        @RequestParam DecimalNum minStrenght,
+                                        @RequestParam DecimalNum maxSlope) {
+
+
+        KlineQueryDto query = KlineQueryDto.builder()
+                .symbol(symbol)
+                .interval(interval)
+                .limit(limit)
+                .build();
+
+        BarSeries series = stockMarketService.getBarSeries(query).get();
+
+        ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
+        EMAIndicator longEma = new EMAIndicator(closePrice, 20);
+        StandardDeviationIndicator sd = new StandardDeviationIndicator(closePrice, 20);
+        RSIIndicator rsiIndicator = new RSIIndicator(closePrice, 14);
+        BollingerBandsMiddleIndicator bbm = new BollingerBandsMiddleIndicator(longEma);
+        BollingerBandsLowerIndicator bbl = new BollingerBandsLowerIndicator(bbm, sd);
+        BollingerBandsUpperIndicator bbu = new BollingerBandsUpperIndicator(bbm, sd);
+        BollingerBandWidthIndicator bbw = new BollingerBandWidthIndicator(bbu, bbm, bbl);
+        PercentBIndicator percentB = new PercentBIndicator(closePrice, 20, 2.0);
+
+        Rule rule = new InSlopeRule(longEma, nthPrevious, DecimalNum.valueOf(maxSlope));
+
+        Rule risingRule = new IsRisingRule(longEma, nthPrevious, minStrenght.doubleValue());
+        Rule fallingRule = new IsFallingRule(longEma, nthPrevious, minStrenght.doubleValue());
+
+        OnBalanceVolumeIndicator balanceVolumeIndicator = new OnBalanceVolumeIndicator(series);
+        CorrelationCoefficientIndicator correlation = new CorrelationCoefficientIndicator(rsiIndicator, balanceVolumeIndicator, 14);
+
+        return ResponseEntity.ok(correlation.getValue(series.getEndIndex()).toString());
+
+    }
+
+
+    @GetMapping("/report")
+    private ResponseEntity<Map<String, List<Position>>> getReport() {
 
         List<String> symbolsList = stockMarketService.getSpotSymbols().get();
 
 
-        List<BollingerStrategyReport> reports = findAndReport(symbolsList.stream()
+        Map<String, List<Position>> reports = findAndReport(symbolsList.stream()
                 .filter(s -> !s.startsWith("USDT"))
                 .filter(s -> s.contains("USDT"))
                 .collect(Collectors.toList()));
@@ -94,9 +134,7 @@ public class SpotClientController {
     @GetMapping("/symbols")
     private ResponseEntity<List<String>> getSymbols() {
         List<String> symbolsList = stockMarketService.getSpotSymbols().get();
-        // getter fuck
-        Rule rule;
-        // symbolsList.stream().filter(s -> s.startsWith("USDT")).collect(Collectors.toList());
+
         return ResponseEntity.ok(symbolsList.stream().filter(s -> !s.startsWith("USDT"))
                 .filter(s -> s.contains("USDT"))
                 .collect(Collectors.toList()));
@@ -108,7 +146,7 @@ public class SpotClientController {
                                                   @RequestParam String interval,
                                                   @RequestParam Integer limit,
                                                   @RequestParam Integer period) {
-        KlineQueryDto query = new KlineQueryDto();
+        KlineQueryDto query = KlineQueryDto.builder().build();
         query.setLimit(limit);
         query.setInterval(interval);
         query.setInterval(symbol);
@@ -136,13 +174,15 @@ public class SpotClientController {
         return ResponseEntity.ok(response.toString());
     }
 
-    private List<BollingerStrategyReport> findAndReport(List<String> symbols) {
+    private Map<String, List<Position>> findAndReport(List<String> symbols) {
 
-        KlineQueryDto query = new KlineQueryDto();
-        query.setLimit(100);
+        KlineQueryDto query = KlineQueryDto.builder().build();
+        query.setLimit(96);
         query.setInterval("15m");
 
         List<BollingerStrategyReport> reports = new ArrayList<>();
+        Map<String, List<Position>> positionMap = new HashMap<>();
+        Integer amountPosition = 0;
 
 
         for (int i = 0; i < symbols.size(); i++) {
@@ -164,40 +204,70 @@ public class SpotClientController {
             BollingerBandsLowerIndicator bbl = new BollingerBandsLowerIndicator(bbm, sd);
             BollingerBandsUpperIndicator bbu = new BollingerBandsUpperIndicator(bbm, sd);
             BollingerBandWidthIndicator bbw = new BollingerBandWidthIndicator(bbu, bbm, bbl);
-            PercentBIndicator percentB = new PercentBIndicator(closePrice, 20, 2.0);
+            PercentBIndicator percentB = new PercentBIndicator(closePrice, 20, 3.0);
 
             ADXIndicator adxIndicator = new ADXIndicator(series, 20);
             int endIndex = series.getEndIndex();
 
 
-            boolean bbwRising = new IsRisingRule(bbw, 14).isSatisfied(endIndex);
-            boolean longSmaRising = new IsRisingRule(longSma, 7).isSatisfied(endIndex);
+            // Правило перепроданности по RSI
+            Rule underRsiRule = new UnderIndicatorRule(rsiIndicator, 30);
+            // Правило пробития нижнего уровня BB
+            Rule underPercentB = new UnderIndicatorRule(percentB, 0);
+            // Правило MAX width канала Боллиджера
+            Rule isHighestRule = new IsHighestRule(bbw, 7);
+
+            Rule waitCountBarRule = new WaitForRule(Trade.TradeType.BUY, 4);
+
+
+            // Resulted enter rule
+            Rule enterRule = underRsiRule.and(underPercentB);
+
+            // ResultedExitRule
+            Rule exitRule = new StopGainRule(closePrice, DecimalNum.valueOf("0.8"));
+
+
+            Strategy firstStrategy = new BaseStrategy(enterRule, exitRule);
+            firstStrategy.getName();
+
+            BarSeriesManager seriesManager = new BarSeriesManager(series);
+
 
             try {
-                if (longSmaRising) { // средняя растёт
-                    System.out.println("средняя растёт");
-                    if(percentB.getValue(endIndex).doubleValue() <= 0.17) // BBP Condition
-                    if (rsiIndicator.getValue(endIndex).doubleValue() <= 50) {// RSI <=50
-                        BollingerStrategyReport report = BollingerStrategyReport.builder()
 
-                                .percentBIndicatorValue(new BigDecimal(percentB.getValue(endIndex).toString()))
-                                .bollingerBandWidthValue(new BigDecimal(bbw.getValue(endIndex).toString()))
-                                .bollingerBandsUpperValue(new BigDecimal(bbu.getValue(endIndex).toString()))
-                                .bollingerBandsMiddleValue(new BigDecimal(bbm.getValue(endIndex).toString()))
-                                .bollingerBandsLowerValue(new BigDecimal(bbl.getValue(endIndex).toString()))
-                                .rsiValue(new BigDecimal(rsiIndicator.getValue(endIndex).toString()))
-                                .currentPriceValue(new BigDecimal(series.getBar(endIndex).getClosePrice().toString()))
-                                .adxValue(new BigDecimal(adxIndicator.getValue(endIndex).toString()))
-                                .symbolName(symbol)
-                                .build();
+                TradingRecord tradingRecord = seriesManager.run(firstStrategy);
+                List<Position> positionList = tradingRecord.getPositions();
+                System.out.println("Position count is: " + tradingRecord.getPositionCount());
+                amountPosition = amountPosition + tradingRecord.getPositionCount();
+                positionMap.put(symbol, positionList);
 
-                        reports.add(report);
-                    }
-                }
+
             } catch (Exception e) {
                 System.out.println(e.getMessage());
             }
         }
-        return reports;
+
+        positionMap.entrySet().stream().forEach(stringListEntry ->
+                {
+                    System.out.println("---------------------------------------------");
+                    System.out.println("symbol is: " + stringListEntry.getKey().toString());
+                    System.out.println("position count: " + stringListEntry.getValue().size());
+                    stringListEntry.getValue().stream().forEach(position -> {
+                        System.out.println("{");
+                        Trade trade = position.getEntry();
+                        System.out.println("   entry:" + position.getEntry());
+                        System.out.println("}");
+                    });
+                    System.out.println("---------------------------------------------");
+                }
+        );
+
+
+        System.out.println("+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-");
+        System.out.println("ВСЕГО ПОЗИЦИЙ: " + amountPosition);
+        System.out.println("+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-+-");
+        return null;
     }
+
+
 }
