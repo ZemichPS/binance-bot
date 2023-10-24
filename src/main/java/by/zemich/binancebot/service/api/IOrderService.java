@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Optional;
 
 public interface IOrderService {
-    Optional<OrderEntity> create(NewOrderDTO newOrder);
+    Optional<OrderEntity> create(NewOrderRequestDto newOrder);
 
     Optional<CancelOrderResponseDto> cancel(CancelOrderDto canceledOrder);
 

@@ -1,13 +1,16 @@
 package by.zemich.binancebot.endpoint.web.controller;
 
+import by.zemich.binancebot.DAO.entity.OrderEntity;
 import by.zemich.binancebot.core.dto.*;
-import by.zemich.binancebot.core.enums.EInterval;
+import by.zemich.binancebot.core.enums.EOrderType;
+import by.zemich.binancebot.core.enums.ESide;
+import by.zemich.binancebot.core.enums.ETimeInForce;
 import by.zemich.binancebot.service.api.IAccountService;
 import by.zemich.binancebot.service.api.IOrderService;
 import by.zemich.binancebot.service.api.IStockMarketService;
 
 import by.zemich.binancebot.core.dto.TickerSymbolShortQuery;
-import by.zemich.binancebot.service.strategy.RSI2Strategy;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -20,10 +23,8 @@ import org.ta4j.core.indicators.SMAIndicator;
 import org.ta4j.core.indicators.adx.ADXIndicator;
 import org.ta4j.core.indicators.bollinger.*;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
-import org.ta4j.core.indicators.helpers.CombineIndicator;
 import org.ta4j.core.indicators.statistics.CorrelationCoefficientIndicator;
 import org.ta4j.core.indicators.statistics.StandardDeviationIndicator;
-import org.ta4j.core.indicators.volume.ChaikinMoneyFlowIndicator;
 import org.ta4j.core.indicators.volume.OnBalanceVolumeIndicator;
 import org.ta4j.core.num.DecimalNum;
 import org.ta4j.core.num.Num;
@@ -37,19 +38,18 @@ import java.util.stream.Collectors;
 @RequestMapping("/spot")
 public class SpotClientController {
     private final Map<String, Object> parameters = new HashMap<>();
-    private final RSI2Strategy strategy;
+
     private final IStockMarketService stockMarketService;
     private final IOrderService orderService;
     private final IAccountService accountService;
 
 
-    public SpotClientController(RSI2Strategy strategy, IStockMarketService stockMarketService, IOrderService orderService, IAccountService accountService) {
-        this.strategy = strategy;
+
+    public SpotClientController(IStockMarketService stockMarketService, IOrderService orderService, IAccountService accountService) {
         this.stockMarketService = stockMarketService;
         this.orderService = orderService;
         this.accountService = accountService;
     }
-
 
     @GetMapping("/history")
     private ResponseEntity<List<HistoricalOrderResponseDto>> getHistory() {
@@ -107,6 +107,22 @@ public class SpotClientController {
     }
 
 
+    @GetMapping("/create_oder")
+    private ResponseEntity<OrderEntity> createOrder(){
+        NewOrderRequestDto request = new NewOrderRequestDto();
+
+        request.setSymbol("LINKUSDT");
+        request.setSide(ESide.BUY.name());
+        request.setType(EOrderType.LIMIT.name());
+        request.setQuantity(new BigDecimal(1));
+        request.setPrice(new BigDecimal("9.204"));
+        request.setTimeInForce(ETimeInForce.GTC.name());
+
+        OrderEntity orderEntity = orderService.create(request).get();
+
+        return ResponseEntity.ok(orderEntity);
+    }
+
     @GetMapping("/report")
     private ResponseEntity<Map<String, List<Position>>> getReport() {
 
@@ -139,6 +155,8 @@ public class SpotClientController {
                 .filter(s -> s.contains("USDT"))
                 .collect(Collectors.toList()));
     }
+
+
 
 
     @GetMapping("/correlation")

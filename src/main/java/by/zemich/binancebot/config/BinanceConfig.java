@@ -43,13 +43,4 @@ public class BinanceConfig {
         return new HmacSignatureGenerator(privateProperties.getSecretKey());
     }
 
-/*
-    WebSocketApiRequestHandler webSocketApiRequestHandler(WebSocketConnection connection){
-        return new WebSocketApiRequestHandler(
-                connection,
-                privateProperties.getApiKey(),
-
-        );
-    }
-*/
 }

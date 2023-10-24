@@ -14,7 +14,7 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.UUID;
 
-@Entity
+@Entity(name = "orders")
 public class OrderEntity {
 
     @Id

@@ -10,15 +10,17 @@ import lombok.Data;
 import java.math.BigDecimal;
 
 @Data
-public class NewOrderDTO {
+public class NewOrderRequestDto {
     @NotEmpty(message = "Symbol is mandatory")
     private String symbol;
     @NotEmpty(message = "Side is mandatory")
-    private ESide side;
+    private String side;
     @NotEmpty(message = "Type is mandatory")
-    private EOrderType type;
-    private ETimeInForce timeInForce;
-    @NotEmpty(message = "Type is mandatory")
+    private String type;
+    @NotEmpty(message = "Time in force is mandatory")
+    private String timeInForce;
+
+    @NotEmpty(message = "Quantity is mandatory")
     @Min(value = 1)
     private BigDecimal quantity;
     private BigDecimal quoteOrderQty;

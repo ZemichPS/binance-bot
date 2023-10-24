@@ -6,13 +6,13 @@ import by.zemich.binancebot.core.dto.*;
 import by.zemich.binancebot.service.api.IConverter;
 import by.zemich.binancebot.service.api.IOrderService;
 import by.zemich.binancebot.service.api.IStockMarketService;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 @Service
 public class OrderServiceImpl implements IOrderService {
@@ -33,9 +33,10 @@ public class OrderServiceImpl implements IOrderService {
 
 
     @Override
-    public Optional<OrderEntity> create(NewOrderDTO newOrder) {
+    public Optional<OrderEntity> create(NewOrderRequestDto newOrder) {
         NewOrderFullResponseDto responseDto = stockMarketService.createOrder(converter.dtoToMap(newOrder)).orElseThrow(RuntimeException::new);
         OrderEntity entity = conversionService.convert(responseDto, OrderEntity.class);
+        entity.setUuid(UUID.randomUUID());
         orderDao.save(entity);
         return Optional.of(entity);
     }
