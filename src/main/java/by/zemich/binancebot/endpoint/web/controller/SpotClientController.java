@@ -19,13 +19,16 @@ import org.ta4j.core.indicators.SMAIndicator;
 import org.ta4j.core.indicators.adx.ADXIndicator;
 import org.ta4j.core.indicators.bollinger.*;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
+import org.ta4j.core.indicators.statistics.CorrelationCoefficientIndicator;
 import org.ta4j.core.indicators.statistics.StandardDeviationIndicator;
 import org.ta4j.core.indicators.volume.ChaikinMoneyFlowIndicator;
 import org.ta4j.core.num.DecimalNum;
 import org.ta4j.core.num.Num;
+import org.ta4j.core.rules.IsRisingRule;
 
 import java.math.BigDecimal;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/spot")
@@ -67,12 +70,60 @@ public class SpotClientController {
                                                                        @RequestParam Integer limit,
                                                                        @RequestParam Integer period) {
 
-        List<SymbolShortDto> response = stockMarketService.getAllSymbols(new TickerSymbolShortQuery()).get();
+        List<String> symbolsList = stockMarketService.getSpotSymbols().get();
 
 
-        List<BollingerStrategyReport> reports = findAndReport(response);
+        List<BollingerStrategyReport> reports = findAndReport(symbolsList.stream()
+                .filter(s -> !s.startsWith("USDT"))
+                .filter(s -> s.contains("USDT"))
+                .collect(Collectors.toList()));
+
         return ResponseEntity.ok(reports);
     }
+
+    @GetMapping("/exchange")
+    private ResponseEntity<ExchangeInfoResponseDto> getExchangeInfo() {
+        ExchangeInfoQueryDto exchangeInfoQuery = new ExchangeInfoQueryDto();
+
+        exchangeInfoQuery.setPermissions(new ArrayList<>(List.of("SPOT")));
+        ExchangeInfoResponseDto exchangeInfo = stockMarketService.getExchangeInfo(exchangeInfoQuery).get();
+
+        return ResponseEntity.ok(exchangeInfo);
+    }
+
+    @GetMapping("/symbols")
+    private ResponseEntity<List<String>> getSymbols() {
+        List<String> symbolsList = stockMarketService.getSpotSymbols().get();
+
+        // symbolsList.stream().filter(s -> s.startsWith("USDT")).collect(Collectors.toList());
+        return ResponseEntity.ok(symbolsList.stream().filter(s -> !s.startsWith("USDT"))
+                .filter(s -> s.contains("USDT"))
+                .collect(Collectors.toList()));
+    }
+
+
+    @GetMapping("/correlation")
+    private ResponseEntity<String> getCorrelation(@RequestParam String symbol,
+                                                  @RequestParam String interval,
+                                                  @RequestParam Integer limit,
+                                                  @RequestParam Integer period) {
+        KlineQueryDto query = new KlineQueryDto();
+        query.setLimit(limit);
+        query.setInterval(interval);
+        query.setInterval(symbol);
+
+        BarSeries series = stockMarketService.getBarSeries(query).get();
+
+        ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
+        RSIIndicator rsiIndicator = new RSIIndicator(closePrice, 14);
+        ADXIndicator adxIndicator = new ADXIndicator(series, 20);
+
+        CorrelationCoefficientIndicator correlationCoefficient = new CorrelationCoefficientIndicator(rsiIndicator, adxIndicator, 20);
+        Num correlation = correlationCoefficient.getValue(series.getEndIndex());
+
+        return ResponseEntity.ok(correlation.toString());
+    }
+
 
     @GetMapping("/other")
     private ResponseEntity<String> getInfo() {
@@ -84,7 +135,7 @@ public class SpotClientController {
         return ResponseEntity.ok(response.toString());
     }
 
-    private List<BollingerStrategyReport> findAndReport(List<SymbolShortDto> symbols) {
+    private List<BollingerStrategyReport> findAndReport(List<String> symbols) {
 
         KlineQueryDto query = new KlineQueryDto();
         query.setLimit(100);
@@ -93,14 +144,10 @@ public class SpotClientController {
         List<BollingerStrategyReport> reports = new ArrayList<>();
 
 
-
         for (int i = 0; i < symbols.size(); i++) {
 
-            String symbol = symbols.get(i).getSymbol();
+            String symbol = symbols.get(i);
             query.setSymbol(symbol);
-
-            if (!symbol.contains("USDT")) continue;
-            if (symbol.startsWith("USDT")) continue;
 
             BarSeries series = stockMarketService.getBarSeries(query).get();
 
@@ -122,74 +169,33 @@ public class SpotClientController {
             int endIndex = series.getEndIndex();
 
 
-            if (rsiIndicator.getValue(endIndex).doubleValue() < 30 & percentB.getValue(endIndex).doubleValue() <= 0) {
+            boolean bbwRising = new IsRisingRule(bbw, 14).isSatisfied(endIndex);
+            boolean longSmaRising = new IsRisingRule(longSma, 7).isSatisfied(endIndex);
 
-                BollingerStrategyReport report = BollingerStrategyReport.builder()
-                        .percentBIndicatorValue(new BigDecimal(percentB.getValue(endIndex).toString()))
-                        .bollingerBandWidthValue(new BigDecimal(bbw.getValue(endIndex).toString()))
-                        .bollingerBandsUpperValue(new BigDecimal(bbu.getValue(endIndex).toString()))
-                        .bollingerBandsMiddleValue(new BigDecimal(bbm.getValue(endIndex).toString()))
-                        .bollingerBandsLowerValue(new BigDecimal(bbl.getValue(endIndex).toString()))
-                        .rsiValue(new BigDecimal(rsiIndicator.getValue(endIndex).toString()))
-                        .currentPriceValue(new BigDecimal(series.getBar(endIndex).getClosePrice().toString()))
-                        .adxValue(new BigDecimal(adxIndicator.getValue(endIndex).toString()))
-                        .symbolName(symbol)
-                        .build();
+            try {
+                if (longSmaRising) { // средняя растёт
+                    System.out.println("средняя растёт");
+                    if(percentB.getValue(endIndex).doubleValue() <= 0.17) // BBP Condition
+                    if (rsiIndicator.getValue(endIndex).doubleValue() <= 50) {// RSI <=50
+                        BollingerStrategyReport report = BollingerStrategyReport.builder()
+                                .percentBIndicatorValue(new BigDecimal(percentB.getValue(endIndex).toString()))
+                                .bollingerBandWidthValue(new BigDecimal(bbw.getValue(endIndex).toString()))
+                                .bollingerBandsUpperValue(new BigDecimal(bbu.getValue(endIndex).toString()))
+                                .bollingerBandsMiddleValue(new BigDecimal(bbm.getValue(endIndex).toString()))
+                                .bollingerBandsLowerValue(new BigDecimal(bbl.getValue(endIndex).toString()))
+                                .rsiValue(new BigDecimal(rsiIndicator.getValue(endIndex).toString()))
+                                .currentPriceValue(new BigDecimal(series.getBar(endIndex).getClosePrice().toString()))
+                                .adxValue(new BigDecimal(adxIndicator.getValue(endIndex).toString()))
+                                .symbolName(symbol)
+                                .build();
 
-                reports.add(report);
-
+                        reports.add(report);
+                    }
+                }
+            } catch (Exception e) {
+                System.out.println(e.getMessage());
             }
-
         }
-
         return reports;
-
     }
-
-
 }
-
-
-//        /*
-//         * Creating indicators
-//         */
-//        // Close price
-//        ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
-//        // Typical price
-//        TypicalPriceIndicator typicalPrice = new TypicalPriceIndicator(series);
-//        // Price variation
-//      //  ClosePriceRatioIndicator closePriceRatioIndicator = new ClosePriceRatioIndicator(series);
-//        // Simple moving averages
-//        SMAIndicator shortSma = new SMAIndicator(closePrice, 8);
-//        SMAIndicator longSma = new SMAIndicator(closePrice, 20);
-//        // Exponential moving averages
-//        EMAIndicator shortEma = new EMAIndicator(closePrice, 8);
-//        EMAIndicator longEma = new EMAIndicator(closePrice, 20);
-//        // Percentage price oscillator
-//        PPOIndicator ppo = new PPOIndicator(closePrice, 12, 26);
-//        // Rate of change
-//        ROCIndicator roc = new ROCIndicator(closePrice, 100);
-//        // Relative strength index
-//        RSIIndicator rsi = new RSIIndicator(closePrice, 14);
-//        // Williams %R
-//        WilliamsRIndicator williamsR = new WilliamsRIndicator(series, 20);
-//        // Average true range
-//        ATRIndicator atr = new ATRIndicator(series, 20);
-//        // Standard deviation
-//        StandardDeviationIndicator sd = new StandardDeviationIndicator(closePrice, 14);
-//
-//
-//        Map<String, String> indicatorResultMap = new HashMap<>();
-//        indicatorResultMap.put("ClosePriceIndicator", closePrice.getValue(series.getEndIndex()).toString());
-//        indicatorResultMap.put("TypicalPriceIndicator", typicalPrice.getValue(series.getEndIndex()).toString());
-//        indicatorResultMap.put("SMAIndicator", shortSma.getValue(series.getEndIndex()).toString());
-//        indicatorResultMap.put("SMAIndicator", longSma.getValue(series.getEndIndex()).toString());
-//        indicatorResultMap.put("PPOIndicator", ppo.getValue(series.getEndIndex()).toString());
-//        indicatorResultMap.put("ROCIndicator", roc.getValue(series.getEndIndex()).toString());
-//        indicatorResultMap.put("RSIIndicator", rsi.getValue(series.getEndIndex()).toString());
-//        indicatorResultMap.put("WilliamsRIndicator", williamsR.getValue(series.getEndIndex()).toString());
-//        indicatorResultMap.put("ATRIndicator", atr.getValue(series.getEndIndex()).toString());
-//        indicatorResultMap.put("StandardDeviationIndicator", sd.getValue(series.getEndIndex()).toString());
-//
-//
-//

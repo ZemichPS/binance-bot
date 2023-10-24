@@ -11,6 +11,7 @@ public class SymbolDto {
     private String baseAsset;
     private Integer baseAssetPrecision;
     private String quoteAsset;
+    private Integer quotePrecision;
     private Integer quoteAssetPrecision;
     private List<EOrderType> orderTypes;
     private boolean icebergAllowed;
@@ -20,7 +21,7 @@ public class SymbolDto {
     private boolean cancelReplaceAllowed;
     private boolean isSpotTradingAllowed;
     private boolean isMarginTradingAllowed;
-
+    //private List<String> filters;
     private List<String> permissions;
     private String defaultSelfTradePreventionMode;
     private List<String> allowedSelfTradePreventionModes;

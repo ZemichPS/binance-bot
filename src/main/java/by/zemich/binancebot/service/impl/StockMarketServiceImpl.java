@@ -16,6 +16,7 @@ import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.time.*;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class StockMarketServiceImpl implements IStockMarketService {
@@ -65,6 +66,24 @@ public class StockMarketServiceImpl implements IStockMarketService {
 
         List<SymbolShortDto> accountTradeList = symbolConverter(result);
         return Optional.ofNullable(accountTradeList);
+    }
+
+    @Override
+    public Optional<List<String>> getSpotSymbols() {
+        ExchangeInfoQueryDto queryDto = new ExchangeInfoQueryDto();
+        queryDto.setPermissions(new ArrayList<>(List.of("SPOT")));
+        String result = spotClient.createMarket().exchangeInfo(converter.dtoToMap(queryDto));
+        ExchangeInfoResponseDto exchangeInfo;
+        try {
+            exchangeInfo = objectMapper.readValue(result, ExchangeInfoResponseDto.class);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
+        List<String> symbolsList = exchangeInfo.getSymbols().stream()
+                .map(symbolDto -> symbolDto.getSymbol()).collect(Collectors.toList());
+
+        return Optional.of(symbolsList);
     }
 
     private BarSeries getCusomBarSeries(List<BarDto> barDtoList) {

@@ -7,7 +7,7 @@ spring:
       write-dates-with-context-time-zone: true
       write-dates-as-timestamps: false
       write-enums-using-to-string: false
-    property-naming-strategy: SNAKE_CASE
+   # property-naming-strategy: SNAKE_CASE
 
   # datasource config
   datasource:

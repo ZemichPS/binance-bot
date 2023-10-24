@@ -11,4 +11,5 @@ public interface IStockMarketService {
     Optional<BarSeries> getBarSeries(KlineQueryDto klineQuery);
     Optional<ExchangeInfoResponseDto> getExchangeInfo(ExchangeInfoQueryDto queryDto);
     Optional<List<SymbolShortDto>> getAllSymbols(TickerSymbolShortQuery query);
+    Optional<List<String>> getSpotSymbols();
 }
