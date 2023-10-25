@@ -9,7 +9,9 @@ import by.zemich.binancebot.service.api.IConverter;
 import by.zemich.binancebot.service.api.IOrderService;
 import by.zemich.binancebot.service.api.IStockMarketService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.util.BeanUtil;
 import jakarta.transaction.Transactional;
+import org.springframework.beans.BeanUtils;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Service;
 
@@ -39,7 +41,6 @@ public class OrderServiceImpl implements IOrderService {
     public Optional<OrderEntity> create(NewOrderRequestDto newOrder) {
         NewOrderFullResponseDto responseDto = stockMarketService.createOrder(converter.dtoToMap(newOrder)).orElseThrow(RuntimeException::new);
         OrderEntity entity = conversionService.convert(responseDto, OrderEntity.class);
-        entity.setUuid(UUID.randomUUID());
         orderDao.save(entity);
         return Optional.of(entity);
     }
@@ -49,10 +50,23 @@ public class OrderServiceImpl implements IOrderService {
     public Optional<OrderEntity> cancel(CancelOrderRequestDto cancelOrderRequestDto) {
 
         CancelOrderResponseDto canceledOrder = stockMarketService.cancelOrder(converter.dtoToMap(cancelOrderRequestDto)).orElseThrow(RuntimeException::new);
-        OrderEntity orderEntity =  orderDao.findByOrderId(canceledOrder.getOrderId()).orElseThrow(NoSuchEntityException::new);
+        OrderEntity orderEntity = orderDao.findByOrderId(canceledOrder.getOrderId()).orElseThrow(NoSuchEntityException::new);
         orderEntity.setStatus(EOrderStatus.CANCELED);
         orderDao.save(orderEntity);
         return Optional.of(orderEntity);
+    }
+
+    @Override
+    @Transactional
+    public Optional<OrderEntity> update(CurrentOpenOrderResponseDto orderDto) {
+
+        OrderEntity entity = orderDao
+                .findByOrderId(orderDto.getOrderId())
+                .orElse(new OrderEntity());
+        BeanUtils.copyProperties(orderDto, entity);
+
+        orderDao.save(entity);
+        return Optional.empty();
     }
 
     @Override
@@ -80,39 +94,32 @@ public class OrderServiceImpl implements IOrderService {
 
     @Override
     public Optional<List<OrderEntity>> getBySymbol(String symbol) {
-        return Optional.empty();
+        List<OrderEntity> orderEntityList = orderDao.findBySymbol(symbol).orElseThrow(NoSuchEntityException::new);
+        return Optional.of(orderEntityList);
     }
 
     @Override
-    public Optional<List<OrderEntity>> getByOrderId(Long orderId) {
-        return Optional.empty();
+    public Optional<OrderEntity> getByOrderId(Long orderId) {
+        OrderEntity entity = orderDao.findByOrderId(orderId).orElseThrow(NoSuchEntityException::new);
+        return Optional.of(entity);
     }
 
     @Override
-    public Optional<List<OrderEntity>> getBySymbolAndOrderId(String symbol, Long orderId) {
-        return Optional.empty();
+    public Optional<OrderEntity> getBySymbolAndOrderId(String symbol, Long orderId) {
+        OrderEntity entity = orderDao.findBySymbolAndOrderId(symbol, orderId).orElseThrow(NoSuchEntityException::new);
+        return Optional.of(entity);
     }
 
     @Override
-    public Optional<List<OrderEntity>> getByUuid(UUID uuid) {
-        return Optional.empty();
+    public Optional<OrderEntity> getByUuid(UUID uuid) {
+        OrderEntity entity = orderDao.findByUuid(uuid).orElseThrow(NoSuchEntityException::new);
+        return Optional.of(entity);
     }
 
     @Override
     public Optional<List<OrderEntity>> getOpened() {
-        return Optional.empty();
+        List<OrderEntity> orderEntityList = orderDao.findByStatus(EOrderStatus.FILLED).orElseThrow(NoSuchEntityException::new);
+        return Optional.of(orderEntityList);
     }
-
-
-
-/*
-    @Override
-    public Optional<List<OrderEntity>> getAll(HistoricalOrderQueryDto historicalOrderQuery) {
-
-        List<HistoricalOrderResponseDto> historicalOrderList = stockMarketService.getHistoricalOrderList(converter.dtoToMap(historicalOrderQuery)).orElseThrow(RuntimeException::new);
-        return Optional.ofNullable(historicalOrderList);
-
-    }
-*/
 
 }

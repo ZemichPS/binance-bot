@@ -18,6 +18,7 @@ import java.util.UUID;
 public class OrderEntity {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID uuid;
     @Version
     @UpdateTimestamp(source = SourceType.DB)
@@ -39,6 +40,7 @@ public class OrderEntity {
     @Column(name = "transact_time")
     private Timestamp transactTime;
     private BigDecimal price;
+    private BigDecimal stopPrice;
     @Column(name = "orig_qty")
     private BigDecimal origQty;
     @Column(name = "executed_qty")
@@ -47,6 +49,7 @@ public class OrderEntity {
     private BigDecimal cummulativeQuoteQty;
     @Enumerated(EnumType.STRING)
     private EOrderStatus status;
+
     @Enumerated(EnumType.STRING)
     @Column(name = "time_in_force")
     private ETimeInForce timeInForce;
@@ -54,14 +57,18 @@ public class OrderEntity {
     private EOrderType type;
     @Enumerated(EnumType.STRING)
     private ESide side;
+    @Column(name = "is_working")
+    private boolean isWorking;
     @Column(name = "working_time")
     private Timestamp workingTime;
     @Column(name = "self_trade_prevention_mode")
     private String selfTradePreventionMode;
-  //  private List<FillsDto> fills;
 
 
-    public OrderEntity(UUID uuid, Timestamp dtUpdate, Timestamp dtCreate, String symbol, Long orderId, Long orderListId, String clientOrderId, Timestamp transactTime, BigDecimal price, BigDecimal origQty, BigDecimal executedQty, BigDecimal cummulativeQuoteQty, EOrderStatus status, ETimeInForce timeInForce, EOrderType type, ESide side, Timestamp workingTime, String selfTradePreventionMode) {
+    //  private List<FillsDto> fills;
+
+
+    public OrderEntity(UUID uuid, Timestamp dtUpdate, Timestamp dtCreate, String symbol, Long orderId, Long orderListId, String clientOrderId, Timestamp transactTime, BigDecimal price, BigDecimal stopPrice, BigDecimal origQty, BigDecimal executedQty, BigDecimal cummulativeQuoteQty, EOrderStatus status, ETimeInForce timeInForce, EOrderType type, ESide side, boolean isWorking, Timestamp workingTime, String selfTradePreventionMode) {
         this.uuid = uuid;
         this.dtUpdate = dtUpdate;
         this.dtCreate = dtCreate;
@@ -71,6 +78,7 @@ public class OrderEntity {
         this.clientOrderId = clientOrderId;
         this.transactTime = transactTime;
         this.price = price;
+        this.stopPrice = stopPrice;
         this.origQty = origQty;
         this.executedQty = executedQty;
         this.cummulativeQuoteQty = cummulativeQuoteQty;
@@ -78,6 +86,7 @@ public class OrderEntity {
         this.timeInForce = timeInForce;
         this.type = type;
         this.side = side;
+        this.isWorking = isWorking;
         this.workingTime = workingTime;
         this.selfTradePreventionMode = selfTradePreventionMode;
     }
@@ -157,6 +166,14 @@ public class OrderEntity {
         this.price = price;
     }
 
+    public BigDecimal getStopPrice() {
+        return stopPrice;
+    }
+
+    public void setStopPrice(BigDecimal stopPrice) {
+        this.stopPrice = stopPrice;
+    }
+
     public BigDecimal getOrigQty() {
         return origQty;
     }
@@ -211,6 +228,14 @@ public class OrderEntity {
 
     public void setSide(ESide side) {
         this.side = side;
+    }
+
+    public boolean isWorking() {
+        return isWorking;
+    }
+
+    public void setWorking(boolean working) {
+        isWorking = working;
     }
 
     public Timestamp getWorkingTime() {
