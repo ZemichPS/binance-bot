@@ -29,6 +29,12 @@ private final Map<String, BarSeries> seriesMap = new HashMap<>();
         String timeFrame = klineConfig.getTimeFrame();
 
         List<String> symbolsList = stockMarketService.getSpotSymbols().get();
+        symbolsList.stream().forEach(symbol -> {
+            queryDto.setSymbol(symbol);
+            queryDto.setLimit(klineConfig.getLimit());
+            queryDto.setInterval(klineConfig.getTimeFrame());
+            seriesMap.put(symbol, stockMarketService.getBarSeries(queryDto).orElse(null));
+        });
 
 
         stockMarketService.getBarSeries(queryDto);

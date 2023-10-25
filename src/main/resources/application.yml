@@ -49,3 +49,4 @@ server:
 
 kline:
   timeFrame: 15m
+  limit: 500
