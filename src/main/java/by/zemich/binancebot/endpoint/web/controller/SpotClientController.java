@@ -50,7 +50,7 @@ public class SpotClientController {
         this.orderService = orderService;
         this.accountService = accountService;
     }
-
+/*
     @GetMapping("/history")
     private ResponseEntity<List<HistoricalOrderResponseDto>> getHistory() {
         HistoricalOrderQueryDto historicalOrderQuery = new HistoricalOrderQueryDto();
@@ -58,7 +58,7 @@ public class SpotClientController {
         List<HistoricalOrderResponseDto> list = orderService.getAll(historicalOrderQuery).get();
         return ResponseEntity.ok(list);
     }
-
+*/
     @GetMapping("/account")
     private ResponseEntity<AccountInformationResponseDto> accountInf() {
         AccountInformationQueryDto query = new AccountInformationQueryDto();

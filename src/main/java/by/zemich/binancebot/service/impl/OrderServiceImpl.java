@@ -3,10 +3,13 @@ package by.zemich.binancebot.service.impl;
 import by.zemich.binancebot.DAO.api.IOrderDao;
 import by.zemich.binancebot.DAO.entity.OrderEntity;
 import by.zemich.binancebot.core.dto.*;
+import by.zemich.binancebot.core.enums.EOrderStatus;
+import by.zemich.binancebot.core.exeption.NoSuchEntityException;
 import by.zemich.binancebot.service.api.IConverter;
 import by.zemich.binancebot.service.api.IOrderService;
 import by.zemich.binancebot.service.api.IStockMarketService;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.transaction.Transactional;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Service;
 
@@ -41,9 +44,15 @@ public class OrderServiceImpl implements IOrderService {
         return Optional.of(entity);
     }
 
+    @Transactional
     @Override
-    public Optional<CancelOrderResponseDto> cancel(CancelOrderDto canceledOrder) {
-        return Optional.empty();
+    public Optional<OrderEntity> cancel(CancelOrderRequestDto cancelOrderRequestDto) {
+
+        CancelOrderResponseDto canceledOrder = stockMarketService.cancelOrder(converter.dtoToMap(cancelOrderRequestDto)).orElseThrow(RuntimeException::new);
+        OrderEntity orderEntity =  orderDao.findByOrderId(canceledOrder.getOrderId()).orElseThrow(NoSuchEntityException::new);
+        orderEntity.setStatus(EOrderStatus.CANCELED);
+        orderDao.save(orderEntity);
+        return Optional.of(orderEntity);
     }
 
     @Override
@@ -62,18 +71,48 @@ public class OrderServiceImpl implements IOrderService {
     }
 
     @Override
-    public Optional<List<HistoricalOrderResponseDto>> getAll(HistoricalOrderQueryDto historicalOrderQuery) {
-        return Optional.ofNullable(null);
-/*
-        String result = spotClient.createTrade().getOrders(converter.dtoToMap(historicalOrderQuery));
-        try {
-            List<HistoricalOrderResponseDto> historicalOrderResponses = objectMappermapper.readValue(result, List.class);
-            return Optional.of(historicalOrderResponses);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-    */
+    public Optional<List<OrderEntity>> getAll() {
+
+        List<OrderEntity> historicalOrderList = orderDao.findAll();
+        return Optional.ofNullable(historicalOrderList);
+
     }
 
+    @Override
+    public Optional<List<OrderEntity>> getBySymbol(String symbol) {
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<List<OrderEntity>> getByOrderId(Long orderId) {
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<List<OrderEntity>> getBySymbolAndOrderId(String symbol, Long orderId) {
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<List<OrderEntity>> getByUuid(UUID uuid) {
+        return Optional.empty();
+    }
+
+    @Override
+    public Optional<List<OrderEntity>> getOpened() {
+        return Optional.empty();
+    }
+
+
+
+/*
+    @Override
+    public Optional<List<OrderEntity>> getAll(HistoricalOrderQueryDto historicalOrderQuery) {
+
+        List<HistoricalOrderResponseDto> historicalOrderList = stockMarketService.getHistoricalOrderList(converter.dtoToMap(historicalOrderQuery)).orElseThrow(RuntimeException::new);
+        return Optional.ofNullable(historicalOrderList);
+
+    }
+*/
 
 }

@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotEmpty;
 import lombok.Data;
 
 @Data
-public class CancelOrderDto {
+public class CancelOrderRequestDto {
     @NotEmpty(message = "symbol is mandatory")
     private String symbol;
     private Long orderId;

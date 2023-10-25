@@ -43,8 +43,6 @@ public class BinanceMarketServiceImpl implements IStockMarketService {
 
         String result = spotClient.createMarket().klines(converter.dtoToMap(klineQuery));
         List<BarDto> barsList = stringResponseToListOfBarsDto(result);
-
-
         BarSeries series = getCusomBarSeries(barsList);
         return Optional.of(series);
     }
@@ -93,6 +91,34 @@ public class BinanceMarketServiceImpl implements IStockMarketService {
         try {
             NewOrderFullResponseDto orderFullResponseDto = objectMapper.readValue(responseResult, NewOrderFullResponseDto.class);
             return Optional.of(orderFullResponseDto);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
+    }
+
+    @Override
+    public Optional<List<HistoricalOrderResponseDto>> getHistoricalOrderList(Map<String, Object> params) {
+
+        String responseResult = spotClient.createTrade().getOrders(converter.dtoToMap(params));
+        try {
+            List<HistoricalOrderResponseDto> historicalOrderResponses = objectMapper.readValue(responseResult, List.class);
+            return Optional.of(historicalOrderResponses);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
+
+    }
+
+    @Override
+    public Optional<CancelOrderResponseDto> cancelOrder(Map<String, Object> params) {
+
+        String responseResult = spotClient.createTrade().cancelOrder(converter.dtoToMap(params));
+
+        try {
+            CancelOrderResponseDto canceledOrder = objectMapper.readValue(responseResult, CancelOrderResponseDto.class);
+            return Optional.of(canceledOrder);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }

@@ -5,11 +5,12 @@ import by.zemich.binancebot.core.dto.*;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 
 public interface IOrderService {
     Optional<OrderEntity> create(NewOrderRequestDto newOrder);
 
-    Optional<CancelOrderResponseDto> cancel(CancelOrderDto canceledOrder);
+    Optional<OrderEntity> cancel(CancelOrderRequestDto cancelOrderRequestDto);
 
     Optional<QueryOrderResponseDto> get(QueryOrderDto neededOrder);
 
@@ -17,6 +18,11 @@ public interface IOrderService {
 
     Optional<List<CurrentOpenOrderResponseDto>> get(CurrentOpenOrdersQueryDto openedOrders);
 
-    Optional<List<HistoricalOrderResponseDto>> getAll(HistoricalOrderQueryDto historicalOrderQuery);
+    Optional<List<OrderEntity>> getAll();
+    Optional<List<OrderEntity>> getBySymbol(String symbol);
+    Optional<List<OrderEntity>> getByOrderId(Long orderId);
+    Optional<List<OrderEntity>> getBySymbolAndOrderId(String symbol, Long orderId);
+    Optional<List<OrderEntity>> getByUuid(UUID uuid);
+    Optional<List<OrderEntity>> getOpened();
 
 }
