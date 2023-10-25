@@ -46,3 +46,6 @@ management:
 # server config
 server:
   port: 8081
+
+kline:
+  timeFrame: 15m

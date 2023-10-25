@@ -6,6 +6,7 @@ import java.util.OptionalLong;
 
 @Data
 @Builder
+@NoArgsConstructor
 public class KlineQueryDto {
     private String symbol;
     private String interval;
