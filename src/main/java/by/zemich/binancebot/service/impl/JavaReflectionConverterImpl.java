@@ -17,8 +17,11 @@ public class JavaReflectionConverterImpl implements IConverter {
         for (Field field : fields) {
             field.setAccessible(true);
             try {
-                if (field.get(object) != null)
-                    map.put(field.getName(), field.get(object));
+                if (field.get(object) == null) continue;
+
+                if (field.isEnumConstant()) {
+                    map.put(field.getName(), field.get(object).toString());
+                } else map.put(field.getName(), field.get(object));
             } catch (IllegalAccessException e) {
                 throw new RuntimeException(e);
             }

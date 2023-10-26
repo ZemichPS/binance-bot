@@ -5,23 +5,24 @@ import by.zemich.binancebot.core.enums.ESide;
 import by.zemich.binancebot.core.enums.ETimeInForce;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotEmpty;
+import lombok.Builder;
 import lombok.Data;
 
 import java.math.BigDecimal;
 
 @Data
+@Builder
 public class NewOrderRequestDto {
     @NotEmpty(message = "Symbol is mandatory")
     private String symbol;
     @NotEmpty(message = "Side is mandatory")
-    private String side;
+    private ESide side;
     @NotEmpty(message = "Type is mandatory")
-    private String type;
+    private EOrderType type;
     @NotEmpty(message = "Time in force is mandatory")
-    private String timeInForce;
+    private ETimeInForce timeInForce;
 
     @NotEmpty(message = "Quantity is mandatory")
-    @Min(value = 1)
     private BigDecimal quantity;
     private BigDecimal quoteOrderQty;
     @NotEmpty(message = "Price is mandatory")

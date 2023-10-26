@@ -6,8 +6,8 @@ import by.zemich.binancebot.core.dto.OrderDto;
 import org.ta4j.core.Rule;
 
 public interface ITradeManager {
-    OrderEntity buy(NewOrderRequestDto newOrderRequest);
+    OrderDto buy(String symbol);
 
-    OrderEntity sell(OrderDto orderDto, Rule exitRule);
+    OrderDto sell(OrderDto orderDto, Rule exitRule);
 
 }

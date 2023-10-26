@@ -31,7 +31,6 @@ public class BollingerBasedOnIStrategy implements IStrategyManager {
     }
 
 
-
     private Strategy build() {
         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
         RSIIndicator rsiIndicator = new RSIIndicator(closePrice, 14);
@@ -40,7 +39,8 @@ public class BollingerBasedOnIStrategy implements IStrategyManager {
         // Правило перепроданности по RSI
         Rule underRsiRule = new UnderIndicatorRule(rsiIndicator, 30);
         // Правило пробития нижнего уровня BB
-        Rule underPercentB = new UnderIndicatorRule(percentB, 0);
+        //Rule underPercentB = new UnderIndicatorRule(percentB, 0);
+        Rule underPercentB = new UnderIndicatorRule(percentB, 0.20);
         Rule enterRule = underRsiRule.and(underPercentB);
         Rule exitRule = new StopGainRule(closePrice, DecimalNum.valueOf("0.8"));
         strategy = new BaseStrategy(name, enterRule, exitRule);

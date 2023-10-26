@@ -49,4 +49,14 @@ server:
 
 kline:
   timeFrame: 15m
-  limit: 500
+  limit: 100
+
+logging:
+  file:
+    path: C:\
+    name: trading_bot_log.txt
+  log4j2:
+    config:
+
+
+

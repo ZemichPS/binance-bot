@@ -81,7 +81,10 @@ public class BinanceMarketServiceImpl implements IStockMarketService {
         }
 
         List<String> symbolsList = exchangeInfo.getSymbols().stream()
-                .map(symbolDto -> symbolDto.getSymbol()).collect(Collectors.toList());
+                .filter(symbolDto -> symbolDto.getStatus().equals("TRADING"))
+                .filter(symbolDto -> symbolDto.getQuoteAsset().equals("USDT"))
+                .map(SymbolDto::getSymbol)
+                .collect(Collectors.toList());
 
         return Optional.of(symbolsList);
     }
@@ -125,6 +128,19 @@ public class BinanceMarketServiceImpl implements IStockMarketService {
             throw new RuntimeException(e);
         }
 
+    }
+
+    @Override
+    public Optional<OrderBookTickerDto> getOrderBookTicker(Map<String, Object> params) {
+        String responseResult = spotClient.createMarket().bookTicker(params);
+        try {
+            OrderBookTickerDto ticker = objectMapper.readValue(responseResult, OrderBookTickerDto.class);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+
+
+        return Optional.empty();
     }
 
     private BarSeries getCusomBarSeries(List<BarDto> barDtoList) {

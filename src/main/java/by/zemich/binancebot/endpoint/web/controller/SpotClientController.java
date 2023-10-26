@@ -109,6 +109,7 @@ public class SpotClientController {
 
     @GetMapping("/create_oder")
     private ResponseEntity<OrderEntity> createOrder(){
+/*
         NewOrderRequestDto request = new NewOrderRequestDto();
 
         request.setSymbol("LINKUSDT");
@@ -119,8 +120,9 @@ public class SpotClientController {
         request.setTimeInForce(ETimeInForce.GTC.name());
 
         OrderEntity orderEntity = orderService.create(request).get();
-
-        return ResponseEntity.ok(orderEntity);
+*/
+  //      return ResponseEntity.ok(orderEntity);
+       return ResponseEntity.ok(null);
     }
 
     @GetMapping("/report")
