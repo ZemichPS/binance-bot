@@ -17,22 +17,33 @@ import org.ta4j.core.rules.UnderIndicatorRule;
 public class BollingerBasedOnIStrategy implements IStrategyManager {
     private final String name = "BollingerBandAndRsiBaseOnStrategy";
     private BarSeries series;
-    private final ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
-    private final RSIIndicator rsiIndicator = new RSIIndicator(closePrice, 14);
-     private final PercentBIndicator percentB = new PercentBIndicator(closePrice, 20, 3.0);
+    private Strategy strategy;
 
-    // Правило перепроданности по RSI
-    private Rule underRsiRule = new UnderIndicatorRule(rsiIndicator, 30);
-    // Правило пробития нижнего уровня BB
-    private Rule underPercentB = new UnderIndicatorRule(percentB, 0);
-    private Rule enterRule = underRsiRule.and(underPercentB);
-    private Rule exitRule = new StopGainRule(closePrice, DecimalNum.valueOf("0.8"));
 
-    private Strategy strategy = new BaseStrategy(name, enterRule, exitRule);
-
-    public Strategy get(BarSeries series){
-        if(series == null) throw new RuntimeException("Bar series is required. Set not null series before");
+    public Strategy get(BarSeries series) {
+        if (series == null) throw new RuntimeException("Bar series is required. Set not null series before");
         this.series = series;
+        return build();
+    }
+
+    public Strategy get() {
+        return strategy;
+    }
+
+
+
+    private Strategy build() {
+        ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
+        RSIIndicator rsiIndicator = new RSIIndicator(closePrice, 14);
+        PercentBIndicator percentB = new PercentBIndicator(closePrice, 20, 3.0);
+
+        // Правило перепроданности по RSI
+        Rule underRsiRule = new UnderIndicatorRule(rsiIndicator, 30);
+        // Правило пробития нижнего уровня BB
+        Rule underPercentB = new UnderIndicatorRule(percentB, 0);
+        Rule enterRule = underRsiRule.and(underPercentB);
+        Rule exitRule = new StopGainRule(closePrice, DecimalNum.valueOf("0.8"));
+        strategy = new BaseStrategy(name, enterRule, exitRule);
         return strategy;
     }
 

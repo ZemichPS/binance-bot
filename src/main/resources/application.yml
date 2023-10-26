@@ -18,7 +18,7 @@ spring:
       password: postgres
       auto-commit: true
       maximum-pool-size: 20
-    url: jdbc:postgresql://localhost:5432/binance
+    url: jdbc:postgresql://localhost:5432/trading-bot
 
   # JAP config
   jpa:

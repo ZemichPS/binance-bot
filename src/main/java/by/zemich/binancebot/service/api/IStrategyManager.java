@@ -5,4 +5,5 @@ import org.ta4j.core.Strategy;
 
 public interface IStrategyManager {
     Strategy get (BarSeries series);
+    Strategy get ();
 }

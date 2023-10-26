@@ -4,6 +4,7 @@ import by.zemich.binancebot.core.dto.*;
 import by.zemich.binancebot.service.api.IConverter;
 import by.zemich.binancebot.service.api.IStockMarketService;
 import by.zemich.binancebot.core.dto.TickerSymbolShortQuery;
+import by.zemich.binancebot.service.api.ITradeManager;
 import com.binance.connector.client.SpotClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -24,6 +25,7 @@ public class BinanceMarketServiceImpl implements IStockMarketService {
     private final IConverter converter;
     private final ConversionService conversionService;
     private final ObjectMapper objectMapper;
+
 
     public BinanceMarketServiceImpl(SpotClient spotClient, IConverter converter, ConversionService conversionService, ObjectMapper objectMapper) {
         this.spotClient = spotClient;
