@@ -1,7 +1,6 @@
 package by.zemich.binancebot.config;
 
-import by.zemich.binancebot.config.properties.TelegramProperties;
-import by.zemich.binancebot.endpoint.web.telegram.TelegramBot;
+import by.zemich.binancebot.endpoint.web.bot.TelegramBot;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.telegram.telegrambots.meta.TelegramBotsApi;

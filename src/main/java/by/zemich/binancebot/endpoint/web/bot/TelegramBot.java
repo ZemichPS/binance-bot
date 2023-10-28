@@ -1,4 +1,4 @@
-package by.zemich.binancebot.endpoint.web.telegram;
+package by.zemich.binancebot.endpoint.web.bot;
 
 import by.zemich.binancebot.config.properties.TelegramProperties;
 import by.zemich.binancebot.core.dto.Event;
@@ -24,7 +24,7 @@ public class TelegramBot extends TelegramLongPollingBot implements INotifier
 
     @Override
     public void onUpdateReceived(Update update) {
-
+        System.out.println(update);
     }
 
     @Override
