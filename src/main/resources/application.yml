@@ -58,5 +58,8 @@ logging:
   log4j2:
     config:
 
+telegram:
+  chatID: 5654894656123898465654
+
 
 

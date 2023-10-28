@@ -1,18 +1,25 @@
 package by.zemich.binancebot.endpoint.web.telegram;
 
 import by.zemich.binancebot.config.properties.TelegramProperties;
+import by.zemich.binancebot.core.dto.Event;
+import by.zemich.binancebot.service.api.IConverter;
+import by.zemich.binancebot.service.api.INotifier;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
+import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.objects.Update;
+import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 
 @Component
-public class TelegramBot extends TelegramLongPollingBot
+public class TelegramBot extends TelegramLongPollingBot implements INotifier
 {
    private final TelegramProperties properties;
+   private final IConverter converter;
 
-    public TelegramBot(TelegramProperties properties) {
+    public TelegramBot(TelegramProperties properties, IConverter converter) {
         this.properties = properties;
+        this.converter = converter;
     }
 
     @Override
@@ -31,4 +38,28 @@ public class TelegramBot extends TelegramLongPollingBot
     }
 
 
+    public void sendText(Long who, String what){
+        SendMessage sm = SendMessage.builder()
+                .chatId(who.toString()) //Who are we sending a message to
+                .text(what).build();    //Message content
+        try {
+            execute(sm);                        //Actually sending the message
+        } catch (TelegramApiException e) {
+            throw new RuntimeException(e);      //Any error will be printed here
+        }
+    }
+
+    @Override
+    public void notify(Event event) {
+        SendMessage smg = SendMessage.builder()
+                .chatId(properties.getChatID())
+                .text(event.toString())
+                .build();
+
+        try {
+            execute(smg);                        //Actually sending the message
+        } catch (TelegramApiException e) {
+            throw new RuntimeException(e);      //Any error will be printed here
+        }
+    }
 }
