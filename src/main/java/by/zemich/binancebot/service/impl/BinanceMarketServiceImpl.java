@@ -45,7 +45,7 @@ public class BinanceMarketServiceImpl implements IStockMarketService {
 
         String result = spotClient.createMarket().klines(converter.dtoToMap(klineQuery));
         List<BarDto> barsList = stringResponseToListOfBarsDto(result);
-        BarSeries series = getCusomBarSeries(barsList);
+        BarSeries series = getCusomBarSeries(barsList, klineQuery.getSymbol());
         return Optional.of(series);
     }
 
@@ -143,8 +143,8 @@ public class BinanceMarketServiceImpl implements IStockMarketService {
         return Optional.empty();
     }
 
-    private BarSeries getCusomBarSeries(List<BarDto> barDtoList) {
-        BarSeries series = new BaseBarSeries("my_live_series");
+    private BarSeries getCusomBarSeries(List<BarDto> barDtoList, String name) {
+        BarSeries series = new BaseBarSeries(name);
         barDtoList.forEach(candle -> {
             ZonedDateTime closeTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(candle.getCloseTime().getTime()), ZoneId.of("Europe/Minsk"));
             ZonedDateTime openTime = ZonedDateTime.ofInstant(Instant.ofEpochMilli(candle.getCloseTime().getTime()), ZoneId.of("Europe/Minsk"));

@@ -2,15 +2,13 @@ package by.zemich.binancebot.endpoint.web.controller;
 
 import by.zemich.binancebot.DAO.entity.OrderEntity;
 import by.zemich.binancebot.core.dto.*;
-import by.zemich.binancebot.core.enums.EOrderType;
-import by.zemich.binancebot.core.enums.ESide;
-import by.zemich.binancebot.core.enums.ETimeInForce;
 import by.zemich.binancebot.service.api.IAccountService;
 import by.zemich.binancebot.service.api.IOrderService;
 import by.zemich.binancebot.service.api.IStockMarketService;
 
 import by.zemich.binancebot.core.dto.TickerSymbolShortQuery;
 
+import by.zemich.binancebot.service.api.IStrategyManager;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -30,7 +28,6 @@ import org.ta4j.core.num.DecimalNum;
 import org.ta4j.core.num.Num;
 import org.ta4j.core.rules.*;
 
-import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -43,12 +40,15 @@ public class SpotClientController {
     private final IOrderService orderService;
     private final IAccountService accountService;
 
+    private final IStrategyManager strategyManager;
 
 
-    public SpotClientController(IStockMarketService stockMarketService, IOrderService orderService, IAccountService accountService) {
+
+    public SpotClientController(IStockMarketService stockMarketService, IOrderService orderService, IAccountService accountService, IStrategyManager strategyManager) {
         this.stockMarketService = stockMarketService;
         this.orderService = orderService;
         this.accountService = accountService;
+        this.strategyManager = strategyManager;
     }
 /*
     @GetMapping("/history")
@@ -131,10 +131,7 @@ public class SpotClientController {
         List<String> symbolsList = stockMarketService.getSpotSymbols().get();
 
 
-        Map<String, List<Position>> reports = findAndReport(symbolsList.stream()
-                .filter(s -> !s.startsWith("USDT"))
-                .filter(s -> s.contains("USDT"))
-                .collect(Collectors.toList()));
+        Map<String, List<Position>> reports = findAndReport(symbolsList);
 
         return ResponseEntity.ok(reports);
     }
@@ -212,50 +209,12 @@ public class SpotClientController {
 
             BarSeries series = stockMarketService.getBarSeries(query).get();
 
-            ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
-            SMAIndicator longSma = new SMAIndicator(closePrice, 20);
-
-            // Standard deviation
-            StandardDeviationIndicator sd = new StandardDeviationIndicator(closePrice, 20);
-            RSIIndicator rsiIndicator = new RSIIndicator(closePrice, 14);
-
-
-            BollingerBandsMiddleIndicator bbm = new BollingerBandsMiddleIndicator(longSma);
-            BollingerBandsLowerIndicator bbl = new BollingerBandsLowerIndicator(bbm, sd);
-            BollingerBandsUpperIndicator bbu = new BollingerBandsUpperIndicator(bbm, sd);
-            BollingerBandWidthIndicator bbw = new BollingerBandWidthIndicator(bbu, bbm, bbl);
-            PercentBIndicator percentB = new PercentBIndicator(closePrice, 20, 3.0);
-
-            ADXIndicator adxIndicator = new ADXIndicator(series, 20);
-            int endIndex = series.getEndIndex();
-
-
-            // Правило перепроданности по RSI
-            Rule underRsiRule = new UnderIndicatorRule(rsiIndicator, 30);
-            // Правило пробития нижнего уровня BB
-            Rule underPercentB = new UnderIndicatorRule(percentB, 0);
-            // Правило MAX width канала Боллиджера
-            Rule isHighestRule = new IsHighestRule(bbw, 7);
-
-            Rule waitCountBarRule = new WaitForRule(Trade.TradeType.BUY, 4);
-
-
-            // Resulted enter rule
-            Rule enterRule = underRsiRule.and(underPercentB);
-
-            // ResultedExitRule
-            Rule exitRule = new StopGainRule(closePrice, DecimalNum.valueOf("0.8"));
-
-
-            Strategy firstStrategy = new BaseStrategy(enterRule, exitRule);
-            firstStrategy.getName();
-
             BarSeriesManager seriesManager = new BarSeriesManager(series);
 
 
             try {
 
-                TradingRecord tradingRecord = seriesManager.run(firstStrategy);
+                TradingRecord tradingRecord = seriesManager.run(strategyManager.get(series));
                 List<Position> positionList = tradingRecord.getPositions();
                 System.out.println("Position count is: " + tradingRecord.getPositionCount());
                 amountPosition = amountPosition + tradingRecord.getPositionCount();
@@ -291,3 +250,45 @@ public class SpotClientController {
 
 
 }
+
+/*
+    ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
+    SMAIndicator longSma = new SMAIndicator(closePrice, 20);
+
+    // Standard deviation
+    StandardDeviationIndicator sd = new StandardDeviationIndicator(closePrice, 20);
+    RSIIndicator rsiIndicator = new RSIIndicator(closePrice, 14);
+
+
+    BollingerBandsMiddleIndicator bbm = new BollingerBandsMiddleIndicator(longSma);
+    BollingerBandsLowerIndicator bbl = new BollingerBandsLowerIndicator(bbm, sd);
+    BollingerBandsUpperIndicator bbu = new BollingerBandsUpperIndicator(bbm, sd);
+    BollingerBandWidthIndicator bbw = new BollingerBandWidthIndicator(bbu, bbm, bbl);
+    PercentBIndicator percentB = new PercentBIndicator(closePrice, 20, 3.0);
+
+    ADXIndicator adxIndicator = new ADXIndicator(series, 20);
+    int endIndex = series.getEndIndex();
+
+
+    // Правило перепроданности по RSI
+    Rule underRsiRule = new UnderIndicatorRule(rsiIndicator, 30);
+    // Правило пробития нижнего уровня BB
+    Rule underPercentB = new UnderIndicatorRule(percentB, 0);
+    // Правило MAX width канала Боллиджера
+    Rule isHighestRule = new IsHighestRule(bbw, 7);
+
+    Rule waitCountBarRule = new WaitForRule(Trade.TradeType.BUY, 4);
+
+
+    // Resulted enter rule
+    Rule enterRule = underRsiRule.and(underPercentB);
+
+    // ResultedExitRule
+    Rule exitRule = new StopGainRule(closePrice, DecimalNum.valueOf("0.8"));
+
+
+    Strategy firstStrategy = new BaseStrategy(enterRule, exitRule);
+            firstStrategy.getName();
+
+                    BarSeriesManager seriesManager = new BarSeriesManager(series);
+*/

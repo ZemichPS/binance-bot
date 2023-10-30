@@ -53,10 +53,8 @@ kline:
 
 logging:
   file:
-    path: C:\
     name: trading_bot_log.txt
-  log4j2:
-    config:
+
 
 telegram:
   chatID: 852348061

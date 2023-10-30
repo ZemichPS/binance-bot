@@ -13,7 +13,7 @@ import org.ta4j.core.num.DecimalNum;
 import org.ta4j.core.rules.StopGainRule;
 import org.ta4j.core.rules.UnderIndicatorRule;
 
-@Component
+//@Component
 public class BollingerBasedOnIStrategy implements IStrategyManager {
     private final String name = "BollingerBandAndRsiBaseOnStrategy";
     private BarSeries series;

@@ -60,7 +60,10 @@ public class BinanceTraderBotImpl implements ITraderBot {
                         Event event = new Event();
                         event.setEventType(EEventType.ENDPOINT_WAS_FOUNDED);
                         event.setText(symbol);
+
                         notifier.notify(event);
+
+
                     }
 
                 });
