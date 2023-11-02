@@ -9,8 +9,11 @@ import org.ta4j.core.Strategy;
 import org.ta4j.core.indicators.PPOIndicator;
 import org.ta4j.core.indicators.RSIIndicator;
 import org.ta4j.core.indicators.SMAIndicator;
+import org.ta4j.core.indicators.adx.ADXIndicator;
 import org.ta4j.core.indicators.bollinger.*;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
+import org.ta4j.core.indicators.helpers.LowPriceIndicator;
+import org.ta4j.core.indicators.helpers.LowestValueIndicator;
 import org.ta4j.core.indicators.statistics.StandardDeviationIndicator;
 import org.ta4j.core.indicators.volume.OnBalanceVolumeIndicator;
 import org.ta4j.core.num.DecimalNum;
@@ -62,31 +65,29 @@ public class BollingerBasedSecondStrategy implements IStrategyManager {
 
 
         PPOIndicator ppoIndicator = new PPOIndicator(closePrice);
+        LowPriceIndicator lowPriceIndicator = new LowPriceIndicator(series);
+        ADXIndicator adxIndicator = new ADXIndicator(series, 14);
 
 
-        // 1.
-//        Rule entryRule = new UnderIndicatorRule(longSma, longSma.getValue(series.getEndIndex()))
-//                // 2.
-//                .and(new IsRisingRule(longSma, 14, 0.7))
-//                // 3.
-//                .and(new InPipeRule(rsiIndicator, 53, 47))
-//                // 4.
-//                .and(new UnderIndicatorRule(percentB, 0.50))
-//                // 5.
-//               .and(new IsRisingRule(balanceVolumeIndicator, 14, 0.1));
+//        Rule entryRule = new UnderIndicatorRule(lowPriceIndicator, bbm).and(new UnderIndicatorRule(bbm, closePrice))
 //
-//        Rule exitRule = new StopGainRule(closePrice, DecimalNum.valueOf("0.8"));
+//
+//                .and(new IsRisingRule(bbm, 14, 0.9))
+//                .and(new OverIndicatorRule(closePrice, lowPriceIndicator))
+//                .and(new InPipeRule(rsiIndicator, 58, 47))
+//                .and(new IsRisingRule(balanceVolumeIndicator, 20, 0.5))
+//                .and(new OverIndicatorRule(bbw, 0.02));
+
+        Rule entryRule = new UnderIndicatorRule(lowPriceIndicator, bbm).and(new UnderIndicatorRule(bbm, closePrice))
 
 
-        Rule entryRule = new UnderIndicatorRule(closePrice, bbm.getValue(series.getEndIndex()))
-                // 2.
-                .and(new IsRisingRule(bbm, 14, 1))
-                // 3.
-                .and(new InPipeRule(rsiIndicator, 53, 47))
-                // 4.
-                .and(new UnderIndicatorRule(percentB, 0.50))
-                // 5.
-                .and(new IsRisingRule(balanceVolumeIndicator, 20, 0.6));
+                .and(new IsRisingRule(bbm, 14, 0.8))
+                .and(new IsRisingRule(bbm, 40, 0.5))
+                .and(new OverIndicatorRule(closePrice, lowPriceIndicator))
+                .and(new InPipeRule(rsiIndicator, 58, 47))
+                .and(new IsRisingRule(balanceVolumeIndicator, 20, 0.5))
+                .and(new OverIndicatorRule(bbw, 0.03))
+                .and(new UnderIndicatorRule(adxIndicator, 40));
 
 
         Rule exitRule = new StopGainRule(closePrice, DecimalNum.valueOf("0.8"));
