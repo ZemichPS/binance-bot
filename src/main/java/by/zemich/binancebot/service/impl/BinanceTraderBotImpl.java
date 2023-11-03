@@ -20,8 +20,12 @@ import org.springframework.stereotype.Component;
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.Strategy;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Component
@@ -61,11 +65,12 @@ public class BinanceTraderBotImpl implements ITraderBot {
         KlineQueryDto queryDto = new KlineQueryDto();
         String timeFrame = klineConfig.getTimeFrame();
         queryDto.setLimit(klineConfig.getLimit());
-        queryDto.setInterval(timeFrame);
+
 
         stockMarketService.getSpotSymbols().get().stream()
                 .forEach(symbol -> {
                     queryDto.setSymbol(symbol);
+                    queryDto.setInterval(timeFrame);
                     BarSeries series = stockMarketService.getBarSeries(queryDto).orElse(null);
                     Strategy strategy = secondStrategy.get(series);
                     if (strategy.shouldEnter(series.getEndIndex())) {
@@ -106,8 +111,37 @@ public class BinanceTraderBotImpl implements ITraderBot {
 
     }
 
-    private void sell() {
+    private void checkOrder() {
 
+        fakeOrderDao
+                .findAllByStatus(EOrderStatus.EXPIRED).ifPresent(
+                        list -> list.forEach(fakeOrderEntity -> {
+                            Map<String, Object> map = new HashMap<>();
+                            BigDecimal price = fakeOrderEntity.getBuyPrice();
+                            String symbol = fakeOrderEntity.getSymbol();
+
+                            map.put("symbol", symbol);
+                            SymbolPriceTickerDto tickerDto = binanceMarketService.getSymbolPriceTicker(map).get();
+                            BigDecimal currentPrice = tickerDto.getPrice();
+
+                            BigDecimal difference = currentPrice.subtract(price);
+
+                            BigDecimal resultPercent = difference.multiply(BigDecimal.valueOf(100))
+                                    .setScale(2, RoundingMode.HALF_UP)
+                                    .divide(currentPrice, 2, RoundingMode.HALF_UP);
+
+                            if(resultPercent.doubleValue() >= 0.8){
+                                fakeOrderEntity.setStatus(EOrderStatus.FILLED);
+                                fakeOrderEntity.setSellPrice(currentPrice);
+                                fakeOrderEntity.setSellTime(LocalDateTime.now());
+                                fakeOrderEntity.setResult(true);
+                                fakeOrderEntity.setDuration(ChronoUnit.MINUTES.between(fakeOrderEntity.getBuyTime(), fakeOrderEntity.getSellTime()));
+                                fakeOrderDao.save(fakeOrderEntity);
+                            }
+
+
+                        })
+                );
     }
 
 }

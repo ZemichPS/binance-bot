@@ -42,7 +42,7 @@ public class FakeOrderEntity {
     private String symbol;
 
     @Column(name = "duration")
-    private LocalDateTime duration;
+    private Long duration;
 
     @Column(name = "result")
     private boolean result;
@@ -53,7 +53,7 @@ public class FakeOrderEntity {
     public FakeOrderEntity() {
     }
 
-    public FakeOrderEntity(UUID uuid, Timestamp dtUpdate, Timestamp dtCreate, LocalDateTime buyTime, LocalDateTime sellTime, BigDecimal buyPrice, BigDecimal sellPrice, String symbol, LocalDateTime duration, boolean result, EOrderStatus status) {
+    public FakeOrderEntity(UUID uuid, Timestamp dtUpdate, Timestamp dtCreate, LocalDateTime buyTime, LocalDateTime sellTime, BigDecimal buyPrice, BigDecimal sellPrice, String symbol, Long duration, boolean result, EOrderStatus status) {
         this.uuid = uuid;
         this.dtUpdate = dtUpdate;
         this.dtCreate = dtCreate;
@@ -131,11 +131,11 @@ public class FakeOrderEntity {
         this.symbol = symbol;
     }
 
-    public LocalDateTime getDuration() {
+    public Long getDuration() {
         return duration;
     }
 
-    public void setDuration(LocalDateTime duration) {
+    public void setDuration(Long duration) {
         this.duration = duration;
     }
 
