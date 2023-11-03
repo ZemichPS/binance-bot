@@ -45,6 +45,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
 
     private final BinanceMarketServiceImpl binanceMarketService;
     private final List<String> symbolsBlackList = new ArrayList<>();
+    private Integer budget = 120;
 
 
     public BinanceTraderBotImpl(IStockMarketService stockMarketService, KlineConfig klineConfig, TestTradeManagerImpl tradeManager, BollingerBasedSecondStrategy secondStrategy, BollingerBasedOlderTimeFrameStrategy olderTimeFrameStrategy, INotifier notifier, IFakeOrderDao fakeOrderDao, BinanceMarketServiceImpl binanceMarketService) {
@@ -82,11 +83,13 @@ public class BinanceTraderBotImpl implements ITraderBot {
                             Strategy olderStrategy = olderTimeFrameStrategy.get(secondSeries);
                             if (olderStrategy.shouldEnter(secondSeries.getEndIndex())) {
                                 buy(symbol);
+                                pay(20);
                                 symbolsBlackList.add(symbol);
                                 Event event = new Event();
                                 event.setEventType(EEventType.BUYING);
                                 event.setText(symbol);
                                 notifier.notify(event);
+
                             }
 
                         }
@@ -121,44 +124,64 @@ public class BinanceTraderBotImpl implements ITraderBot {
     @Scheduled(fixedDelay = 20_000, initialDelay = 1_000)
     @Async
     public void checkOrder() {
+        if (getBudget() >= 20) {
+            fakeOrderDao
+                    .findAllByStatus(EOrderStatus.EXPIRED).ifPresent(
+                            list -> list.forEach(fakeOrderEntity -> {
+                                Map<String, Object> map = new HashMap<>();
+                                BigDecimal price = fakeOrderEntity.getBuyPrice();
+                                String symbol = fakeOrderEntity.getSymbol();
 
-        fakeOrderDao
-                .findAllByStatus(EOrderStatus.EXPIRED).ifPresent(
-                        list -> list.forEach(fakeOrderEntity -> {
-                            Map<String, Object> map = new HashMap<>();
-                            BigDecimal price = fakeOrderEntity.getBuyPrice();
-                            String symbol = fakeOrderEntity.getSymbol();
+                                map.put("symbol", symbol);
+                                SymbolPriceTickerDto tickerDto = binanceMarketService.getSymbolPriceTicker(map).get();
+                                BigDecimal currentPrice = tickerDto.getPrice();
 
-                            map.put("symbol", symbol);
-                            SymbolPriceTickerDto tickerDto = binanceMarketService.getSymbolPriceTicker(map).get();
-                            BigDecimal currentPrice = tickerDto.getPrice();
+                                BigDecimal difference = currentPrice.subtract(price);
 
-                            BigDecimal difference = currentPrice.subtract(price);
+                                BigDecimal resultPercent = difference.multiply(BigDecimal.valueOf(100))
+                                        .setScale(2, RoundingMode.HALF_UP)
+                                        .divide(currentPrice, 2, RoundingMode.HALF_UP);
 
-                            BigDecimal resultPercent = difference.multiply(BigDecimal.valueOf(100))
-                                    .setScale(2, RoundingMode.HALF_UP)
-                                    .divide(currentPrice, 2, RoundingMode.HALF_UP);
-
-                            if (resultPercent.doubleValue() >= 0.8) {
-                                fakeOrderEntity.setStatus(EOrderStatus.FILLED);
-                                fakeOrderEntity.setSellPrice(currentPrice);
-                                fakeOrderEntity.setSellTime(LocalDateTime.now());
-                                fakeOrderEntity.setResult(true);
-                                fakeOrderEntity.setDuration(ChronoUnit.MINUTES.between(fakeOrderEntity.getBuyTime(), fakeOrderEntity.getSellTime()));
-                                fakeOrderDao.save(fakeOrderEntity);
-
-                                Event event = new Event();
-                                event.setEventType(EEventType.SELLING);
-                                event.setText("crypto active was sell");
-                                notifier.notify(event);
-                                if (!symbolsBlackList.contains(symbol)){
-                                    symbolsBlackList.remove(symbol);
+                                if (resultPercent.doubleValue() >= 0.8) {
+                                    fakeOrderEntity.setStatus(EOrderStatus.FILLED);
+                                    fakeOrderEntity.setSellPrice(currentPrice);
+                                    fakeOrderEntity.setSellTime(LocalDateTime.now());
+                                    fakeOrderEntity.setResult(true);
+                                    fakeOrderEntity.setDuration(ChronoUnit.MINUTES.between(fakeOrderEntity.getBuyTime(), fakeOrderEntity.getSellTime()));
+                                    fakeOrderDao.save(fakeOrderEntity);
+                                    sell(20);
+                                    Event event = new Event();
+                                    event.setEventType(EEventType.SELLING);
+                                    event.setText("crypto active was sell");
+                                    notifier.notify(event);
+                                    if (!symbolsBlackList.contains(symbol)) {
+                                        symbolsBlackList.remove(symbol);
+                                    }
                                 }
-                            }
 
 
-                        })
-                );
+                            })
+                    );
+        }
     }
+
+    private Integer getBudget() {
+        return budget;
+    }
+
+    private void setBudget(Integer budget) {
+        this.budget = budget;
+    }
+
+    private void pay(Integer sum) {
+        if (budget < sum) throw new IllegalArgumentException("Budget is not enough to pay ");
+        budget = budget - sum;
+    }
+
+    private void sell(Integer sum) {
+
+        budget = budget + sum;
+    }
+
 
 }
