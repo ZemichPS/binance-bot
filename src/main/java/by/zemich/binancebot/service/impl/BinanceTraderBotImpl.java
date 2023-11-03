@@ -111,7 +111,9 @@ public class BinanceTraderBotImpl implements ITraderBot {
 
     }
 
-    private void checkOrder() {
+    @Scheduled(fixedDelay = 20_000, initialDelay = 1_000)
+    @Async
+    public void checkOrder() {
 
         fakeOrderDao
                 .findAllByStatus(EOrderStatus.EXPIRED).ifPresent(
@@ -137,6 +139,11 @@ public class BinanceTraderBotImpl implements ITraderBot {
                                 fakeOrderEntity.setResult(true);
                                 fakeOrderEntity.setDuration(ChronoUnit.MINUTES.between(fakeOrderEntity.getBuyTime(), fakeOrderEntity.getSellTime()));
                                 fakeOrderDao.save(fakeOrderEntity);
+
+                                Event event = new Event();
+                                event.setEventType(EEventType.SELLING);
+                                event.setText("crypto active was sell");
+                                notifier.notify(event);
                             }
 
 
