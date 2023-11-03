@@ -24,6 +24,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,6 +44,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
     private final IFakeOrderDao fakeOrderDao;
 
     private final BinanceMarketServiceImpl binanceMarketService;
+    private final List<String> symbolsBlackList = new ArrayList<>();
 
 
     public BinanceTraderBotImpl(IStockMarketService stockMarketService, KlineConfig klineConfig, TestTradeManagerImpl tradeManager, BollingerBasedSecondStrategy secondStrategy, BollingerBasedOlderTimeFrameStrategy olderTimeFrameStrategy, INotifier notifier, IFakeOrderDao fakeOrderDao, BinanceMarketServiceImpl binanceMarketService) {
@@ -69,24 +71,29 @@ public class BinanceTraderBotImpl implements ITraderBot {
 
         stockMarketService.getSpotSymbols().get().stream()
                 .forEach(symbol -> {
-                    queryDto.setSymbol(symbol);
-                    queryDto.setInterval(timeFrame);
-                    BarSeries series = stockMarketService.getBarSeries(queryDto).orElse(null);
-                    Strategy strategy = secondStrategy.get(series);
-                    if (strategy.shouldEnter(series.getEndIndex())) {
-                        queryDto.setInterval("1h");
-                        BarSeries secondSeries = stockMarketService.getBarSeries(queryDto).orElse(null);
-                        Strategy olderStrategy = olderTimeFrameStrategy.get(secondSeries);
-                        if (olderStrategy.shouldEnter(secondSeries.getEndIndex())) {
-                            buy(symbol);
-                            Event event = new Event();
-                            event.setEventType(EEventType.BUYING);
-                            event.setText(symbol);
-                            notifier.notify(event);
+                    if (!symbolsBlackList.contains(symbol)) {
+                        queryDto.setSymbol(symbol);
+                        queryDto.setInterval(timeFrame);
+                        BarSeries series = stockMarketService.getBarSeries(queryDto).orElse(null);
+                        Strategy strategy = secondStrategy.get(series);
+                        if (strategy.shouldEnter(series.getEndIndex())) {
+                            queryDto.setInterval("1h");
+                            BarSeries secondSeries = stockMarketService.getBarSeries(queryDto).orElse(null);
+                            Strategy olderStrategy = olderTimeFrameStrategy.get(secondSeries);
+                            if (olderStrategy.shouldEnter(secondSeries.getEndIndex())) {
+                                buy(symbol);
+                                symbolsBlackList.add(symbol);
+                                Event event = new Event();
+                                event.setEventType(EEventType.BUYING);
+                                event.setText(symbol);
+                                notifier.notify(event);
+                            }
+
                         }
                     }
                 });
     }
+
 
     @Override
     public void lookForExitPosition() {
@@ -132,7 +139,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
                                     .setScale(2, RoundingMode.HALF_UP)
                                     .divide(currentPrice, 2, RoundingMode.HALF_UP);
 
-                            if(resultPercent.doubleValue() >= 0.8){
+                            if (resultPercent.doubleValue() >= 0.8) {
                                 fakeOrderEntity.setStatus(EOrderStatus.FILLED);
                                 fakeOrderEntity.setSellPrice(currentPrice);
                                 fakeOrderEntity.setSellTime(LocalDateTime.now());
@@ -144,6 +151,9 @@ public class BinanceTraderBotImpl implements ITraderBot {
                                 event.setEventType(EEventType.SELLING);
                                 event.setText("crypto active was sell");
                                 notifier.notify(event);
+                                if (!symbolsBlackList.contains(symbol)){
+                                    symbolsBlackList.remove(symbol);
+                                }
                             }
 
 
