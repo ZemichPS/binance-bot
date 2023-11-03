@@ -8,7 +8,7 @@ import by.zemich.binancebot.service.api.IStockMarketService;
 
 import by.zemich.binancebot.core.dto.TickerSymbolShortQuery;
 
-import by.zemich.binancebot.service.api.IStrategyManager;
+import by.zemich.binancebot.service.strategy.BollingerBasedSecondStrategy;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -17,7 +17,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.ta4j.core.*;
 import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.RSIIndicator;
-import org.ta4j.core.indicators.SMAIndicator;
 import org.ta4j.core.indicators.adx.ADXIndicator;
 import org.ta4j.core.indicators.bollinger.*;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
@@ -39,26 +38,25 @@ public class SpotClientController {
     private final IStockMarketService stockMarketService;
     private final IOrderService orderService;
     private final IAccountService accountService;
+    private final BollingerBasedSecondStrategy strategyManager;
 
-    private final IStrategyManager strategyManager;
-
-
-
-    public SpotClientController(IStockMarketService stockMarketService, IOrderService orderService, IAccountService accountService, IStrategyManager strategyManager) {
+    public SpotClientController(IStockMarketService stockMarketService, IOrderService orderService, IAccountService accountService, BollingerBasedSecondStrategy strategyManager) {
         this.stockMarketService = stockMarketService;
         this.orderService = orderService;
         this.accountService = accountService;
         this.strategyManager = strategyManager;
     }
-/*
-    @GetMapping("/history")
-    private ResponseEntity<List<HistoricalOrderResponseDto>> getHistory() {
-        HistoricalOrderQueryDto historicalOrderQuery = new HistoricalOrderQueryDto();
-        historicalOrderQuery.setSymbol("RUNEUSDT");
-        List<HistoricalOrderResponseDto> list = orderService.getAll(historicalOrderQuery).get();
-        return ResponseEntity.ok(list);
-    }
-*/
+
+
+    /*
+                @GetMapping("/history")
+                private ResponseEntity<List<HistoricalOrderResponseDto>> getHistory() {
+                    HistoricalOrderQueryDto historicalOrderQuery = new HistoricalOrderQueryDto();
+                    historicalOrderQuery.setSymbol("RUNEUSDT");
+                    List<HistoricalOrderResponseDto> list = orderService.getAll(historicalOrderQuery).get();
+                    return ResponseEntity.ok(list);
+                }
+            */
     @GetMapping("/account")
     private ResponseEntity<AccountInformationResponseDto> accountInf() {
         AccountInformationQueryDto query = new AccountInformationQueryDto();

@@ -17,5 +17,7 @@ public interface IStockMarketService {
     Optional<List<HistoricalOrderResponseDto>> getHistoricalOrderList(Map<String, Object> params);
     Optional<CancelOrderResponseDto> cancelOrder(Map<String, Object> params);
     Optional<OrderBookTickerDto> getOrderBookTicker(Map<String, Object> params);
+    Optional<SymbolPriceTickerDto> getSymbolPriceTicker(Map<String, Object> params);
+
 
 }

@@ -135,12 +135,23 @@ public class BinanceMarketServiceImpl implements IStockMarketService {
         String responseResult = spotClient.createMarket().bookTicker(params);
         try {
             OrderBookTickerDto ticker = objectMapper.readValue(responseResult, OrderBookTickerDto.class);
+            return Optional.of(ticker);
         } catch (JsonProcessingException e) {
             throw new RuntimeException(e);
         }
 
 
-        return Optional.empty();
+    }
+
+    @Override
+    public Optional<SymbolPriceTickerDto> getSymbolPriceTicker(Map<String, Object> params) {
+        String responseResult = spotClient.createMarket().tickerSymbol(params);
+        try {
+            SymbolPriceTickerDto ticker = objectMapper.readValue(responseResult, SymbolPriceTickerDto.class);
+            return Optional.of(ticker);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private BarSeries getCusomBarSeries(List<BarDto> barDtoList, String name) {
