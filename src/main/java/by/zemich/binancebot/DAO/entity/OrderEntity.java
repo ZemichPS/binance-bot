@@ -63,6 +63,8 @@ public class OrderEntity {
     @Column(name = "self_trade_prevention_mode")
     private String selfTradePreventionMode;
 
+
+
     //  private List<FillsDto> fills;
 
     public OrderEntity() {

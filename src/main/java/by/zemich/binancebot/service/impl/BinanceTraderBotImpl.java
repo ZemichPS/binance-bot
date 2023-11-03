@@ -42,10 +42,10 @@ public class BinanceTraderBotImpl implements ITraderBot {
     private final INotifier notifier;
 
     private final IFakeOrderDao fakeOrderDao;
-
     private final BinanceMarketServiceImpl binanceMarketService;
     private final List<String> symbolsBlackList = new ArrayList<>();
-    private Integer budget = 120;
+    private Integer budget = 200;
+    private double gain = 0.3;
 
 
     public BinanceTraderBotImpl(IStockMarketService stockMarketService, KlineConfig klineConfig, TestTradeManagerImpl tradeManager, BollingerBasedSecondStrategy secondStrategy, BollingerBasedOlderTimeFrameStrategy olderTimeFrameStrategy, INotifier notifier, IFakeOrderDao fakeOrderDao, BinanceMarketServiceImpl binanceMarketService) {
@@ -64,37 +64,38 @@ public class BinanceTraderBotImpl implements ITraderBot {
     @Scheduled(fixedDelay = 40_000, initialDelay = 1_000)
     @Async
     public void lookForEnterPosition() {
+        if (getBudget() >= 20) {
+            KlineQueryDto queryDto = new KlineQueryDto();
+            String timeFrame = klineConfig.getTimeFrame();
+            queryDto.setLimit(klineConfig.getLimit());
 
-        KlineQueryDto queryDto = new KlineQueryDto();
-        String timeFrame = klineConfig.getTimeFrame();
-        queryDto.setLimit(klineConfig.getLimit());
 
+            stockMarketService.getSpotSymbols().get().stream()
+                    .forEach(symbol -> {
+                        if (!symbolsBlackList.contains(symbol)) {
+                            queryDto.setSymbol(symbol);
+                            queryDto.setInterval(timeFrame);
+                            BarSeries series = stockMarketService.getBarSeries(queryDto).orElse(null);
+                            Strategy strategy = secondStrategy.get(series);
+                            if (strategy.shouldEnter(series.getEndIndex())) {
+                                queryDto.setInterval("1h");
+                                BarSeries secondSeries = stockMarketService.getBarSeries(queryDto).orElse(null);
+                                Strategy olderStrategy = olderTimeFrameStrategy.get(secondSeries);
+                                if (olderStrategy.shouldEnter(secondSeries.getEndIndex())) {
+                                    buy(symbol);
+                                    pay(20);
+                                    symbolsBlackList.add(symbol);
+                                    Event event = new Event();
+                                    event.setEventType(EEventType.BUYING);
+                                    event.setText(symbol);
+                                    notifier.notify(event);
 
-        stockMarketService.getSpotSymbols().get().stream()
-                .forEach(symbol -> {
-                    if (!symbolsBlackList.contains(symbol)) {
-                        queryDto.setSymbol(symbol);
-                        queryDto.setInterval(timeFrame);
-                        BarSeries series = stockMarketService.getBarSeries(queryDto).orElse(null);
-                        Strategy strategy = secondStrategy.get(series);
-                        if (strategy.shouldEnter(series.getEndIndex())) {
-                            queryDto.setInterval("1h");
-                            BarSeries secondSeries = stockMarketService.getBarSeries(queryDto).orElse(null);
-                            Strategy olderStrategy = olderTimeFrameStrategy.get(secondSeries);
-                            if (olderStrategy.shouldEnter(secondSeries.getEndIndex())) {
-                                buy(symbol);
-                                pay(20);
-                                symbolsBlackList.add(symbol);
-                                Event event = new Event();
-                                event.setEventType(EEventType.BUYING);
-                                event.setText(symbol);
-                                notifier.notify(event);
+                                }
 
                             }
-
                         }
-                    }
-                });
+                    });
+        }
     }
 
 
@@ -124,45 +125,49 @@ public class BinanceTraderBotImpl implements ITraderBot {
     @Scheduled(fixedDelay = 20_000, initialDelay = 1_000)
     @Async
     public void checkOrder() {
-        if (getBudget() >= 20) {
-            fakeOrderDao
-                    .findAllByStatus(EOrderStatus.EXPIRED).ifPresent(
-                            list -> list.forEach(fakeOrderEntity -> {
-                                Map<String, Object> map = new HashMap<>();
-                                BigDecimal price = fakeOrderEntity.getBuyPrice();
-                                String symbol = fakeOrderEntity.getSymbol();
 
-                                map.put("symbol", symbol);
-                                SymbolPriceTickerDto tickerDto = binanceMarketService.getSymbolPriceTicker(map).get();
-                                BigDecimal currentPrice = tickerDto.getPrice();
+        fakeOrderDao
+                .findAllByStatus(EOrderStatus.EXPIRED).ifPresent(
+                        list -> list.forEach(fakeOrderEntity -> {
+                            Map<String, Object> map = new HashMap<>();
+                            BigDecimal price = fakeOrderEntity.getBuyPrice();
+                            String symbol = fakeOrderEntity.getSymbol();
 
-                                BigDecimal difference = currentPrice.subtract(price);
+                            map.put("symbol", symbol);
+                            SymbolPriceTickerDto tickerDto = binanceMarketService.getSymbolPriceTicker(map).get();
+                            BigDecimal currentPrice = tickerDto.getPrice();
 
-                                BigDecimal resultPercent = difference.multiply(BigDecimal.valueOf(100))
-                                        .setScale(2, RoundingMode.HALF_UP)
-                                        .divide(currentPrice, 2, RoundingMode.HALF_UP);
+                            BigDecimal difference = currentPrice.subtract(price);
 
-                                if (resultPercent.doubleValue() >= 0.8) {
-                                    fakeOrderEntity.setStatus(EOrderStatus.FILLED);
-                                    fakeOrderEntity.setSellPrice(currentPrice);
-                                    fakeOrderEntity.setSellTime(LocalDateTime.now());
-                                    fakeOrderEntity.setResult(true);
-                                    fakeOrderEntity.setDuration(ChronoUnit.MINUTES.between(fakeOrderEntity.getBuyTime(), fakeOrderEntity.getSellTime()));
-                                    fakeOrderDao.save(fakeOrderEntity);
-                                    sell(20);
-                                    Event event = new Event();
-                                    event.setEventType(EEventType.SELLING);
-                                    event.setText("crypto active was sell");
-                                    notifier.notify(event);
-                                    if (!symbolsBlackList.contains(symbol)) {
-                                        symbolsBlackList.remove(symbol);
-                                    }
+                            BigDecimal resultPercent = difference.multiply(BigDecimal.valueOf(100))
+                                    .setScale(2, RoundingMode.HALF_UP)
+                                    .divide(currentPrice, 2, RoundingMode.HALF_UP);
+
+                            if (resultPercent.doubleValue() >= gain) {
+                                fakeOrderEntity.setStatus(EOrderStatus.FILLED);
+                                fakeOrderEntity.setSellPrice(currentPrice);
+                                fakeOrderEntity.setSellTime(LocalDateTime.now());
+                                fakeOrderEntity.setResult(true);
+                                fakeOrderEntity.setDuration(ChronoUnit.MINUTES.between(fakeOrderEntity.getBuyTime(), fakeOrderEntity.getSellTime()));
+                                fakeOrderDao.save(fakeOrderEntity);
+                                sell(20);
+                                Event event = new Event();
+                                event.setEventType(EEventType.SELLING);
+                                event.setText("crypto active was sell");
+                                notifier.notify(event);
+                                if (!symbolsBlackList.contains(symbol)) {
+                                    symbolsBlackList.remove(symbol);
                                 }
+                            } else{
+                                fakeOrderEntity.setCurrentResult(resultPercent);
+                                fakeOrderEntity.setDuration(ChronoUnit.MINUTES.between(fakeOrderEntity.getBuyTime(), LocalDateTime.now()));
+                                fakeOrderDao.save(fakeOrderEntity);
+                            }
 
 
-                            })
-                    );
-        }
+                        })
+                );
+
     }
 
     private Integer getBudget() {

@@ -47,13 +47,16 @@ public class FakeOrderEntity {
     @Column(name = "result")
     private boolean result;
 
+    @Column(name = "current_result")
+    private BigDecimal currentResult;
+
     @Enumerated(EnumType.STRING)
     private EOrderStatus status;
 
     public FakeOrderEntity() {
     }
 
-    public FakeOrderEntity(UUID uuid, Timestamp dtUpdate, Timestamp dtCreate, LocalDateTime buyTime, LocalDateTime sellTime, BigDecimal buyPrice, BigDecimal sellPrice, String symbol, Long duration, boolean result, EOrderStatus status) {
+    public FakeOrderEntity(UUID uuid, Timestamp dtUpdate, Timestamp dtCreate, LocalDateTime buyTime, LocalDateTime sellTime, BigDecimal buyPrice, BigDecimal sellPrice, String symbol, Long duration, boolean result, BigDecimal currentResult, EOrderStatus status) {
         this.uuid = uuid;
         this.dtUpdate = dtUpdate;
         this.dtCreate = dtCreate;
@@ -64,6 +67,7 @@ public class FakeOrderEntity {
         this.symbol = symbol;
         this.duration = duration;
         this.result = result;
+        this.currentResult = currentResult;
         this.status = status;
     }
 
@@ -153,5 +157,13 @@ public class FakeOrderEntity {
 
     public void setStatus(EOrderStatus status) {
         this.status = status;
+    }
+
+    public BigDecimal getCurrentResult() {
+        return currentResult;
+    }
+
+    public void setCurrentResult(BigDecimal currentResult) {
+        this.currentResult = currentResult;
     }
 }
