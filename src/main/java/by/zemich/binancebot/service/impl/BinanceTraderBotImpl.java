@@ -149,11 +149,13 @@ public class BinanceTraderBotImpl implements ITraderBot {
                                 fakeOrderEntity.setSellTime(LocalDateTime.now());
                                 fakeOrderEntity.setResult(true);
                                 fakeOrderEntity.setDuration(ChronoUnit.MINUTES.between(fakeOrderEntity.getBuyTime(), fakeOrderEntity.getSellTime()));
+                                fakeOrderEntity.setCurrentResult(resultPercent);
                                 fakeOrderDao.save(fakeOrderEntity);
+
                                 sell(20);
                                 Event event = new Event();
                                 event.setEventType(EEventType.SELLING);
-                                event.setText("crypto active was sell");
+                                event.setText("crypto active was sell. Result percentage: " + resultPercent.doubleValue());
                                 notifier.notify(event);
                                 if (!symbolsBlackList.contains(symbol)) {
                                     symbolsBlackList.remove(symbol);
