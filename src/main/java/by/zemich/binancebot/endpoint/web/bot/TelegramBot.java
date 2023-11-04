@@ -1,7 +1,7 @@
 package by.zemich.binancebot.endpoint.web.bot;
 
 import by.zemich.binancebot.config.properties.TelegramProperties;
-import by.zemich.binancebot.core.dto.Event;
+import by.zemich.binancebot.core.dto.EventDto;
 import by.zemich.binancebot.service.api.IConverter;
 import by.zemich.binancebot.service.api.INotifier;
 import org.springframework.stereotype.Component;
@@ -50,10 +50,10 @@ public class TelegramBot extends TelegramLongPollingBot implements INotifier
     }
 
     @Override
-    public void notify(Event event) {
+    public void notify(EventDto eventDto) {
         SendMessage smg = SendMessage.builder()
                 .chatId(properties.getChatID())
-                .text(event.toString())
+                .text(eventDto.toString())
                 .build();
 
         try {

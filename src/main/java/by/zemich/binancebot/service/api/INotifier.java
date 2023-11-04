@@ -1,8 +1,8 @@
 package by.zemich.binancebot.service.api;
 
-import by.zemich.binancebot.core.dto.Event;
+import by.zemich.binancebot.core.dto.EventDto;
 
 public interface INotifier {
 
-    void notify(Event event);
+    void notify(EventDto eventDto);
 }

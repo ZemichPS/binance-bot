@@ -1,9 +1,7 @@
 package by.zemich.binancebot.service.impl;
 
 
-import by.zemich.binancebot.core.dto.Event;
 import by.zemich.binancebot.core.dto.KlineQueryDto;
-import by.zemich.binancebot.core.enums.EEventType;
 import by.zemich.binancebot.service.api.*;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Async;
@@ -31,8 +29,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
     private final Map<String, IStrategy> strategyMap = new HashMap<>();
 
     public BinanceTraderBotImpl(IStockMarketService stockMarketService,
-                                TestTradeManagerImpl tradeManager,
-                                INotifier notifier,
+                                ITradeManager tradeManager, INotifier notifier,
                                 BinanceMarketServiceImpl binanceMarketService) {
         this.stockMarketService = stockMarketService;
         this.tradeManager = tradeManager;
@@ -66,13 +63,9 @@ public class BinanceTraderBotImpl implements ITraderBot {
                         queryDto.setInterval("1h");
                         BarSeries secondSeries = stockMarketService.getBarSeries(queryDto).orElse(null);
                         Strategy sureStrategy = strategyMap.get("BOLLINGER_BAND_OLDER_TIMEFRAME_STRATEGY").get(secondSeries);
-                        if (sureStrategy.shouldEnter(secondSeries.getEndIndex())) {
-
-
-                            Event event = new Event();
-                            event.setEventType(EEventType.BUYING);
-                            event.setText(symbol);
-                            notifier.notify(event);
+                       // if (sureStrategy.shouldEnter(secondSeries.getEndIndex())) {
+                        if (true) {
+                            tradeManager.buy(symbol);
 
                         }
 

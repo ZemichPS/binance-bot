@@ -4,7 +4,7 @@ import by.zemich.binancebot.core.enums.EEventType;
 import lombok.Data;
 
 @Data
-public class Event {
+public class EventDto {
     EEventType eventType;
     String text;
 }
