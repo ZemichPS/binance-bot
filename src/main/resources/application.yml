@@ -47,9 +47,6 @@ management:
 server:
   port: 8081
 
-kline:
-  timeFrame: 15m
-  limit: 100
 
 logging:
   file:
@@ -58,6 +55,7 @@ logging:
 
 telegram:
   chatID: 852348061
+  name: MTCCurrencyBot
 
 
 

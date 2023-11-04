@@ -1,27 +1,20 @@
 package by.zemich.binancebot.service.strategy;
 
-import by.zemich.binancebot.service.api.IStrategyManager;
+import by.zemich.binancebot.service.api.IStrategy;
 import org.springframework.stereotype.Component;
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.BaseStrategy;
 import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
-import org.ta4j.core.indicators.PPOIndicator;
 import org.ta4j.core.indicators.RSIIndicator;
-import org.ta4j.core.indicators.SMAIndicator;
-import org.ta4j.core.indicators.adx.ADXIndicator;
-import org.ta4j.core.indicators.bollinger.*;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
-import org.ta4j.core.indicators.helpers.LowPriceIndicator;
-import org.ta4j.core.indicators.statistics.StandardDeviationIndicator;
-import org.ta4j.core.indicators.volume.OnBalanceVolumeIndicator;
 import org.ta4j.core.num.DecimalNum;
 import org.ta4j.core.rules.*;
 
 
 @Component
-public class BollingerBasedOlderTimeFrameStrategy implements IStrategyManager {
-    private final String name = "BollingerBandRisingMAStrategy";
+public class BasedOnBollingerBandOlderTimeframeStrategy implements IStrategy {
+    private final String name = "BOLLINGER_BAND_OLDER_TIMEFRAME_STRATEGY";
     private BarSeries series;
     private Strategy strategy;
 
@@ -34,6 +27,11 @@ public class BollingerBasedOlderTimeFrameStrategy implements IStrategyManager {
 
     public Strategy get() {
         return strategy;
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 
 

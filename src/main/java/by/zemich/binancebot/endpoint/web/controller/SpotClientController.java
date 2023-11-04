@@ -8,7 +8,7 @@ import by.zemich.binancebot.service.api.IStockMarketService;
 
 import by.zemich.binancebot.core.dto.TickerSymbolShortQuery;
 
-import by.zemich.binancebot.service.strategy.BollingerBasedSecondStrategy;
+import by.zemich.binancebot.service.strategy.BasedOnBollingerBandStrategy;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -38,9 +38,9 @@ public class SpotClientController {
     private final IStockMarketService stockMarketService;
     private final IOrderService orderService;
     private final IAccountService accountService;
-    private final BollingerBasedSecondStrategy strategyManager;
+    private final BasedOnBollingerBandStrategy strategyManager;
 
-    public SpotClientController(IStockMarketService stockMarketService, IOrderService orderService, IAccountService accountService, BollingerBasedSecondStrategy strategyManager) {
+    public SpotClientController(IStockMarketService stockMarketService, IOrderService orderService, IAccountService accountService, BasedOnBollingerBandStrategy strategyManager) {
         this.stockMarketService = stockMarketService;
         this.orderService = orderService;
         this.accountService = accountService;

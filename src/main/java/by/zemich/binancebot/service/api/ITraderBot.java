@@ -4,6 +4,10 @@ public interface ITraderBot {
 
     void lookForEnterPosition();
 
-    void lookForExitPosition();
+    void registerStrategy(String name, IStrategy strategyManager);
+
+
+
+
 
 }

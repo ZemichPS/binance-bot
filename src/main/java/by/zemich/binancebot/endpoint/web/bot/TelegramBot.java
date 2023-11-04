@@ -29,7 +29,7 @@ public class TelegramBot extends TelegramLongPollingBot implements INotifier
 
     @Override
     public String getBotUsername() {
-        return "MTCCurrencyBot";
+        return properties.getName();
     }
 
     @Override

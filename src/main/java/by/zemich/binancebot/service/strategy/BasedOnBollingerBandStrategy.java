@@ -1,6 +1,6 @@
 package by.zemich.binancebot.service.strategy;
 
-import by.zemich.binancebot.service.api.IStrategyManager;
+import by.zemich.binancebot.service.api.IStrategy;
 import org.springframework.stereotype.Component;
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.BaseStrategy;
@@ -13,17 +13,15 @@ import org.ta4j.core.indicators.adx.ADXIndicator;
 import org.ta4j.core.indicators.bollinger.*;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.indicators.helpers.LowPriceIndicator;
-import org.ta4j.core.indicators.helpers.LowestValueIndicator;
 import org.ta4j.core.indicators.statistics.StandardDeviationIndicator;
 import org.ta4j.core.indicators.volume.OnBalanceVolumeIndicator;
 import org.ta4j.core.num.DecimalNum;
-import org.ta4j.core.num.Num;
 import org.ta4j.core.rules.*;
 
 
 @Component
-public class BollingerBasedSecondStrategy implements IStrategyManager {
-    private final String name = "BollingerBandRisingMAStrategy";
+public class BasedOnBollingerBandStrategy implements IStrategy {
+    private final String name = "BOLLINGER_BAND_MAIN_STRATEGY";
     private BarSeries series;
     private Strategy strategy;
 
@@ -36,6 +34,11 @@ public class BollingerBasedSecondStrategy implements IStrategyManager {
 
     public Strategy get() {
         return strategy;
+    }
+
+    @Override
+    public String getName() {
+        return name;
     }
 
 
@@ -78,15 +81,13 @@ public class BollingerBasedSecondStrategy implements IStrategyManager {
 //                .and(new IsRisingRule(balanceVolumeIndicator, 20, 0.5))
 //                .and(new OverIndicatorRule(bbw, 0.02));
 
-        Rule entryRule = new UnderIndicatorRule(lowPriceIndicator, bbm).and(new UnderIndicatorRule(bbm, closePrice))
-
-
+        Rule entryRule = new UnderIndicatorRule(lowPriceIndicator, bbm)
+                .and(new UnderIndicatorRule(bbm, closePrice))
+                .and(new OverIndicatorRule(bbw, 3.5))
                 .and(new IsRisingRule(bbm, 14, 0.8))
-                .and(new IsRisingRule(bbm, 40, 0.5))
                 .and(new OverIndicatorRule(closePrice, lowPriceIndicator))
                 .and(new InPipeRule(rsiIndicator, 58, 47))
                 .and(new IsRisingRule(balanceVolumeIndicator, 20, 0.5))
-                .and(new OverIndicatorRule(bbw, 0.03))
                 .and(new UnderIndicatorRule(adxIndicator, 40));
 
 
