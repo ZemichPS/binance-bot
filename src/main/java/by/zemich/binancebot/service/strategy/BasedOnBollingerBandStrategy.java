@@ -44,12 +44,6 @@ public class BasedOnBollingerBandStrategy implements IStrategy {
 
     private Strategy build() {
 
-        // ПРАВИЛО ВХОДА
-        // 1. Close price ниже MA
-        // 2. MA индикатор показывает уверенный рост
-        // 3. RSI в туннеле от 47 до 53
-        // 4 ВВ% <= 0.50
-        // 5. OBV индикатор показывает уверенный рост
 
 
         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
@@ -72,19 +66,10 @@ public class BasedOnBollingerBandStrategy implements IStrategy {
         ADXIndicator adxIndicator = new ADXIndicator(series, 14);
 
 
-//        Rule entryRule = new UnderIndicatorRule(lowPriceIndicator, bbm).and(new UnderIndicatorRule(bbm, closePrice))
-//
-//
-//                .and(new IsRisingRule(bbm, 14, 0.9))
-//                .and(new OverIndicatorRule(closePrice, lowPriceIndicator))
-//                .and(new InPipeRule(rsiIndicator, 58, 47))
-//                .and(new IsRisingRule(balanceVolumeIndicator, 20, 0.5))
-//                .and(new OverIndicatorRule(bbw, 0.02));
-
         Rule entryRule = new UnderIndicatorRule(lowPriceIndicator, bbm)
                 .and(new UnderIndicatorRule(bbm, closePrice))
                 .and(new OverIndicatorRule(bbw, 3.5))
-                .and(new IsRisingRule(bbm, 14, 0.8))
+                .and(new IsRisingRule(bbm, 14, 0.5))
                 .and(new OverIndicatorRule(closePrice, lowPriceIndicator))
                 .and(new InPipeRule(rsiIndicator, 58, 47))
                 .and(new IsRisingRule(balanceVolumeIndicator, 20, 0.5))

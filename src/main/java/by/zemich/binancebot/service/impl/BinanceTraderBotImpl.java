@@ -49,7 +49,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
     public void lookForEnterPosition() {
 
         KlineQueryDto queryDto = new KlineQueryDto();
-        queryDto.setLimit(1000);
+        queryDto.setLimit(500);
 
 
         stockMarketService.getSpotSymbols().get().stream()
@@ -65,7 +65,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
                         Strategy sureStrategy = strategyMap.get("BOLLINGER_BAND_OLDER_TIMEFRAME_STRATEGY").get(secondSeries);
                        // if (sureStrategy.shouldEnter(secondSeries.getEndIndex())) {
                         if (true) {
-                            tradeManager.buy(symbol);
+                            tradeManager.createBuyLimitOrder(symbol);
 
                         }
 

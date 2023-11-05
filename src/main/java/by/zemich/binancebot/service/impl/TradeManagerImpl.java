@@ -40,7 +40,7 @@ public class TradeManagerImpl implements ITradeManager {
 
 
     @Override
-    public OrderDto buy(String symbol) {
+    public OrderDto createBuyLimitOrder(String symbol) {
         BigDecimal askPrice = getPrice(symbol);
         BigDecimal quantity = tradeProperties.getDeposit().divide(askPrice, 0, RoundingMode.HALF_UP);
 
@@ -59,15 +59,15 @@ public class TradeManagerImpl implements ITradeManager {
 
         OrderDto orderDto = convertOrderEntityToDto(orderEntity);
 
-        EventDto event = eventCreate.get(EEventType.BUYING, orderDto);
+        EventDto event = eventCreate.get(EEventType.BUY_LIMIT_ORDER, orderDto);
         notifier.notify(event);
         return orderDto;
     }
 
     @Override
-    public OrderDto sell(Long orderId, EOrderType orderType) {
-        OrderEntity orderEntity = orderService.getByOrderId(orderId).orElseThrow(RuntimeException::new);
-        OrderDto oldOrderDto = convertOrderEntityToDto(orderEntity);
+    public OrderDto createSellLimitOrder(Long orderId) {
+
+        OrderDto oldOrderDto = getOrderById(orderId);
 
         String symbol = oldOrderDto.getSymbol();
         BigDecimal gain = percent(oldOrderDto.getPrice(), tradeProperties.getGain());
@@ -84,10 +84,38 @@ public class TradeManagerImpl implements ITradeManager {
 
         OrderEntity sellOrderEntity = orderService.create(newOrderRequest).orElseThrow(RuntimeException::new);
         OrderDto sellOrderDto = convertOrderEntityToDto(sellOrderEntity);
-        EventDto event = eventCreate.get(EEventType.SELLING, sellOrderDto);
+        EventDto event = eventCreate.get(EEventType.SELL_LIMIT_ORDER, sellOrderDto);
         notifier.notify(event);
 
         return sellOrderDto;
+    }
+
+    @Override
+    public OrderDto createStopLimitOrder(Long orderId) {
+
+        OrderDto oldOrderDto = getOrderById(orderId);
+
+        String symbol = oldOrderDto.getSymbol();
+        BigDecimal gain = percent(oldOrderDto.getPrice(), tradeProperties.getGain());
+
+        NewOrderRequestDto newOrderRequest = NewOrderRequestDto.builder()
+                .symbol(symbol)
+                .price(oldOrderDto.getPrice().add(gain))
+                .stopPrice(oldOrderDto.getPrice().add(gain))
+                .side(ESide.SELL)
+                .type(EOrderType.STOP_LOSS_LIMIT)
+                .quantity(oldOrderDto.getExecutedQty())
+                .timeInForce(ETimeInForce.IOC)
+                .newOrderRespType(ENewOrderRespType.FULL)
+                .build();
+
+        OrderEntity sellOrderEntity = orderService.create(newOrderRequest).orElseThrow(RuntimeException::new);
+        OrderDto stopLimitOrder = convertOrderEntityToDto(sellOrderEntity);
+        EventDto event = eventCreate.get(EEventType.STOP_LIMIT_ORDER, stopLimitOrder);
+        notifier.notify(event);
+
+
+        return stopLimitOrder;
     }
 
 
@@ -96,6 +124,11 @@ public class TradeManagerImpl implements ITradeManager {
         paramMap.put("symbol", symbol);
         OrderBookTickerDto tickerDto = stockMarketService.getOrderBookTicker(paramMap).orElseThrow(RuntimeException::new);
         return tickerDto.getAskPrice();
+    }
+
+    private OrderDto getOrderById(Long orderId){
+        OrderEntity orderEntity = orderService.getByOrderId(orderId).orElseThrow(RuntimeException::new);
+        return convertOrderEntityToDto(orderEntity);
     }
 
     private OrderDto convertOrderEntityToDto(OrderEntity entity) {
