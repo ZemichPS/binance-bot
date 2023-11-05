@@ -1,5 +1,6 @@
-package by.zemich.binancebot.DAO.entity;
+package by.zemich.binancebot.core.dto;
 
+import by.zemich.binancebot.DAO.entity.OrderEntity;
 import by.zemich.binancebot.core.enums.EBargainStatus;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -8,58 +9,34 @@ import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.util.Objects;
 import java.util.UUID;
 
-@Entity
-@Table(name = "bargain")
-public class BargainEntity {
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
+
+public class BargainDto {
+
     private UUID uuid;
 
-    @CreationTimestamp(source = SourceType.DB)
-    @Temporal(TemporalType.TIMESTAMP)
-    @Column(name = "dt_create")
     private Timestamp dtCreate;
-    @Version
-    @UpdateTimestamp(source = SourceType.DB)
-    @Temporal(TemporalType.TIMESTAMP)
-    @Column(name = "dt_update")
+
     private Timestamp dtUpdate;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "buy_order_uuid", referencedColumnName = "uuid")
-    private OrderEntity buyOrder;
+    private OrderDto buyOrder;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "sell_order_uuid", referencedColumnName = "uuid")
-    private OrderEntity sellOrder;
+    private OrderDto sellOrder;
 
-    @Column(name = "percentage_result")
     private BigDecimal percentageResult;
-    @Column(name = "finance_result")
+
     private BigDecimal financeResult;
 
-    @Column(name = "time_in_work")
     private Long timeInWork;
 
-    @Column(name = "finish_time")
     private Timestamp finishTime;
-    @Column(name = "status")
-    @Enumerated(EnumType.STRING)
+
     private EBargainStatus status;
 
 
-    public BargainEntity(UUID uuid,
-                         Timestamp dtUpdate,
-                         Timestamp dtCreate,
-                         OrderEntity buyOrder,
-                         OrderEntity sellOrder,
-                         BigDecimal percentageResult,
-                         BigDecimal financeResult,
-                         Long timeInWork,
-                         Timestamp finishTime,
-                         EBargainStatus status) {
+    public BargainDto(UUID uuid, Timestamp dtUpdate, Timestamp dtCreate, OrderDto buyOrder, OrderDto sellOrder, BigDecimal percentageResult, BigDecimal financeResult, Long timeInWork, Timestamp finishTime, EBargainStatus status) {
         this.uuid = uuid;
         this.dtUpdate = dtUpdate;
         this.dtCreate = dtCreate;
@@ -72,7 +49,7 @@ public class BargainEntity {
         this.status = status;
     }
 
-    public BargainEntity() {
+    public BargainDto() {
     }
 
     public UUID getUuid() {
@@ -99,19 +76,19 @@ public class BargainEntity {
         this.dtCreate = dtCreate;
     }
 
-    public OrderEntity getBuyOrder() {
+    public OrderDto getBuyOrder() {
         return buyOrder;
     }
 
-    public void setBuyOrder(OrderEntity buyOrder) {
+    public void setBuyOrder(OrderDto buyOrder) {
         this.buyOrder = buyOrder;
     }
 
-    public OrderEntity getSellOrder() {
+    public OrderDto getSellOrder() {
         return sellOrder;
     }
 
-    public void setSellOrder(OrderEntity sellOrder) {
+    public void setSellOrder(OrderDto sellOrder) {
         this.sellOrder = sellOrder;
     }
 
@@ -156,18 +133,17 @@ public class BargainEntity {
     }
 
     @Override
-    public String toString() {
-        return "BargainEntity{" +
-                "uuid=" + uuid +
-                ", dtCreate=" + dtCreate +
-                ", dtUpdate=" + dtUpdate +
-                ", buyOrder=" + buyOrder +
-                ", sellOrder=" + sellOrder +
-                ", percentageResult=" + percentageResult +
-                ", financeResult=" + financeResult +
-                ", timeInWork=" + timeInWork +
-                ", finishTime=" + finishTime +
-                ", status=" + status +
-                '}';
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        BargainDto that = (BargainDto) o;
+        return Objects.equals(uuid, that.uuid) && Objects.equals(dtCreate, that.dtCreate) && Objects.equals(dtUpdate, that.dtUpdate) && Objects.equals(buyOrder, that.buyOrder) && Objects.equals(sellOrder, that.sellOrder) && Objects.equals(percentageResult, that.percentageResult) && Objects.equals(financeResult, that.financeResult) && Objects.equals(timeInWork, that.timeInWork) && Objects.equals(finishTime, that.finishTime) && status == that.status;
     }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(uuid, dtCreate, dtUpdate, buyOrder, sellOrder, percentageResult, financeResult, timeInWork, finishTime, status);
+    }
+
+
 }

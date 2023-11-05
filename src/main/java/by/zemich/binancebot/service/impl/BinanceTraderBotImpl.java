@@ -1,7 +1,11 @@
 package by.zemich.binancebot.service.impl;
 
 
+import by.zemich.binancebot.DAO.entity.BargainEntity;
+import by.zemich.binancebot.core.dto.BargainDto;
 import by.zemich.binancebot.core.dto.KlineQueryDto;
+import by.zemich.binancebot.core.dto.OrderDto;
+import by.zemich.binancebot.core.enums.EBargainStatus;
 import by.zemich.binancebot.service.api.*;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Async;
@@ -14,6 +18,7 @@ import org.ta4j.core.Strategy;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
 
 
 @Component
@@ -26,15 +31,18 @@ public class BinanceTraderBotImpl implements ITraderBot {
     private final INotifier notifier;
     private final BinanceMarketServiceImpl binanceMarketService;
 
+    private final IBargainService bargainService;
+
     private final Map<String, IStrategy> strategyMap = new HashMap<>();
 
     public BinanceTraderBotImpl(IStockMarketService stockMarketService,
                                 ITradeManager tradeManager, INotifier notifier,
-                                BinanceMarketServiceImpl binanceMarketService) {
+                                BinanceMarketServiceImpl binanceMarketService, IBargainService bargainService) {
         this.stockMarketService = stockMarketService;
         this.tradeManager = tradeManager;
         this.notifier = notifier;
         this.binanceMarketService = binanceMarketService;
+        this.bargainService = bargainService;
     }
 
     @Override
@@ -65,8 +73,13 @@ public class BinanceTraderBotImpl implements ITraderBot {
                         Strategy sureStrategy = strategyMap.get("BOLLINGER_BAND_OLDER_TIMEFRAME_STRATEGY").get(secondSeries);
                        // if (sureStrategy.shouldEnter(secondSeries.getEndIndex())) {
                         if (true) {
-                            tradeManager.createBuyLimitOrder(symbol);
-
+                            OrderDto buyOrder = tradeManager.createBuyLimitOrder(symbol);
+                            BargainDto newBargain = new BargainDto();
+                            newBargain.setUuid(UUID.randomUUID());
+                            newBargain.setBuyOrder(buyOrder);
+                            newBargain.setStatus(EBargainStatus.OPEN);
+                            BargainEntity entity = bargainService.save(newBargain).get();
+                            System.out.println(entity);
                         }
 
                     }

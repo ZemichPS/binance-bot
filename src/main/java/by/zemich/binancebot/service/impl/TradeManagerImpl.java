@@ -29,7 +29,7 @@ public class TradeManagerImpl implements ITradeManager {
 
     public TradeManagerImpl(IStockMarketService stockMarketService,
                             IConverter converter,
-                            IOrderService orderService, INotifier notifier, IEventManager eventCreate, TradeProperties tradeProperties) {
+                            IOrderService orderService, INotifier notifier, IEventManager eventCreate, TradeProperties tradeProperties, IBargainService bargainService) {
         this.stockMarketService = stockMarketService;
         this.converter = converter;
         this.orderService = orderService;
@@ -58,7 +58,6 @@ public class TradeManagerImpl implements ITradeManager {
         OrderEntity orderEntity = orderService.create(newOrderRequest).orElseThrow(RuntimeException::new);
 
         OrderDto orderDto = convertOrderEntityToDto(orderEntity);
-
         EventDto event = eventCreate.get(EEventType.BUY_LIMIT_ORDER, orderDto);
         notifier.notify(event);
         return orderDto;
