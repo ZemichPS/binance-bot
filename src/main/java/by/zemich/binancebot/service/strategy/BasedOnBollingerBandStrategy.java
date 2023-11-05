@@ -27,12 +27,12 @@ public class BasedOnBollingerBandStrategy implements IStrategy {
 
 
     public Strategy get(BarSeries series) {
-        if (series == null) throw new RuntimeException("Bar series is required. Set not null series before");
         this.series = series;
         return build();
     }
 
     public Strategy get() {
+        if (series == null) throw new RuntimeException("Bar series is required. Set not null series before");
         return strategy;
     }
 

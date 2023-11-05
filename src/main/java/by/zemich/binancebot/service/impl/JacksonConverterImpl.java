@@ -18,6 +18,7 @@ public class JacksonConverterImpl implements IConverter {
     public Map<String, Object> dtoToMap(Object o) {
         Map<String, Object> map = mapper.convertValue(o, new TypeReference<Map<String, Object>>() {
         });
+
         return map;
     }
 }

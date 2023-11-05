@@ -1,10 +1,10 @@
-binance:
-  apiKey: 6lMxokgpRal6ZUHE0mYMohVZlrhxWjBjNkhfbRLMxpIc5iOndDxI5kcNAIywvW0U
-  secretKey: X9Yc0NODekDnC2KKXJn0jqHJ6QnM3lX48BJevWqArMNjZ2ApCxuIhy2RlWkOrYM3
-
 #binance:
-  #apiKey: 5HuOTl8uyFXdbXGmLfQjxam8Cmsd76Q6Fsaz5aCoHXpBBFQvFnDDnsCm9129ceFb
-  #secretKey: MssC9TgPjLzYOz0Xf4lRq3tF8REALWtX9vun13DligrVdGHthIeDk74y1iZlko3E
+  #apiKey: 6lMxokgpRal6ZUHE0mYMohVZlrhxWjBjNkhfbRLMxpIc5iOndDxI5kcNAIywvW0U
+  #secretKey: X9Yc0NODekDnC2KKXJn0jqHJ6QnM3lX48BJevWqArMNjZ2ApCxuIhy2RlWkOrYM3
+
+binance:
+  apiKey: 5HuOTl8uyFXdbXGmLfQjxam8Cmsd76Q6Fsaz5aCoHXpBBFQvFnDDnsCm9129ceFb
+  secretKey: MssC9TgPjLzYOz0Xf4lRq3tF8REALWtX9vun13DligrVdGHthIeDk74y1iZlko3E
 
 
 telegram:

@@ -8,6 +8,7 @@ import by.zemich.binancebot.service.api.IStockMarketService;
 
 import by.zemich.binancebot.core.dto.TickerSymbolShortQuery;
 
+import by.zemich.binancebot.service.api.ITradeManager;
 import by.zemich.binancebot.service.strategy.BasedOnBollingerBandStrategy;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -40,11 +41,14 @@ public class SpotClientController {
     private final IAccountService accountService;
     private final BasedOnBollingerBandStrategy strategyManager;
 
-    public SpotClientController(IStockMarketService stockMarketService, IOrderService orderService, IAccountService accountService, BasedOnBollingerBandStrategy strategyManager) {
+    private final ITradeManager tradeManager;
+
+    public SpotClientController(IStockMarketService stockMarketService, IOrderService orderService, IAccountService accountService, BasedOnBollingerBandStrategy strategyManager, ITradeManager tradeManager) {
         this.stockMarketService = stockMarketService;
         this.orderService = orderService;
         this.accountService = accountService;
         this.strategyManager = strategyManager;
+        this.tradeManager = tradeManager;
     }
 
 
@@ -63,6 +67,14 @@ public class SpotClientController {
         query.setTimestamp(new Date().getTime());
 
         return ResponseEntity.ok(accountService.getInformation(query).get());
+    }
+
+
+    @GetMapping("/buy")
+    private ResponseEntity<OrderDto> buy(@RequestParam String symbol) {
+        OrderDto order = tradeManager.buy(symbol);
+
+        return ResponseEntity.ok(order);
     }
 
     @GetMapping("/rule_test")

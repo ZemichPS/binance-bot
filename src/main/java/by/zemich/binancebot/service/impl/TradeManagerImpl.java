@@ -1,6 +1,7 @@
 package by.zemich.binancebot.service.impl;
 
 import by.zemich.binancebot.DAO.entity.OrderEntity;
+import by.zemich.binancebot.config.properties.TradeProperties;
 import by.zemich.binancebot.core.dto.*;
 import by.zemich.binancebot.core.enums.EEventType;
 import by.zemich.binancebot.core.enums.EOrderType;
@@ -9,10 +10,11 @@ import by.zemich.binancebot.core.enums.ETimeInForce;
 import by.zemich.binancebot.service.api.*;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
-import org.ta4j.core.Rule;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 public class TradeManagerImpl implements ITradeManager {
@@ -22,46 +24,29 @@ public class TradeManagerImpl implements ITradeManager {
     private final IOrderService orderService;
     private final INotifier notifier;
     private final IEventManager eventCreate;
+    private final TradeProperties tradeProperties;
 
-    private final BigDecimal deposit = new BigDecimal("20");
 
     public TradeManagerImpl(IStockMarketService stockMarketService,
                             IConverter converter,
-                            IOrderService orderService, INotifier notifier, IEventManager eventCreate) {
+                            IOrderService orderService, INotifier notifier, IEventManager eventCreate, TradeProperties tradeProperties) {
         this.stockMarketService = stockMarketService;
         this.converter = converter;
         this.orderService = orderService;
         this.notifier = notifier;
         this.eventCreate = eventCreate;
+        this.tradeProperties = tradeProperties;
     }
 
 
     @Override
     public OrderDto buy(String symbol) {
-
-        BigDecimal amountForTrade = new BigDecimal("20");
-        NewOrderRequestDto orderRequest = createLimitOrder(symbol, amountForTrade);
-        OrderEntity orderEntity = orderService.create(orderRequest).orElseThrow(RuntimeException::new);
-
-        OrderDto orderDto = new OrderDto();
-        BeanUtils.copyProperties(orderEntity, orderDto);
-
-        EventDto event = eventCreate.get(EEventType.BUYING, orderDto);
-        notifier.notify(event);
-        return orderDto;
-    }
-
-    @Override
-    public OrderDto sell(OrderDto orderDto, Rule exitRule) {
-        return null;
-    }
-
-    private NewOrderRequestDto createLimitOrder(String symbol, BigDecimal usdtAmount) {
         BigDecimal askPrice = getPrice(symbol);
-        BigDecimal quantity = usdtAmount.divide(askPrice).setScale(2, RoundingMode.HALF_UP);
+        BigDecimal quantity = tradeProperties.getDeposit().divide(askPrice, 0, RoundingMode.HALF_UP);
 
-        NewOrderRequestDto newOrder = NewOrderRequestDto.builder()
+        NewOrderRequestDto newOrderRequest = NewOrderRequestDto.builder()
                 .symbol(symbol)
+                // TODO заменить на наиболее выгодный вариант
                 .price(askPrice)
                 .side(ESide.BUY)
                 .type(EOrderType.LIMIT)
@@ -70,11 +55,56 @@ public class TradeManagerImpl implements ITradeManager {
                 .newOrderRespType(ENewOrderRespType.FULL)
                 .build();
 
-        return newOrder;
+        OrderEntity orderEntity = orderService.create(newOrderRequest).orElseThrow(RuntimeException::new);
+
+        OrderDto orderDto = convertOrderEntityToDto(orderEntity);
+
+        EventDto event = eventCreate.get(EEventType.BUYING, orderDto);
+        notifier.notify(event);
+        return orderDto;
     }
 
+    @Override
+    public OrderDto sell(Long orderId, EOrderType orderType) {
+        OrderEntity orderEntity = orderService.getByOrderId(orderId).orElseThrow(RuntimeException::new);
+        OrderDto oldOrderDto = convertOrderEntityToDto(orderEntity);
+
+        String symbol = oldOrderDto.getSymbol();
+        BigDecimal gain = percent(oldOrderDto.getPrice(), tradeProperties.getGain());
+
+        NewOrderRequestDto newOrderRequest = NewOrderRequestDto.builder()
+                .symbol(symbol)
+                .price(oldOrderDto.getPrice().add(gain))
+                .side(ESide.SELL)
+                .type(EOrderType.LIMIT)
+                .quantity(oldOrderDto.getExecutedQty())
+                .timeInForce(ETimeInForce.IOC)
+                .newOrderRespType(ENewOrderRespType.FULL)
+                .build();
+
+        OrderEntity sellOrderEntity = orderService.create(newOrderRequest).orElseThrow(RuntimeException::new);
+        OrderDto sellOrderDto = convertOrderEntityToDto(sellOrderEntity);
+        EventDto event = eventCreate.get(EEventType.SELLING, sellOrderDto);
+        notifier.notify(event);
+
+        return sellOrderDto;
+    }
+
+
     private BigDecimal getPrice(String symbol) {
-        OrderBookTickerDto tickerDto = stockMarketService.getOrderBookTicker(converter.dtoToMap(symbol)).orElseThrow(RuntimeException::new);
+        Map<String, Object> paramMap = new HashMap<>();
+        paramMap.put("symbol", symbol);
+        OrderBookTickerDto tickerDto = stockMarketService.getOrderBookTicker(paramMap).orElseThrow(RuntimeException::new);
         return tickerDto.getAskPrice();
+    }
+
+    private OrderDto convertOrderEntityToDto(OrderEntity entity) {
+        OrderDto orderDto = new OrderDto();
+        BeanUtils.copyProperties(entity, orderDto);
+        return orderDto;
+    }
+
+    private BigDecimal percent(BigDecimal value, BigDecimal percent) {
+        return value.multiply(percent).divide(new BigDecimal(100), RoundingMode.DOWN);
     }
 }
