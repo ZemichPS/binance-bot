@@ -12,7 +12,7 @@ import java.text.MessageFormat;
 public class EventManagerImpl implements IEventManager {
     @Override
     public EventDto get(EEventType eventType, OrderDto order) {
-        EventDto eventDto = new EventDto();
+        EventDto eventDto = EventDto.builder().build();
         eventDto.setEventType(eventType);
         String eventText = MessageFormat.format("""
                         id: {0}

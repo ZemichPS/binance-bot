@@ -9,6 +9,7 @@ import java.util.Optional;
 
 public interface IStockMarketService {
     Optional<List<BarDto>> getBars(KlineQueryDto klineQuery);
+    Optional<QueryOrderResponseDto> getOrder(QueryOrderDto queryOrder);
     Optional<BarSeries> getBarSeries(KlineQueryDto klineQuery);
     Optional<ExchangeInfoResponseDto> getExchangeInfo(ExchangeInfoQueryDto queryDto);
     Optional<List<SymbolShortDto>> getAllSymbols(TickerSymbolShortQuery query);

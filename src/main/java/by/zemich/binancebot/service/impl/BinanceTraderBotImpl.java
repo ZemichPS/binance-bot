@@ -8,6 +8,7 @@ import by.zemich.binancebot.core.dto.KlineQueryDto;
 import by.zemich.binancebot.core.dto.OrderDto;
 import by.zemich.binancebot.core.enums.EBargainStatus;
 import by.zemich.binancebot.core.enums.EEventType;
+import by.zemich.binancebot.core.enums.ESide;
 import by.zemich.binancebot.service.api.*;
 import com.binance.connector.client.exceptions.BinanceClientException;
 import lombok.extern.log4j.Log4j2;
@@ -52,9 +53,10 @@ public class BinanceTraderBotImpl implements ITraderBot {
     }
 
 
-    @Override
+
     @Scheduled(fixedDelay = 40_000, initialDelay = 1_000)
     @Async
+    @Override
     public void lookForEnterPosition() {
 
         KlineQueryDto queryDto = new KlineQueryDto();
@@ -72,28 +74,28 @@ public class BinanceTraderBotImpl implements ITraderBot {
                         queryDto.setInterval("1h");
                         BarSeries secondSeries = stockMarketService.getBarSeries(queryDto).orElse(null);
                         Strategy sureStrategy = strategyMap.get("BOLLINGER_BAND_OLDER_TIMEFRAME_STRATEGY").get(secondSeries);
-                       // if (sureStrategy.shouldEnter(secondSeries.getEndIndex())) {
+                        // if (sureStrategy.shouldEnter(secondSeries.getEndIndex())) {
                         if (true) {
-                           try {
-                            OrderDto buyOrder = tradeManager.createBuyLimitOrderByBidPrice(symbol);
-                            BargainDto newBargain = new BargainDto();
-                            newBargain.setUuid(UUID.randomUUID());
-                            newBargain.setStatus(EBargainStatus.OPEN);
+                            try {
+                                OrderDto buyOrder = tradeManager.createBuyLimitOrderByBidPrice(symbol);
+                                BargainDto newBargain = new BargainDto();
+                                newBargain.setUuid(UUID.randomUUID());
+                                newBargain.setStatus(EBargainStatus.OPEN);
 
-                            List<OrderDto> orders = new ArrayList<>();
-                            orders.add(buyOrder);
-                            newBargain.setOrders(orders);
-                            BargainEntity entity = bargainService.create(newBargain).get();
+                                newBargain.setOrders(List.of(buyOrder));
+                                BargainEntity newBargainEntity = bargainService.create(newBargain).get();
 
-                            EventDto event = new EventDto();
-                            event.setEventType(EEventType.BUY_LIMIT_ORDER);
-                            event.setText(entity.toString());
-                            notifier.notify(event); }
-                           catch (BinanceClientException binanceClientException){
-                               System.out.println(
-                                       binanceClientException.getErrMsg()
-                               );
-                           }
+                                EventDto event = EventDto.builder()
+                                        .text(newBargainEntity.toString())
+                                        .eventType(EEventType.BUY_LIMIT_ORDER)
+                                        .build();
+
+                                notifier.notify(event);
+                            } catch (BinanceClientException binanceClientException) {
+                                System.out.println(
+                                        binanceClientException.getErrMsg()
+                                );
+                            }
                         }
 
                     }
@@ -101,13 +103,18 @@ public class BinanceTraderBotImpl implements ITraderBot {
                 });
     }
 
+    @Scheduled(fixedDelay = 20_000, initialDelay = 1_000)
+    @Async
     @Override
-    public void checkOrderStatus() {
-
+    public void checkBargain() {
+        bargainService.updateOpensOrderStatus().get()
+                .forEach(bargain->{
+                    bargain.getOrders().stream()
+                            .findFirst()
+                            .filter(orderEntity -> orderEntity.getSide().equals(ESide.BUY))
+                            .ifPresent(value-> tradeManager.createSellLimitOrder(value.getOrderId()));
+                });
     }
-
-
-
 
 
 }

@@ -70,6 +70,22 @@ public class OrderServiceImpl implements IOrderService {
     }
 
     @Override
+    public Optional<OrderEntity> updateStatus(OrderEntity orderEntity) {
+
+        QueryOrderResponseDto queryOrderResponse = stockMarketService.getOrder(QueryOrderDto.builder()
+                .symbol(orderEntity.getSymbol())
+                .orderId(orderEntity.getOrderId())
+                .build()).orElseThrow(RuntimeException::new);
+
+         if(!orderEntity.getStatus().equals(queryOrderResponse.getStatus())){
+             orderEntity.setStatus(queryOrderResponse.getStatus());
+             return Optional.of(orderDao.save(orderEntity));
+         }
+
+        return Optional.empty();
+    }
+
+    @Override
     public Optional<QueryOrderResponseDto> get(QueryOrderDto neededOrder) {
         return Optional.empty();
     }
@@ -99,6 +115,14 @@ public class OrderServiceImpl implements IOrderService {
     }
 
     @Override
+    public Optional<OrderEntity> updateByUuid(UUID uuid) {
+        OrderEntity orderEntity = orderDao.findByUuid(uuid).orElseThrow(NoSuchEntityException::new);
+        //stockMarketService.
+
+        return Optional.empty();
+    }
+
+    @Override
     public Optional<OrderEntity> getByOrderId(Long orderId) {
         OrderEntity entity = orderDao.findByOrderId(orderId).orElseThrow(NoSuchEntityException::new);
         return Optional.of(entity);
@@ -117,7 +141,7 @@ public class OrderServiceImpl implements IOrderService {
     }
 
     @Override
-    public Optional<List<OrderEntity>> getOpened() {
+    public Optional<List<OrderEntity>> getAllOpened() {
         List<OrderEntity> orderEntityList = orderDao.findByStatus(EOrderStatus.FILLED).orElseThrow(NoSuchEntityException::new);
         return Optional.of(orderEntityList);
     }

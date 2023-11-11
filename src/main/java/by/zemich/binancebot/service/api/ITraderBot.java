@@ -6,7 +6,7 @@ public interface ITraderBot {
 
     void registerStrategy(String name, IStrategy strategyManager);
 
-    void checkOrderStatus();
+    void checkBargain();
 
 
 

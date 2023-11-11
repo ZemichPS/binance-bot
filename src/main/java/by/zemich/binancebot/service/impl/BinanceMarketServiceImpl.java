@@ -41,6 +41,17 @@ public class BinanceMarketServiceImpl implements IStockMarketService {
     }
 
     @Override
+    public Optional<QueryOrderResponseDto> getOrder(QueryOrderDto queryOrder) {
+        String result = spotClient.createTrade().getOrders(converter.dtoToMap(queryOrder));
+        try {
+            QueryOrderResponseDto queryOrderResponse = objectMapper.readValue(result, QueryOrderResponseDto.class);
+            return Optional.of(queryOrderResponse);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    @Override
     public Optional<BarSeries> getBarSeries(KlineQueryDto klineQuery) {
 
         String result = spotClient.createMarket().klines(converter.dtoToMap(klineQuery));

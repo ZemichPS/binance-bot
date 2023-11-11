@@ -12,6 +12,7 @@ public interface IOrderService {
 
     Optional<OrderEntity> cancel(CancelOrderRequestDto cancelOrderRequestDto);
     Optional<OrderEntity> update(CurrentOpenOrderResponseDto orderDto);
+    Optional<OrderEntity> updateStatus(OrderEntity orderEntity);
 
     Optional<QueryOrderResponseDto> get(QueryOrderDto neededOrder);
 
@@ -22,6 +23,7 @@ public interface IOrderService {
     Optional<List<OrderEntity>> getAll();
 
     Optional<List<OrderEntity>> getBySymbol(String symbol);
+    Optional<OrderEntity> updateByUuid(UUID uuid);
 
     Optional<OrderEntity> getByOrderId(Long orderId);
 
@@ -29,7 +31,7 @@ public interface IOrderService {
 
     Optional<OrderEntity> getByUuid(UUID uuid);
 
-    Optional<List<OrderEntity>> getOpened();
+    Optional<List<OrderEntity>> getAllOpened();
 
 
 

@@ -10,6 +10,7 @@ import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -20,10 +21,13 @@ public class BargainServiceImpl implements IBargainService {
     private final IBargainDao bargainDao;
     private final ConversionService conversionService;
 
+    private final IOrderService orderService;
 
-    public BargainServiceImpl(IBargainDao bargainDao, ConversionService conversionService) {
+
+    public BargainServiceImpl(IBargainDao bargainDao, ConversionService conversionService, IOrderService orderService) {
         this.bargainDao = bargainDao;
         this.conversionService = conversionService;
+        this.orderService = orderService;
     }
 
     @Override
@@ -47,6 +51,23 @@ public class BargainServiceImpl implements IBargainService {
     @Transactional(readOnly = true)
     public Optional<List<BargainEntity>> getAll() {
         List<BargainEntity> bargainEntities = bargainDao.findAll();
+        return Optional.of(bargainEntities);
+    }
+
+    @Override
+    public Optional<List<BargainEntity>> updateOpensOrderStatus() {
+        List<BargainEntity> bargainEntities = new ArrayList<>();
+
+        bargainDao.findAllByStatus(EBargainStatus.OPEN).forEach(
+                bargainEntity -> {
+                    bargainEntity.getOrders().forEach(orderEntity -> {
+                                if(orderService.updateStatus(orderEntity).isPresent()){
+                                    bargainEntities.add(bargainEntity);
+                                }
+                            }
+                    );
+                }
+        );
         return Optional.of(bargainEntities);
     }
 
