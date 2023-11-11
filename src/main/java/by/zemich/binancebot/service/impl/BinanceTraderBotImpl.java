@@ -3,10 +3,13 @@ package by.zemich.binancebot.service.impl;
 
 import by.zemich.binancebot.DAO.entity.BargainEntity;
 import by.zemich.binancebot.core.dto.BargainDto;
+import by.zemich.binancebot.core.dto.EventDto;
 import by.zemich.binancebot.core.dto.KlineQueryDto;
 import by.zemich.binancebot.core.dto.OrderDto;
 import by.zemich.binancebot.core.enums.EBargainStatus;
+import by.zemich.binancebot.core.enums.EEventType;
 import by.zemich.binancebot.service.api.*;
+import com.binance.connector.client.exceptions.BinanceClientException;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableScheduling;
@@ -16,9 +19,7 @@ import org.ta4j.core.BarSeries;
 import org.ta4j.core.Strategy;
 
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 
 
 @Component
@@ -73,19 +74,40 @@ public class BinanceTraderBotImpl implements ITraderBot {
                         Strategy sureStrategy = strategyMap.get("BOLLINGER_BAND_OLDER_TIMEFRAME_STRATEGY").get(secondSeries);
                        // if (sureStrategy.shouldEnter(secondSeries.getEndIndex())) {
                         if (true) {
-                            OrderDto buyOrder = tradeManager.createBuyLimitOrder(symbol);
+                           try {
+                            OrderDto buyOrder = tradeManager.createBuyLimitOrderByBidPrice(symbol);
                             BargainDto newBargain = new BargainDto();
                             newBargain.setUuid(UUID.randomUUID());
-                            newBargain.setBuyOrder(buyOrder);
                             newBargain.setStatus(EBargainStatus.OPEN);
-                            BargainEntity entity = bargainService.save(newBargain).get();
-                            System.out.println(entity);
+
+                            List<OrderDto> orders = new ArrayList<>();
+                            orders.add(buyOrder);
+                            newBargain.setOrders(orders);
+                            BargainEntity entity = bargainService.create(newBargain).get();
+
+                            EventDto event = new EventDto();
+                            event.setEventType(EEventType.BUY_LIMIT_ORDER);
+                            event.setText(entity.toString());
+                            notifier.notify(event); }
+                           catch (BinanceClientException binanceClientException){
+                               System.out.println(
+                                       binanceClientException.getErrMsg()
+                               );
+                           }
                         }
 
                     }
 
                 });
     }
+
+    @Override
+    public void checkOrderStatus() {
+
+    }
+
+
+
 
 
 }

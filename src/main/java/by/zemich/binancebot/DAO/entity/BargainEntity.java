@@ -2,19 +2,20 @@ package by.zemich.binancebot.DAO.entity;
 
 import by.zemich.binancebot.core.enums.EBargainStatus;
 import jakarta.persistence.*;
+import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.SourceType;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.util.List;
 import java.util.UUID;
 
 @Entity
 @Table(name = "bargain")
 public class BargainEntity {
     @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID uuid;
 
     @CreationTimestamp(source = SourceType.DB)
@@ -27,13 +28,13 @@ public class BargainEntity {
     @Column(name = "dt_update")
     private Timestamp dtUpdate;
 
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "buy_order_uuid", referencedColumnName = "uuid")
-    private OrderEntity buyOrder;
-
-    @OneToOne(cascade = CascadeType.ALL)
-    @JoinColumn(name = "sell_order_uuid", referencedColumnName = "uuid")
-    private OrderEntity sellOrder;
+    @OneToMany(targetEntity = OrderEntity.class,
+            cascade = CascadeType.REFRESH,
+            fetch = FetchType.LAZY,
+            mappedBy = "bargain",
+            orphanRemoval = true)
+    //@JoinColumn(name = "uuid")
+    private List<OrderEntity> orders;
 
     @Column(name = "percentage_result")
     private BigDecimal percentageResult;
@@ -53,8 +54,6 @@ public class BargainEntity {
     public BargainEntity(UUID uuid,
                          Timestamp dtUpdate,
                          Timestamp dtCreate,
-                         OrderEntity buyOrder,
-                         OrderEntity sellOrder,
                          BigDecimal percentageResult,
                          BigDecimal financeResult,
                          Long timeInWork,
@@ -63,8 +62,6 @@ public class BargainEntity {
         this.uuid = uuid;
         this.dtUpdate = dtUpdate;
         this.dtCreate = dtCreate;
-        this.buyOrder = buyOrder;
-        this.sellOrder = sellOrder;
         this.percentageResult = percentageResult;
         this.financeResult = financeResult;
         this.timeInWork = timeInWork;
@@ -99,20 +96,12 @@ public class BargainEntity {
         this.dtCreate = dtCreate;
     }
 
-    public OrderEntity getBuyOrder() {
-        return buyOrder;
+    public List<OrderEntity> getOrders() {
+        return orders;
     }
 
-    public void setBuyOrder(OrderEntity buyOrder) {
-        this.buyOrder = buyOrder;
-    }
-
-    public OrderEntity getSellOrder() {
-        return sellOrder;
-    }
-
-    public void setSellOrder(OrderEntity sellOrder) {
-        this.sellOrder = sellOrder;
+    public void setOrders(List<OrderEntity> orders) {
+        this.orders = orders;
     }
 
     public BigDecimal getPercentageResult() {
@@ -161,8 +150,7 @@ public class BargainEntity {
                 "uuid=" + uuid +
                 ", dtCreate=" + dtCreate +
                 ", dtUpdate=" + dtUpdate +
-                ", buyOrder=" + buyOrder +
-                ", sellOrder=" + sellOrder +
+                ", orders=" + orders +
                 ", percentageResult=" + percentageResult +
                 ", financeResult=" + financeResult +
                 ", timeInWork=" + timeInWork +

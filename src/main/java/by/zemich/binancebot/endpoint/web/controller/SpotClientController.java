@@ -72,7 +72,7 @@ public class SpotClientController {
 
     @GetMapping("/buy")
     private ResponseEntity<OrderDto> buy(@RequestParam String symbol) {
-        OrderDto order = tradeManager.createBuyLimitOrder(symbol);
+        OrderDto order = tradeManager.createBuyLimitOrderByAskPrice(symbol);
 
         return ResponseEntity.ok(order);
     }

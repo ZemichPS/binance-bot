@@ -18,6 +18,7 @@ import java.util.UUID;
 public class OrderEntity {
 
     @Id
+    @Column(name = "uuid")
     @GeneratedValue(strategy = GenerationType.UUID)
     private UUID uuid;
     @Version
@@ -30,7 +31,7 @@ public class OrderEntity {
     @Column(name = "dt_create")
     private Timestamp dtCreate;
     private String symbol;
-    @Column(name = "order_id")
+    @Column(name = "binance_order_id")
     private Long orderId;
     @Column(name = "order_list_id")
     private Long orderListId;
@@ -63,7 +64,8 @@ public class OrderEntity {
     @Column(name = "self_trade_prevention_mode")
     private String selfTradePreventionMode;
 
-
+    @ManyToOne(targetEntity = BargainEntity.class, fetch = FetchType.LAZY, cascade = CascadeType.REFRESH)
+    private BargainEntity bargain;
 
     //  private List<FillsDto> fills;
 
@@ -251,5 +253,40 @@ public class OrderEntity {
 
     public void setSelfTradePreventionMode(String selfTradePreventionMode) {
         this.selfTradePreventionMode = selfTradePreventionMode;
+    }
+
+    public BargainEntity getBargain() {
+        return bargain;
+    }
+
+    public void setBargain(BargainEntity bargain) {
+        this.bargain = bargain;
+    }
+
+    @Override
+    public String toString() {
+        return "OrderEntity{" +
+                "uuid=" + uuid +
+                ", dtUpdate=" + dtUpdate +
+                ", dtCreate=" + dtCreate +
+                ", symbol='" + symbol + '\'' +
+                ", orderId=" + orderId +
+                ", orderListId=" + orderListId +
+                ", clientOrderId='" + clientOrderId + '\'' +
+                ", transactTime=" + transactTime +
+                ", price=" + price +
+                ", stopPrice=" + stopPrice +
+                ", origQty=" + origQty +
+                ", executedQty=" + executedQty +
+                ", cummulativeQuoteQty=" + cummulativeQuoteQty +
+                ", status=" + status +
+                ", timeInForce=" + timeInForce +
+                ", type=" + type +
+                ", side=" + side +
+                ", isWorking=" + isWorking +
+                ", workingTime=" + workingTime +
+                ", selfTradePreventionMode='" + selfTradePreventionMode + '\'' +
+                ", bargain=" + bargain +
+                '}';
     }
 }

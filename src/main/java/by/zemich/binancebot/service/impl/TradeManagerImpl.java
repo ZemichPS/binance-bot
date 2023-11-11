@@ -26,6 +26,7 @@ public class TradeManagerImpl implements ITradeManager {
     private final IEventManager eventCreate;
     private final TradeProperties tradeProperties;
 
+    private final IBargainService bargainService;
 
     public TradeManagerImpl(IStockMarketService stockMarketService,
                             IConverter converter,
@@ -36,22 +37,45 @@ public class TradeManagerImpl implements ITradeManager {
         this.notifier = notifier;
         this.eventCreate = eventCreate;
         this.tradeProperties = tradeProperties;
+        this.bargainService = bargainService;
     }
 
 
     @Override
-    public OrderDto createBuyLimitOrder(String symbol) {
-        BigDecimal askPrice = getPrice(symbol);
+    public OrderDto createBuyLimitOrderByAskPrice(String symbol) {
+        BigDecimal askPrice = getAskPrice(symbol);
         BigDecimal quantity = tradeProperties.getDeposit().divide(askPrice, 0, RoundingMode.HALF_UP);
 
         NewOrderRequestDto newOrderRequest = NewOrderRequestDto.builder()
                 .symbol(symbol)
-                // TODO заменить на наиболее выгодный вариант
                 .price(askPrice)
                 .side(ESide.BUY)
                 .type(EOrderType.LIMIT)
                 .quantity(quantity)
                 .timeInForce(ETimeInForce.IOC)
+                .newOrderRespType(ENewOrderRespType.FULL)
+                .build();
+
+        OrderEntity orderEntity = orderService.create(newOrderRequest).orElseThrow(RuntimeException::new);
+
+        OrderDto orderDto = convertOrderEntityToDto(orderEntity);
+        EventDto event = eventCreate.get(EEventType.BUY_LIMIT_ORDER, orderDto);
+        notifier.notify(event);
+        return orderDto;
+    }
+
+
+    public OrderDto createBuyLimitOrderByBidPrice(String symbol) {
+        BigDecimal bidPrice = getBidPrice(symbol);
+        BigDecimal quantity = tradeProperties.getDeposit().divide(bidPrice, 0, RoundingMode.HALF_UP);
+
+        NewOrderRequestDto newOrderRequest = NewOrderRequestDto.builder()
+                .symbol(symbol)
+                .price(bidPrice)
+                .side(ESide.BUY)
+                .type(EOrderType.LIMIT)
+                .quantity(quantity)
+                .timeInForce(ETimeInForce.GTC)
                 .newOrderRespType(ENewOrderRespType.FULL)
                 .build();
 
@@ -77,12 +101,13 @@ public class TradeManagerImpl implements ITradeManager {
                 .side(ESide.SELL)
                 .type(EOrderType.LIMIT)
                 .quantity(oldOrderDto.getExecutedQty())
-                .timeInForce(ETimeInForce.IOC)
+                .timeInForce(ETimeInForce.GTC)
                 .newOrderRespType(ENewOrderRespType.FULL)
                 .build();
 
         OrderEntity sellOrderEntity = orderService.create(newOrderRequest).orElseThrow(RuntimeException::new);
         OrderDto sellOrderDto = convertOrderEntityToDto(sellOrderEntity);
+
         EventDto event = eventCreate.get(EEventType.SELL_LIMIT_ORDER, sellOrderDto);
         notifier.notify(event);
 
@@ -110,6 +135,7 @@ public class TradeManagerImpl implements ITradeManager {
 
         OrderEntity sellOrderEntity = orderService.create(newOrderRequest).orElseThrow(RuntimeException::new);
         OrderDto stopLimitOrder = convertOrderEntityToDto(sellOrderEntity);
+
         EventDto event = eventCreate.get(EEventType.STOP_LIMIT_ORDER, stopLimitOrder);
         notifier.notify(event);
 
@@ -118,14 +144,21 @@ public class TradeManagerImpl implements ITradeManager {
     }
 
 
-    private BigDecimal getPrice(String symbol) {
+    private BigDecimal getAskPrice(String symbol) {
         Map<String, Object> paramMap = new HashMap<>();
         paramMap.put("symbol", symbol);
         OrderBookTickerDto tickerDto = stockMarketService.getOrderBookTicker(paramMap).orElseThrow(RuntimeException::new);
         return tickerDto.getAskPrice();
     }
 
-    private OrderDto getOrderById(Long orderId){
+    private BigDecimal getBidPrice(String symbol) {
+        Map<String, Object> paramMap = new HashMap<>();
+        paramMap.put("symbol", symbol);
+        OrderBookTickerDto tickerDto = stockMarketService.getOrderBookTicker(paramMap).orElseThrow(RuntimeException::new);
+        return tickerDto.getBidPrice();
+    }
+
+    private OrderDto getOrderById(Long orderId) {
         OrderEntity orderEntity = orderService.getByOrderId(orderId).orElseThrow(RuntimeException::new);
         return convertOrderEntityToDto(orderEntity);
     }

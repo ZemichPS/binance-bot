@@ -5,7 +5,7 @@ import by.zemich.binancebot.DAO.entity.BargainEntity;
 import by.zemich.binancebot.core.dto.BargainDto;
 import by.zemich.binancebot.core.enums.EBargainStatus;
 import by.zemich.binancebot.service.api.IBargainService;
-import org.springframework.beans.BeanUtils;
+import by.zemich.binancebot.service.api.IOrderService;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -28,16 +28,19 @@ public class BargainServiceImpl implements IBargainService {
 
     @Override
     @Transactional
-    public Optional<BargainEntity> save(BargainDto bargainDto) {
-        BargainEntity bargainEntity = conversionService.convert(bargainDto, BargainEntity.class);
-        return Optional.of(bargainEntity);
+    public Optional<BargainEntity> create(BargainDto bargainDto) {
+
+        BargainEntity newBargainEntity = conversionService.convert(bargainDto, BargainEntity.class);
+        BargainEntity savedBargainEntity = bargainDao.save(newBargainEntity);
+        return Optional.of(savedBargainEntity);
     }
 
     @Override
     @Transactional
     public Optional<BargainEntity> update(BargainDto bargainDto) {
-        BargainEntity bargainEntity = conversionService.convert(bargainDto, BargainEntity.class);
-        return Optional.of(bargainEntity);
+        BargainEntity newBargainEntity = conversionService.convert(bargainDto, BargainEntity.class);
+        BargainEntity savedBargainEntity = bargainDao.save(newBargainEntity);
+        return Optional.of(savedBargainEntity);
     }
 
     @Override
