@@ -74,8 +74,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
                         queryDto.setInterval("1h");
                         BarSeries secondSeries = stockMarketService.getBarSeries(queryDto).orElse(null);
                         Strategy sureStrategy = strategyMap.get("BOLLINGER_BAND_OLDER_TIMEFRAME_STRATEGY").get(secondSeries);
-                        // if (sureStrategy.shouldEnter(secondSeries.getEndIndex())) {
-                        if (true) {
+                         if (sureStrategy.shouldEnter(secondSeries.getEndIndex())) {
                             try {
                                 OrderDto buyOrder = tradeManager.createBuyLimitOrderByBidPrice(symbol);
                                 BargainDto newBargain = new BargainDto();
