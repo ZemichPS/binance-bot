@@ -2,6 +2,7 @@ package by.zemich.binancebot.service.api;
 
 import by.zemich.binancebot.DAO.entity.OrderEntity;
 import by.zemich.binancebot.core.dto.*;
+import by.zemich.binancebot.core.enums.EOrderStatus;
 
 import java.util.List;
 import java.util.Optional;
@@ -12,7 +13,7 @@ public interface IOrderService {
 
     Optional<OrderEntity> cancel(CancelOrderRequestDto cancelOrderRequestDto);
     Optional<OrderEntity> update(CurrentOpenOrderResponseDto orderDto);
-    Optional<OrderEntity> updateStatus(OrderDto orderDto);
+    Optional<OrderEntity> updateStatus(OrderDto orderDto, EOrderStatus conditionalStatus);
 
     Optional<QueryOrderResponseDto> get(QueryOrderDto neededOrder);
 

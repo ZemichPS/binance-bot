@@ -1,4 +1,4 @@
-package by.zemich.binancebot.service.impl;
+package by.zemich.binancebot.service.converter.JsonComponents;
 
 import by.zemich.binancebot.service.api.IConverter;
 import com.fasterxml.jackson.core.type.TypeReference;

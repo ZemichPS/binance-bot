@@ -70,18 +70,21 @@ public class OrderServiceImpl implements IOrderService {
     }
 
     @Override
-    public Optional<OrderEntity> updateStatus(OrderDto orderDto) {
+    public Optional<OrderEntity> updateStatus(OrderDto orderDto, EOrderStatus conditionalStatus) {
 
         QueryOrderResponseDto queryOrderResponse = stockMarketService.getOrder(QueryOrderDto.builder()
                 .symbol(orderDto.getSymbol())
                 .orderId(orderDto.getOrderId())
                 .build()).orElseThrow(RuntimeException::new);
 
-         if(!orderDto.getStatus().equals(queryOrderResponse.getStatus())){
-             orderDto.setStatus(queryOrderResponse.getStatus());
-             OrderEntity orderEntity = conversionService.convert(orderDto, OrderEntity.class);
+         if(!orderDto.getStatus().equals(queryOrderResponse.getStatus()) ){
 
-             return Optional.of(orderDao.save(orderEntity));
+             if(queryOrderResponse.getStatus().equals(conditionalStatus)) {
+                 orderDto.setStatus(queryOrderResponse.getStatus());
+                 OrderEntity orderEntity = conversionService.convert(orderDto, OrderEntity.class);
+
+                 return Optional.of(orderDao.save(orderEntity));
+             }
          }
 
         return Optional.empty();

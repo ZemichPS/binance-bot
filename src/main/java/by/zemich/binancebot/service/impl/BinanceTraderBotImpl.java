@@ -32,20 +32,17 @@ public class BinanceTraderBotImpl implements ITraderBot {
     private final IStockMarketService stockMarketService;
     private final ITradeManager tradeManager;
     private final INotifier notifier;
-    private final BinanceMarketServiceImpl binanceMarketService;
-
     private final IBargainService bargainService;
     private final ConversionService conversionService;
-
     private final Map<String, IStrategy> strategyMap = new HashMap<>();
 
     public BinanceTraderBotImpl(IStockMarketService stockMarketService,
                                 ITradeManager tradeManager, INotifier notifier,
-                                BinanceMarketServiceImpl binanceMarketService, IBargainService bargainService, ConversionService conversionService) {
+                                IBargainService bargainService,
+                                ConversionService conversionService) {
         this.stockMarketService = stockMarketService;
         this.tradeManager = tradeManager;
         this.notifier = notifier;
-        this.binanceMarketService = binanceMarketService;
         this.bargainService = bargainService;
         this.conversionService = conversionService;
     }
@@ -123,12 +120,19 @@ public class BinanceTraderBotImpl implements ITraderBot {
                 });
 
         bargainService.checkOnFinish().ifPresent(bargainEntities -> {
-            bargainEntities.stream().forEach(bargainEntity -> {
+            bargainEntities.forEach(bargainEntity -> {
                 BargainDto bargainDto = conversionService.convert(bargainEntity, BargainDto.class);
                 bargainService.end(bargainDto);
             });
         });
 
+        bargainService.checkOnExpired().ifPresent(bargainEntities -> {
+            bargainEntities.forEach(bargainEntity -> {
+                BargainDto bargainDto = conversionService.convert(bargainEntity, BargainDto.class);
+                bargainService.endByReasonExpired(bargainDto);
+            });
+
+        });
     }
 
 
