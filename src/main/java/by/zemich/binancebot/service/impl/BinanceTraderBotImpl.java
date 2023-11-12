@@ -12,6 +12,7 @@ import by.zemich.binancebot.core.enums.ESide;
 import by.zemich.binancebot.service.api.*;
 import com.binance.connector.client.exceptions.BinanceClientException;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.core.convert.ConversionService;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -34,24 +35,25 @@ public class BinanceTraderBotImpl implements ITraderBot {
     private final BinanceMarketServiceImpl binanceMarketService;
 
     private final IBargainService bargainService;
+    private final ConversionService conversionService;
 
     private final Map<String, IStrategy> strategyMap = new HashMap<>();
 
     public BinanceTraderBotImpl(IStockMarketService stockMarketService,
                                 ITradeManager tradeManager, INotifier notifier,
-                                BinanceMarketServiceImpl binanceMarketService, IBargainService bargainService) {
+                                BinanceMarketServiceImpl binanceMarketService, IBargainService bargainService, ConversionService conversionService) {
         this.stockMarketService = stockMarketService;
         this.tradeManager = tradeManager;
         this.notifier = notifier;
         this.binanceMarketService = binanceMarketService;
         this.bargainService = bargainService;
+        this.conversionService = conversionService;
     }
 
     @Override
     public void registerStrategy(String name, IStrategy strategyManager) {
         strategyMap.put(name, strategyManager);
     }
-
 
 
     @Scheduled(fixedDelay = 40_000, initialDelay = 1_000)
@@ -63,7 +65,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
         queryDto.setLimit(500);
 
 
-        stockMarketService.getSpotSymbols().get().stream()
+        stockMarketService.getSpotSymbols().get()
                 .forEach(symbol -> {
 
                     queryDto.setSymbol(symbol);
@@ -74,7 +76,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
                         queryDto.setInterval("1h");
                         BarSeries secondSeries = stockMarketService.getBarSeries(queryDto).orElse(null);
                         Strategy sureStrategy = strategyMap.get("BOLLINGER_BAND_OLDER_TIMEFRAME_STRATEGY").get(secondSeries);
-                         if (sureStrategy.shouldEnter(secondSeries.getEndIndex())) {
+                        if (sureStrategy.shouldEnter(secondSeries.getEndIndex())) {
                             try {
                                 OrderDto buyOrder = tradeManager.createBuyLimitOrderByBidPrice(symbol);
                                 BargainDto newBargain = new BargainDto();
@@ -106,18 +108,27 @@ public class BinanceTraderBotImpl implements ITraderBot {
     @Async
     @Override
     public void checkBargain() {
-        bargainService.updateStatusOpenedOrders().get()
-                .forEach(bargain->{
-                    bargain.getOrders().stream()
+
+        bargainService.updateOpenStatus().get().stream()
+                .map(bargainEntity -> conversionService.convert(bargainEntity, BargainDto.class))
+                .forEach(bargainDto -> {
+                    bargainDto.getOrders().stream()
                             .findFirst()
-                            .filter(orderEntity -> orderEntity.getSide().equals(ESide.BUY))
-                            .ifPresent(value-> {
-                                tradeManager.createSellLimitOrder(value.getOrderId());
-                                bargainService.update()
-
-
+                            .filter(orderDto -> orderDto.getSide().equals(ESide.BUY))
+                            .ifPresent(orderDto -> {
+                                tradeManager.createSellLimitOrder(orderDto.getOrderId());
+                                bargainDto.setStatus(EBargainStatus.OPEN_BUY_ORDER_FILLED);
+                                bargainService.update(bargainDto);
                             });
                 });
+
+        bargainService.checkOnFinish().ifPresent(bargainEntities -> {
+            bargainEntities.stream().forEach(bargainEntity -> {
+                BargainDto bargainDto = conversionService.convert(bargainEntity, BargainDto.class);
+                bargainService.end(bargainDto);
+            });
+        });
+
     }
 
 

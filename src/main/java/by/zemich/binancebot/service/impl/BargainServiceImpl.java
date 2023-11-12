@@ -2,8 +2,11 @@ package by.zemich.binancebot.service.impl;
 
 import by.zemich.binancebot.DAO.api.IBargainDao;
 import by.zemich.binancebot.DAO.entity.BargainEntity;
+import by.zemich.binancebot.DAO.entity.OrderEntity;
 import by.zemich.binancebot.core.dto.BargainDto;
+import by.zemich.binancebot.core.dto.OrderDto;
 import by.zemich.binancebot.core.enums.EBargainStatus;
+import by.zemich.binancebot.core.enums.ESide;
 import by.zemich.binancebot.service.api.IBargainService;
 import by.zemich.binancebot.service.api.IOrderService;
 import org.springframework.core.convert.ConversionService;
@@ -14,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+
 @Service
 public class BargainServiceImpl implements IBargainService {
 
@@ -48,6 +52,17 @@ public class BargainServiceImpl implements IBargainService {
     }
 
     @Override
+    public Optional<BargainEntity> end(BargainDto bargainDto) {
+        // тут всякие расчёты и просчёты
+
+        BargainEntity bargainEntity = conversionService.convert(bargainDto, BargainEntity.class);
+        BargainEntity savedEntity = bargainDao.save(bargainEntity);
+
+
+        return Optional.of(savedEntity);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public Optional<List<BargainEntity>> getAll() {
         List<BargainEntity> bargainEntities = bargainDao.findAll();
@@ -55,17 +70,41 @@ public class BargainServiceImpl implements IBargainService {
     }
 
     @Override
-    public Optional<List<BargainEntity>> updateStatusOpenedOrders() {
+    public Optional<List<BargainEntity>> updateOpenStatus() {
         List<BargainEntity> bargainEntities = new ArrayList<>();
 
-        bargainDao.findAllByStatus(EBargainStatus.OPEN).forEach(
-                bargainEntity -> {
-                    bargainEntity.getOrders().forEach(orderEntity -> {
-                                if(orderService.updateStatus(orderEntity).isPresent()){
-                                    bargainEntities.add(bargainEntity);
-                                }
-                            }
-                    );
+        bargainDao.findAllByStatus(EBargainStatus.OPEN).forEach(bargainEntity -> {
+
+                    if (bargainEntity.getOrders() != null && bargainEntity.getOrders().size() == 1) {
+
+                        OrderDto orderDto = conversionService.convert(bargainEntity.getOrders().get(0), OrderDto.class);
+                        // сравниваем статусы
+                        if (orderService.updateStatus(orderDto).isPresent()) {
+                            bargainEntities.add(bargainEntity);
+                        }
+                    }
+                }
+        );
+        return Optional.of(bargainEntities);
+    }
+
+    @Override
+    public Optional<List<BargainEntity>> checkOnFinish() {
+        List<BargainEntity> bargainEntities = new ArrayList<>();
+
+        bargainDao.findAllByStatus(EBargainStatus.OPEN_BUY_ORDER_FILLED).forEach(bargainEntity -> {
+
+                    if (bargainEntity.getOrders() != null && bargainEntity.getOrders().size() == 2) {
+                        OrderEntity orderEntity = bargainEntity.getOrders().stream()
+                                .filter(entity -> entity.getSide().equals(ESide.SELL))
+                                .findFirst()
+                                .get();
+                        OrderDto orderDto = conversionService.convert(orderEntity, OrderDto.class);
+                        // сравниваем статусы
+                        if (orderService.updateStatus(orderDto).isPresent()) {
+                            bargainEntities.add(bargainEntity);
+                        }
+                    }
                 }
         );
         return Optional.of(bargainEntities);

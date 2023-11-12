@@ -12,7 +12,7 @@ public interface IOrderService {
 
     Optional<OrderEntity> cancel(CancelOrderRequestDto cancelOrderRequestDto);
     Optional<OrderEntity> update(CurrentOpenOrderResponseDto orderDto);
-    Optional<OrderEntity> updateStatus(OrderEntity orderEntity);
+    Optional<OrderEntity> updateStatus(OrderDto orderDto);
 
     Optional<QueryOrderResponseDto> get(QueryOrderDto neededOrder);
 

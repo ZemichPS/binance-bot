@@ -12,8 +12,10 @@ public interface IBargainService {
     Optional<BargainEntity> create(BargainDto bargainDto);
 
     Optional<BargainEntity> update(BargainDto bargainDto);
+    Optional<BargainEntity> end(BargainDto bargainDto);
     Optional<List<BargainEntity>>  getAll();
-    Optional<List<BargainEntity>> updateStatusOpenedOrders();
+    Optional<List<BargainEntity>> updateOpenStatus();
+    Optional<List<BargainEntity>> checkOnFinish();
     Optional<List<BargainEntity>> getAllByStatus(EBargainStatus status);
     Optional<BargainEntity> getByUuid(UUID uuid);
     void removeByUuid(UUID uuid);

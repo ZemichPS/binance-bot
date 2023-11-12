@@ -1,4 +1,4 @@
-package by.zemich.binancebot.service.converter.JsonComponents;
+package by.zemich.binancebot.service.converter;
 
 import by.zemich.binancebot.DAO.entity.BargainEntity;
 import by.zemich.binancebot.DAO.entity.OrderEntity;
