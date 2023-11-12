@@ -55,7 +55,7 @@ public class BargainServiceImpl implements IBargainService {
     }
 
     @Override
-    public Optional<List<BargainEntity>> updateOpensOrderStatus() {
+    public Optional<List<BargainEntity>> updateStatusOpenedOrders() {
         List<BargainEntity> bargainEntities = new ArrayList<>();
 
         bargainDao.findAllByStatus(EBargainStatus.OPEN).forEach(

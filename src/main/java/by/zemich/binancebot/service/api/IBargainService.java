@@ -13,7 +13,7 @@ public interface IBargainService {
 
     Optional<BargainEntity> update(BargainDto bargainDto);
     Optional<List<BargainEntity>>  getAll();
-    Optional<List<BargainEntity>> updateOpensOrderStatus();
+    Optional<List<BargainEntity>> updateStatusOpenedOrders();
     Optional<List<BargainEntity>> getAllByStatus(EBargainStatus status);
     Optional<BargainEntity> getByUuid(UUID uuid);
     void removeByUuid(UUID uuid);

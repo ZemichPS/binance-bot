@@ -106,12 +106,17 @@ public class BinanceTraderBotImpl implements ITraderBot {
     @Async
     @Override
     public void checkBargain() {
-        bargainService.updateOpensOrderStatus().get()
+        bargainService.updateStatusOpenedOrders().get()
                 .forEach(bargain->{
                     bargain.getOrders().stream()
                             .findFirst()
                             .filter(orderEntity -> orderEntity.getSide().equals(ESide.BUY))
-                            .ifPresent(value-> tradeManager.createSellLimitOrder(value.getOrderId()));
+                            .ifPresent(value-> {
+                                tradeManager.createSellLimitOrder(value.getOrderId());
+                                bargainService.update()
+
+
+                            });
                 });
     }
 
