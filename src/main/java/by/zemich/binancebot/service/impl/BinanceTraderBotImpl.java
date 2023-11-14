@@ -27,7 +27,6 @@ import java.util.*;
 
 @Component
 @EnableScheduling
-@Async
 @Log4j2
 public class BinanceTraderBotImpl implements ITraderBot {
     private final IStockMarketService stockMarketService;
@@ -56,34 +55,6 @@ public class BinanceTraderBotImpl implements ITraderBot {
     }
 
 
-    @Scheduled(fixedDelay = 40_000, initialDelay = 1_000)
-    @Async
-    @Override
-    public void lookForEnterPosition() {
-
-        KlineQueryDto queryDto = new KlineQueryDto();
-        queryDto.setLimit(200);
-
-
-        stockMarketService.getSpotSymbols().get()
-                .forEach(symbol -> {
-
-                    queryDto.setSymbol(symbol);
-                    queryDto.setInterval("15m");
-                    BarSeries series = stockMarketService.getBarSeries(queryDto).orElse(null);
-                    Strategy strategy = strategyMap.get("BOLLINGER_BAND_MAIN_STRATEGY").get(series);
-                    if (strategy.shouldEnter(series.getEndIndex())) {
-                        queryDto.setInterval("1h");
-                        BarSeries secondSeries = stockMarketService.getBarSeries(queryDto).orElse(null);
-                        Strategy sureStrategy = strategyMap.get("BOLLINGER_BAND_OLDER_TIMEFRAME_STRATEGY").get(secondSeries);
-                        if (sureStrategy.shouldEnter(secondSeries.getEndIndex())) {
-                            //createBargain(symbol);
-                            creatFakeBargain(symbol);
-                        }
-                    }
-                });
-    }
-
     @Scheduled(fixedDelay = 20_000, initialDelay = 1_000)
     @Async
     @Override
@@ -91,7 +62,6 @@ public class BinanceTraderBotImpl implements ITraderBot {
 
 
         //проверка на исполнение ордера на покупку
-
         bargainService.updateOpenStatus().get().stream()
                 .map(bargainEntity -> conversionService.convert(bargainEntity, BargainDto.class))
                 .forEach(bargainDto -> {
@@ -118,8 +88,6 @@ public class BinanceTraderBotImpl implements ITraderBot {
         });
 
 
-
-
         //проверка на истёкший ордер
         bargainService.checkOnExpired().ifPresent(bargainEntities -> {
             bargainEntities.forEach(bargainEntity -> {
@@ -128,6 +96,35 @@ public class BinanceTraderBotImpl implements ITraderBot {
             });
 
         });
+    }
+
+    @Scheduled(fixedDelay = 40_000, initialDelay = 1_000)
+    @Async
+    @Override
+    public void lookForEnterPosition() {
+
+        KlineQueryDto queryDto = new KlineQueryDto();
+        queryDto.setLimit(200);
+
+
+        stockMarketService.getSpotSymbols().get()
+                .forEach(symbol -> {
+
+                    queryDto.setSymbol(symbol);
+                    queryDto.setInterval("15m");
+                    BarSeries series = stockMarketService.getBarSeries(queryDto).orElse(null);
+                    Strategy strategy = strategyMap.get("BOLLINGER_BAND_MAIN_STRATEGY").get(series);
+                    if (strategy.shouldEnter(series.getEndIndex())) {
+                        queryDto.setInterval("1h");
+                        BarSeries secondSeries = stockMarketService.getBarSeries(queryDto).orElse(null);
+                        Strategy sureStrategy = strategyMap.get("BOLLINGER_BAND_OLDER_TIMEFRAME_STRATEGY").get(secondSeries);
+                     //   if (sureStrategy.shouldEnter(secondSeries.getEndIndex())) {
+                        if (true) {
+                            //createBargain(symbol);
+                            creatFakeBargain(symbol);
+                        }
+                    }
+                });
     }
 
     private void createBargain(String symbol) {
