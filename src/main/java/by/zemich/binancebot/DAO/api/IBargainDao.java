@@ -16,6 +16,6 @@ import java.util.UUID;
 public interface IBargainDao extends JpaRepository<BargainEntity, UUID>, PagingAndSortingRepository<BargainEntity, UUID> {
     List<BargainEntity> findAll();
 
-    List<BargainEntity> findAllByStatus(EBargainStatus status);
+    Optional<List<BargainEntity>> findAllByStatus(EBargainStatus status);
 
 }

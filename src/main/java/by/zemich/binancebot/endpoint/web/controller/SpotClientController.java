@@ -64,8 +64,6 @@ public class SpotClientController {
     @GetMapping("/account")
     private ResponseEntity<AccountInformationResponseDto> accountInf() {
         AccountInformationQueryDto query = new AccountInformationQueryDto();
-        query.setTimestamp(new Date().getTime());
-
         return ResponseEntity.ok(accountService.getInformation(query).get());
     }
 

@@ -68,11 +68,11 @@ public class BasedOnBollingerBandStrategy implements IStrategy {
 
         Rule entryRule = new UnderIndicatorRule(lowPriceIndicator, bbm)
                 .and(new UnderIndicatorRule(bbm, closePrice))
-                .and(new OverIndicatorRule(bbw, 3.0))
+             //   .and(new OverIndicatorRule(bbw, 3.0))
                 .and(new IsRisingRule(bbm, 14, 0.7))
                 .and(new OverIndicatorRule(closePrice, lowPriceIndicator))
                 .and(new InPipeRule(rsiIndicator, 58, 47))
-                .and(new IsRisingRule(balanceVolumeIndicator, 20, 0.5))
+            //    .and(new IsRisingRule(balanceVolumeIndicator, 20, 0.5))
                 .and(new UnderIndicatorRule(adxIndicator, 40));
 
 

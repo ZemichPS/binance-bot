@@ -22,17 +22,19 @@ public class BargainEntityToBargainDtoConverter implements Converter<BargainEnti
                 orderDtoList.add(orderDto);
             });
         }
-
         BargainDto bargainDto = new BargainDto();
         bargainDto.setUuid(source.getUuid());
         bargainDto.setDtCreate(source.getDtCreate());
         bargainDto.setDtUpdate(source.getDtUpdate());
-        bargainDto.setStatus(source.getStatus());
-        bargainDto.setFinishTime(source.getFinishTime());
-        bargainDto.setFinanceResult(source.getFinanceResult());
-        bargainDto.setPercentageResult(source.getPercentageResult());
-        bargainDto.setTimeInWork(source.getTimeInWork());
         bargainDto.setOrders(orderDtoList);
+        bargainDto.setPercentageResult(source.getPercentageResult());
+        bargainDto.setFinanceResult(source.getFinanceResult());
+        bargainDto.setTimeInWork(source.getTimeInWork());
+        bargainDto.setFinishTime(source.getFinishTime());
+        bargainDto.setStatus(source.getStatus());
+        bargainDto.setSymbol(source.getSymbol());
+        bargainDto.setCurrentFinanceResult(source.getCurrentFinanceResult());
+        bargainDto.setCurrentPercentageResult(source.getCurrentPercentageResult());
 
         return bargainDto;
     }

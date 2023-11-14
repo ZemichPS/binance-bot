@@ -165,6 +165,17 @@ public class BinanceMarketServiceImpl implements IStockMarketService {
         }
     }
 
+    @Override
+    public Optional<AccountInformationResponseDto> getAccountInformation(Map<String, Object> params) {
+        String responseResult = spotClient.createTrade().account(params);
+        try {
+            AccountInformationResponseDto accountInformationResponse = objectMapper.readValue(responseResult, AccountInformationResponseDto.class);
+            return Optional.of(accountInformationResponse);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private BarSeries getCusomBarSeries(List<BarDto> barDtoList, String name) {
         BarSeries series = new BaseBarSeries(name);
         barDtoList.forEach(candle -> {

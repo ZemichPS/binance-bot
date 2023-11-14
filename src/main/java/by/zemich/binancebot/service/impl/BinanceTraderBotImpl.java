@@ -21,6 +21,7 @@ import org.ta4j.core.BarSeries;
 import org.ta4j.core.Strategy;
 
 
+import java.text.MessageFormat;
 import java.util.*;
 
 
@@ -32,17 +33,19 @@ public class BinanceTraderBotImpl implements ITraderBot {
     private final IStockMarketService stockMarketService;
     private final ITradeManager tradeManager;
     private final INotifier notifier;
+    private final IEventManager eventManager;
     private final IBargainService bargainService;
     private final ConversionService conversionService;
     private final Map<String, IStrategy> strategyMap = new HashMap<>();
 
     public BinanceTraderBotImpl(IStockMarketService stockMarketService,
                                 ITradeManager tradeManager, INotifier notifier,
-                                IBargainService bargainService,
+                                IEventManager eventManager, IBargainService bargainService,
                                 ConversionService conversionService) {
         this.stockMarketService = stockMarketService;
         this.tradeManager = tradeManager;
         this.notifier = notifier;
+        this.eventManager = eventManager;
         this.bargainService = bargainService;
         this.conversionService = conversionService;
     }
@@ -59,7 +62,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
     public void lookForEnterPosition() {
 
         KlineQueryDto queryDto = new KlineQueryDto();
-        queryDto.setLimit(500);
+        queryDto.setLimit(200);
 
 
         stockMarketService.getSpotSymbols().get()
@@ -74,30 +77,10 @@ public class BinanceTraderBotImpl implements ITraderBot {
                         BarSeries secondSeries = stockMarketService.getBarSeries(queryDto).orElse(null);
                         Strategy sureStrategy = strategyMap.get("BOLLINGER_BAND_OLDER_TIMEFRAME_STRATEGY").get(secondSeries);
                         if (sureStrategy.shouldEnter(secondSeries.getEndIndex())) {
-                            try {
-                                OrderDto buyOrder = tradeManager.createBuyLimitOrderByBidPrice(symbol);
-                                BargainDto newBargain = new BargainDto();
-                                newBargain.setUuid(UUID.randomUUID());
-                                newBargain.setStatus(EBargainStatus.OPEN);
-
-                                newBargain.setOrders(List.of(buyOrder));
-                                BargainEntity newBargainEntity = bargainService.create(newBargain).get();
-
-                                EventDto event = EventDto.builder()
-                                        .text(newBargainEntity.toString())
-                                        .eventType(EEventType.BUY_LIMIT_ORDER)
-                                        .build();
-
-                                notifier.notify(event);
-                            } catch (BinanceClientException binanceClientException) {
-                                System.out.println(
-                                        binanceClientException.getErrMsg()
-                                );
-                            }
+                            //createBargain(symbol);
+                            creatFakeBargain(symbol);
                         }
-
                     }
-
                 });
     }
 
@@ -106,19 +89,27 @@ public class BinanceTraderBotImpl implements ITraderBot {
     @Override
     public void checkBargain() {
 
+
+        //проверка на исполнение ордера на покупку
+
         bargainService.updateOpenStatus().get().stream()
                 .map(bargainEntity -> conversionService.convert(bargainEntity, BargainDto.class))
                 .forEach(bargainDto -> {
                     bargainDto.getOrders().stream()
-                            .findFirst()
                             .filter(orderDto -> orderDto.getSide().equals(ESide.BUY))
+                            .findFirst()
                             .ifPresent(orderDto -> {
                                 tradeManager.createSellLimitOrder(orderDto.getOrderId());
-                                bargainDto.setStatus(EBargainStatus.OPEN_BUY_ORDER_FILLED);
+                                bargainDto.setStatus(EBargainStatus.OPEN_SELL_ORDER_CREATED);
                                 bargainService.update(bargainDto);
                             });
                 });
 
+
+        // установка временных результатов
+        bargainService.setTemporaryResult();
+
+        //проверка на окончание сделки
         bargainService.checkOnFinish().ifPresent(bargainEntities -> {
             bargainEntities.forEach(bargainEntity -> {
                 BargainDto bargainDto = conversionService.convert(bargainEntity, BargainDto.class);
@@ -126,6 +117,10 @@ public class BinanceTraderBotImpl implements ITraderBot {
             });
         });
 
+
+
+
+        //проверка на истёкший ордер
         bargainService.checkOnExpired().ifPresent(bargainEntities -> {
             bargainEntities.forEach(bargainEntity -> {
                 BargainDto bargainDto = conversionService.convert(bargainEntity, BargainDto.class);
@@ -133,6 +128,34 @@ public class BinanceTraderBotImpl implements ITraderBot {
             });
 
         });
+    }
+
+    private void createBargain(String symbol) {
+        try {
+            OrderDto buyOrder = tradeManager.createBuyLimitOrderByBidPrice(symbol);
+            BargainDto newBargain = new BargainDto();
+            newBargain.setUuid(UUID.randomUUID());
+            newBargain.setStatus(EBargainStatus.OPEN_BUY_ORDER_CREATED);
+            newBargain.setOrders(List.of(buyOrder));
+            newBargain.setSymbol(symbol);
+            BargainEntity newBargainEntity = bargainService.create(newBargain).orElseThrow();
+            BargainDto createdBargain = conversionService.convert(newBargainEntity, BargainDto.class);
+            EventDto event = eventManager.get(EEventType.BARGAIN_WAS_CREATED, createdBargain);
+            notifier.notify(event);
+
+        } catch (BinanceClientException binanceClientException) {
+            log.error(binanceClientException.getErrMsg(), binanceClientException.getCause().getMessage());
+            EventDto event = eventManager.get(EEventType.ERROR, binanceClientException);
+
+            notifier.notify(event);
+        }
+    }
+
+    private void creatFakeBargain(String symbol) {
+        notifier.notify(EventDto.builder()
+                .eventType(EEventType.ENDPOINT_WAS_FOUNDED)
+                .text(MessageFormat.format("Symbol: {0}", symbol))
+                .build());
     }
 
 

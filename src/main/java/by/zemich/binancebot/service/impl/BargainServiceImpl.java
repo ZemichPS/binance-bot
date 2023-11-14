@@ -3,7 +3,6 @@ package by.zemich.binancebot.service.impl;
 import by.zemich.binancebot.DAO.api.IBargainDao;
 import by.zemich.binancebot.DAO.entity.BargainEntity;
 import by.zemich.binancebot.DAO.entity.OrderEntity;
-import by.zemich.binancebot.core.dto.BarDto;
 import by.zemich.binancebot.core.dto.BargainDto;
 import by.zemich.binancebot.core.dto.OrderDto;
 import by.zemich.binancebot.core.enums.EBargainStatus;
@@ -11,6 +10,7 @@ import by.zemich.binancebot.core.enums.EOrderStatus;
 import by.zemich.binancebot.core.enums.ESide;
 import by.zemich.binancebot.service.api.IBargainService;
 import by.zemich.binancebot.service.api.IOrderService;
+import by.zemich.binancebot.service.api.IStockMarketService;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,14 +29,15 @@ public class BargainServiceImpl implements IBargainService {
 
     private final IBargainDao bargainDao;
     private final ConversionService conversionService;
-
     private final IOrderService orderService;
+    private final IStockMarketService stockMarketService;
 
 
-    public BargainServiceImpl(IBargainDao bargainDao, ConversionService conversionService, IOrderService orderService) {
+    public BargainServiceImpl(IBargainDao bargainDao, ConversionService conversionService, IOrderService orderService, IStockMarketService stockMarketService) {
         this.bargainDao = bargainDao;
         this.conversionService = conversionService;
         this.orderService = orderService;
+        this.stockMarketService = stockMarketService;
     }
 
     @Override
@@ -75,12 +76,12 @@ public class BargainServiceImpl implements IBargainService {
         OrderDto buyOrder = bargainDto.getOrders().stream()
                 .filter(orderDto -> orderDto.getSide().equals(ESide.BUY))
                 .findFirst()
-                .get();
+                .orElseThrow();
 
         OrderDto sellOrder = bargainDto.getOrders().stream()
                 .filter(orderDto -> orderDto.getSide().equals(ESide.SELL))
                 .findFirst()
-                .get();
+                .orElseThrow();
 
         Timestamp startTime = buyOrder.getDtCreate();
         Timestamp finishTime = Timestamp.from(Instant.now());
@@ -106,6 +107,11 @@ public class BargainServiceImpl implements IBargainService {
     }
 
     @Override
+    public void setTemporaryResult() {
+        bargainDao.findAllByStatus(EBargainStatus.OPEN_SELL_ORDER_CREATED).orElseThrow().forEach(this::updateResult);
+    }
+
+    @Override
     @Transactional(readOnly = true)
     public Optional<List<BargainEntity>> getAll() {
         List<BargainEntity> bargainEntities = bargainDao.findAll();
@@ -116,7 +122,7 @@ public class BargainServiceImpl implements IBargainService {
     public Optional<List<BargainEntity>> updateOpenStatus() {
         List<BargainEntity> bargainEntities = new ArrayList<>();
 
-        bargainDao.findAllByStatus(EBargainStatus.OPEN).forEach(bargainEntity -> {
+        bargainDao.findAllByStatus(EBargainStatus.CREATED).orElseThrow().forEach(bargainEntity -> {
                     if (bargainEntity.getOrders() != null && bargainEntity.getOrders().size() == 1) {
                         OrderDto orderDto = conversionService.convert(bargainEntity.getOrders().get(0), OrderDto.class);
                         // сравниваем статусы
@@ -133,16 +139,17 @@ public class BargainServiceImpl implements IBargainService {
     public Optional<List<BargainEntity>> checkOnExpired() {
         List<BargainEntity> bargainEntities = new ArrayList<>();
 
-        bargainDao.findAllByStatus(EBargainStatus.OPEN).forEach(bargainEntity -> {
-                    if (bargainEntity.getOrders() != null && bargainEntity.getOrders().size() == 1) {
-                        OrderDto orderDto = conversionService.convert(bargainEntity.getOrders().get(0), OrderDto.class);
-                        // сравниваем статусы
-                        if (orderService.updateStatus(orderDto, EOrderStatus.EXPIRED).isPresent()) {
-                            bargainEntities.add(bargainEntity);
+        bargainDao.findAllByStatus(EBargainStatus.CREATED).orElseThrow().
+                forEach(bargainEntity -> {
+                            if (bargainEntity.getOrders() != null && bargainEntity.getOrders().size() == 1) {
+                                OrderDto orderDto = conversionService.convert(bargainEntity.getOrders().get(0), OrderDto.class);
+                                // сравниваем статусы
+                                if (orderService.updateStatus(orderDto, EOrderStatus.EXPIRED).isPresent()) {
+                                    bargainEntities.add(bargainEntity);
+                                }
+                            }
                         }
-                    }
-                }
-        );
+                );
         return Optional.of(bargainEntities);
     }
 
@@ -150,7 +157,7 @@ public class BargainServiceImpl implements IBargainService {
     public Optional<List<BargainEntity>> checkOnFinish() {
         List<BargainEntity> bargainEntities = new ArrayList<>();
 
-        bargainDao.findAllByStatus(EBargainStatus.OPEN_BUY_ORDER_FILLED).forEach(bargainEntity -> {
+        bargainDao.findAllByStatus(EBargainStatus.OPEN_BUY_ORDER_FILLED).orElseThrow().forEach(bargainEntity -> {
 
                     if (bargainEntity.getOrders() != null && bargainEntity.getOrders().size() == 2) {
                         OrderEntity orderEntity = bargainEntity.getOrders().stream()
@@ -171,7 +178,7 @@ public class BargainServiceImpl implements IBargainService {
     @Override
     @Transactional(readOnly = true)
     public Optional<List<BargainEntity>> getAllByStatus(EBargainStatus status) {
-        List<BargainEntity> bargainEntities = bargainDao.findAllByStatus(status);
+        List<BargainEntity> bargainEntities = bargainDao.findAllByStatus(status).orElseThrow();
         return Optional.of(bargainEntities);
     }
 
@@ -196,6 +203,37 @@ public class BargainServiceImpl implements IBargainService {
                 .divide(buyPrice, 2, RoundingMode.HALF_UP);
 
         return resultPercent;
+    }
+
+    final BigDecimal getSymbolPrice(String symbol) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("symbol", symbol);
+        return stockMarketService.getSymbolPriceTicker(params).orElseThrow().getPrice();
+    }
+
+    private void updateResult(BargainEntity bargainEntity) {
+
+        OrderEntity buyOrderEntity = bargainEntity.getOrders().stream()
+                .filter(order -> order.getSide().equals(ESide.BUY))
+                .findFirst().orElseThrow();
+
+
+        Timestamp startTime = buyOrderEntity.getDtCreate();
+        Timestamp finishTime = Timestamp.from(Instant.now());
+        Duration timeInWork = Duration.between(LocalDateTime.ofInstant(startTime.toInstant(), TimeZone.getDefault().toZoneId()),
+                LocalDateTime.ofInstant(finishTime.toInstant(), TimeZone.getDefault().toZoneId()));
+
+        BigDecimal buyPrice = buyOrderEntity.getCummulativeQuoteQty();
+        BigDecimal currentPrice = getSymbolPrice(buyOrderEntity.getSymbol());
+
+        BigDecimal financeResult = currentPrice.subtract(buyPrice);
+        BigDecimal percentageResult = getPercentDifference(buyPrice, currentPrice);
+
+        bargainEntity.setFinanceResult(financeResult);
+        bargainEntity.setCurrentPercentageResult(percentageResult);
+        bargainEntity.setTimeInWork(timeInWork.toMinutes());
+
+        bargainDao.save(bargainEntity);
     }
 
 
