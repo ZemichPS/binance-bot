@@ -16,22 +16,17 @@ import java.util.UUID;
 
 @Data
 public class BargainDto {
-
     private UUID uuid;
-
     private Timestamp dtCreate;
-
     private Timestamp dtUpdate;
-
     private List<OrderDto> orders;
-
     private BigDecimal percentageResult;
     private BigDecimal financeResult;
-
     private Long timeInWork;
-
     private Timestamp finishTime;
     private EBargainStatus status;
-
+    private String symbol;
+    private BigDecimal currentFinanceResult;
+    private BigDecimal currentPercentageResult;
 
 }

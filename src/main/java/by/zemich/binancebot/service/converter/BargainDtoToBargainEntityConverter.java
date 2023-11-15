@@ -21,7 +21,6 @@ public class BargainDtoToBargainEntityConverter implements Converter<BargainDto,
             entities.add(orderEntity);
         }
 
-
         BargainEntity bargainEntity = new BargainEntity();
         bargainEntity.setUuid(source.getUuid());
         bargainEntity.setOrders(entities);
@@ -30,7 +29,9 @@ public class BargainDtoToBargainEntityConverter implements Converter<BargainDto,
         bargainEntity.setTimeInWork(source.getTimeInWork());
         bargainEntity.setFinishTime(source.getFinishTime());
         bargainEntity.setStatus(source.getStatus());
-
+        bargainEntity.setSymbol(source.getSymbol());
+        bargainEntity.setCurrentFinanceResult(source.getCurrentFinanceResult());
+        bargainEntity.setCurrentPercentageResult(source.getCurrentPercentageResult());
         return bargainEntity;
     }
 }

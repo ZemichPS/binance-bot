@@ -1,6 +1,9 @@
 package by.zemich.binancebot.service.api;
 
-import by.zemich.binancebot.core.dto.OrderDto;
+import by.zemich.binancebot.core.dto.*;
+
+import java.util.List;
+import java.util.Optional;
 
 public interface ITradeManager {
     OrderDto createBuyLimitOrderByAskPrice(String symbol);
@@ -9,6 +12,8 @@ public interface ITradeManager {
     OrderDto createSellLimitOrder(Long orderId);
 
     OrderDto createStopLimitOrder(Long orderId);
+
+
 
 
 

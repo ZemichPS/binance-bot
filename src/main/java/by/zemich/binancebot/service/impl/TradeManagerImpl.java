@@ -8,13 +8,16 @@ import by.zemich.binancebot.core.enums.EOrderType;
 import by.zemich.binancebot.core.enums.ESide;
 import by.zemich.binancebot.core.enums.ETimeInForce;
 import by.zemich.binancebot.service.api.*;
+import com.binance.connector.client.exceptions.BinanceClientException;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
+import org.springframework.validation.BindException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
+
 
 @Component
 public class TradeManagerImpl implements ITradeManager {
@@ -25,8 +28,8 @@ public class TradeManagerImpl implements ITradeManager {
     private final INotifier notifier;
     private final IEventManager eventCreate;
     private final TradeProperties tradeProperties;
-
     private final IBargainService bargainService;
+    private final List<String> blackList = new ArrayList<>(List.of("BUSDUSDT", "USDTUSDT"));
 
     public TradeManagerImpl(IStockMarketService stockMarketService,
                             IConverter converter,
@@ -66,6 +69,7 @@ public class TradeManagerImpl implements ITradeManager {
 
 
     public OrderDto createBuyLimitOrderByBidPrice(String symbol) {
+
         BigDecimal bidPrice = getBidPrice(symbol);
         BigDecimal quantity = tradeProperties.getDeposit().divide(bidPrice, 0, RoundingMode.HALF_UP);
 
@@ -144,6 +148,17 @@ public class TradeManagerImpl implements ITradeManager {
     }
 
 
+    private BigDecimal getUSDTBalance() {
+        AccountInformationQueryDto accountInformation = new AccountInformationQueryDto();
+        AccountInformationResponseDto information  = stockMarketService.getAccountInformation(converter.dtoToMap(accountInformation)).orElseThrow();
+        return information.getBalances().stream()
+                .filter(balanceDto -> balanceDto.getAsset().equals("USDT"))
+                .findFirst()
+                .orElseThrow()
+                .getFree();
+    }
+
+
     private BigDecimal getAskPrice(String symbol) {
         Map<String, Object> paramMap = new HashMap<>();
         paramMap.put("symbol", symbol);
@@ -172,4 +187,8 @@ public class TradeManagerImpl implements ITradeManager {
     private BigDecimal percent(BigDecimal value, BigDecimal percent) {
         return value.multiply(percent).divide(new BigDecimal(100), RoundingMode.DOWN);
     }
+
+
+
+
 }

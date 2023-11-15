@@ -12,10 +12,9 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 
 @Component
-public class TelegramBot extends TelegramLongPollingBot implements INotifier
-{
-   private final TelegramProperties properties;
-   private final IConverter converter;
+public class TelegramBot extends TelegramLongPollingBot implements INotifier {
+    private final TelegramProperties properties;
+    private final IConverter converter;
 
     public TelegramBot(TelegramProperties properties, IConverter converter) {
         this.properties = properties;
@@ -38,7 +37,7 @@ public class TelegramBot extends TelegramLongPollingBot implements INotifier
     }
 
 
-    public void sendText(Long who, String what){
+    public void sendText(Long who, String what) {
         SendMessage sm = SendMessage.builder()
                 .chatId(who.toString()) //Who are we sending a message to
                 .text(what).build();    //Message content

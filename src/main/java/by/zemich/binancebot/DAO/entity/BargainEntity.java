@@ -2,7 +2,6 @@ package by.zemich.binancebot.DAO.entity;
 
 import by.zemich.binancebot.core.enums.EBargainStatus;
 import jakarta.persistence.*;
-import org.hibernate.annotations.Cascade;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.SourceType;
 import org.hibernate.annotations.UpdateTimestamp;
@@ -30,7 +29,7 @@ public class BargainEntity {
 
     @OneToMany(targetEntity = OrderEntity.class,
             cascade = CascadeType.REFRESH,
-            fetch = FetchType.LAZY,
+            fetch = FetchType.EAGER,
             mappedBy = "bargain",
             orphanRemoval = true)
     //@JoinColumn(name = "uuid")
@@ -50,6 +49,13 @@ public class BargainEntity {
     @Enumerated(EnumType.STRING)
     private EBargainStatus status;
 
+    @Column(name = "symbol")
+    private String symbol;
+    @Column(name = "current_finance_result")
+    private BigDecimal currentFinanceResult;
+    @Column(name = "current_percentage_result")
+    private BigDecimal currentPercentageResult;
+
 
     public BargainEntity(UUID uuid,
                          Timestamp dtUpdate,
@@ -58,7 +64,10 @@ public class BargainEntity {
                          BigDecimal financeResult,
                          Long timeInWork,
                          Timestamp finishTime,
-                         EBargainStatus status) {
+                         EBargainStatus status,
+                         String symbol,
+                         BigDecimal currentResult,
+                         BigDecimal currentPercentageResult) {
         this.uuid = uuid;
         this.dtUpdate = dtUpdate;
         this.dtCreate = dtCreate;
@@ -67,6 +76,9 @@ public class BargainEntity {
         this.timeInWork = timeInWork;
         this.finishTime = finishTime;
         this.status = status;
+        this.symbol = symbol;
+        this.currentFinanceResult = currentResult;
+        this.currentPercentageResult = currentPercentageResult;
     }
 
     public BargainEntity() {
@@ -144,6 +156,30 @@ public class BargainEntity {
         this.status = status;
     }
 
+    public String getSymbol() {
+        return symbol;
+    }
+
+    public void setSymbol(String symbol) {
+        this.symbol = symbol;
+    }
+
+    public BigDecimal getCurrentFinanceResult() {
+        return currentFinanceResult;
+    }
+
+    public void setCurrentFinanceResult(BigDecimal currentFinanceResult) {
+        this.currentFinanceResult = currentFinanceResult;
+    }
+
+    public BigDecimal getCurrentPercentageResult() {
+        return currentPercentageResult;
+    }
+
+    public void setCurrentPercentageResult(BigDecimal currentPercentageResult) {
+        this.currentPercentageResult = currentPercentageResult;
+    }
+
     @Override
     public String toString() {
         return "BargainEntity{" +
@@ -156,6 +192,9 @@ public class BargainEntity {
                 ", timeInWork=" + timeInWork +
                 ", finishTime=" + finishTime +
                 ", status=" + status +
+                ", symbol='" + symbol + '\'' +
+                ", currentResult=" + currentFinanceResult +
+                ", currentPercentageResult=" + currentPercentageResult +
                 '}';
     }
 }

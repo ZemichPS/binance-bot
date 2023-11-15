@@ -6,7 +6,4 @@ import lombok.Data;
 @Data
 public class AccountInformationQueryDto {
     private Long recvWindow;
-
-    private Long timestamp;
-
 }

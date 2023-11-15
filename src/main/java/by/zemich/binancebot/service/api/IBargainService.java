@@ -11,11 +11,10 @@ import java.util.UUID;
 
 public interface IBargainService {
     Optional<BargainEntity> create(BargainDto bargainDto);
-
     Optional<BargainEntity> update(BargainDto bargainDto);
-
     Optional<BargainEntity> endByReasonExpired(BargainDto bargainDto);
     Optional<BargainEntity> end(BargainDto bargainDto);
+    void setTemporaryResult();
     Optional<List<BargainEntity>>  getAll();
     Optional<List<BargainEntity>> updateOpenStatus();
     Optional<List<BargainEntity>> checkOnExpired();
