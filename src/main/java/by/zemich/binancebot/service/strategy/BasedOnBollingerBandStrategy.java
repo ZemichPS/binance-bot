@@ -54,7 +54,7 @@ public class BasedOnBollingerBandStrategy implements IStrategy {
         HighPriceIndicator highPriceIndicator = new HighPriceIndicator(series);
 
         SMAIndicator longSma = new SMAIndicator(closePrice, 20);
-        //  EMAIndicator emaIndicator = new EMAIndicator(closePrice, 20);
+        EMAIndicator emaIndicator = new EMAIndicator(closePrice, 20);
         RSIIndicator rsiIndicator = new RSIIndicator(closePrice, 14);
         PercentBIndicator percentB = new PercentBIndicator(closePrice, 20, 2.0);
         OnBalanceVolumeIndicator balanceVolumeIndicator = new OnBalanceVolumeIndicator(series);
@@ -62,7 +62,7 @@ public class BasedOnBollingerBandStrategy implements IStrategy {
 
         // Standard deviation
         StandardDeviationIndicator sd = new StandardDeviationIndicator(closePrice, 20);
-        BollingerBandsMiddleIndicator bbm = new BollingerBandsMiddleIndicator(longSma);
+        BollingerBandsMiddleIndicator bbm = new BollingerBandsMiddleIndicator(emaIndicator);
         BollingerBandsLowerIndicator bbl = new BollingerBandsLowerIndicator(bbm, sd);
         BollingerBandsUpperIndicator bbu = new BollingerBandsUpperIndicator(bbm, sd);
         BollingerBandWidthIndicator bbw = new BollingerBandWidthIndicator(bbu, bbm, bbl);
@@ -77,7 +77,7 @@ public class BasedOnBollingerBandStrategy implements IStrategy {
                         .and(new OverIndicatorRule(bbw, 3.0))
                         .and(new IsRisingRule(bbm, 14, 0.8))
                         .and(new InPipeRule(rsiIndicator, 58, 47))
-                        //    .and(new IsRisingRule(balanceVolumeIndicator, 20, 0.5))
+                    //    .and(new IsRisingRule(balanceVolumeIndicator, 20, 0.4))
                         .and(new UnderIndicatorRule(adxIndicator, 40));
 
 

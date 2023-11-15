@@ -25,7 +25,7 @@ import java.text.MessageFormat;
 import java.util.*;
 
 
-@Component
+//@Component
 @EnableScheduling
 @Log4j2
 public class BinanceTraderBotImpl implements ITraderBot {
