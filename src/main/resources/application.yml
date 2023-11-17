@@ -1,6 +1,10 @@
 
 spring:
 
+  task:
+    scheduling:
+      pool:
+        size: 1
   # jackson config
   jackson:
     serialization:
@@ -47,19 +51,19 @@ management:
 server:
   port: 8081
 
-
-logging:
-  file:
-    name: trading_bot_log.txt
-
-
 telegram:
   chatID: 852348061
   name: MTCCurrencyBot
 
 trade:
   gain: 0.6
-  deposit: 11
+
+test:
+  trading:
+    gain: 0.4
+    deposit: 20
+    minDeposit: 12
+    balance: 200
 
 
 

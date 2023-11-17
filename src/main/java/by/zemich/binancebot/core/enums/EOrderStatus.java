@@ -6,7 +6,7 @@ public enum EOrderStatus {
     FILLED,
     CANCELED,
     REPLACED,
-    STOPPED,
+    SOLD,
     REJECTED,
     EXPIRED,
     NEW_INSURANCE,

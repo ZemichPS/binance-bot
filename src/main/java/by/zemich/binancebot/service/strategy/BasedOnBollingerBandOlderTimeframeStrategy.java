@@ -66,7 +66,7 @@ public class BasedOnBollingerBandOlderTimeframeStrategy implements IStrategy {
 //        LowPriceIndicator lowPriceIndicator = new LowPriceIndicator(series);
 
 
-        Rule entryRule = new UnderIndicatorRule(rsiIndicator, 60);
+        Rule entryRule = new UnderIndicatorRule(rsiIndicator, 65);
                 //.and(new OverIndicatorRule(closePrice, openPriceIndicator))
                 //.and(new IsRisingRule(emaIndicator, 14, 0.5));
       //          .and(new UnderIndicatorRule(adxIndicator, 40));

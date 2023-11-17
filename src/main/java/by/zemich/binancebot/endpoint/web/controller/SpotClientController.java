@@ -28,6 +28,7 @@ import org.ta4j.core.num.DecimalNum;
 import org.ta4j.core.num.Num;
 import org.ta4j.core.rules.*;
 
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -74,6 +75,15 @@ public class SpotClientController {
 
         return ResponseEntity.ok(order);
     }
+
+    @GetMapping("/dec")
+    private ResponseEntity<BigDecimal> dec() {
+        BigDecimal decimal = new BigDecimal("150");
+        decimal = decimal.add(new BigDecimal("150"));
+
+        return ResponseEntity.ok(decimal);
+    }
+
 
     @GetMapping("/rule_test")
     private ResponseEntity<String> rule(@RequestParam String symbol,
