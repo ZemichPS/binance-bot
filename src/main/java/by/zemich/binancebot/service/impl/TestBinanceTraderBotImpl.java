@@ -116,10 +116,21 @@ public class TestBinanceTraderBotImpl implements ITraderBot {
     private FakeBargainEntity createFakeBargain(String symbol) {
         BigDecimal assetPrice = getSymbolPrice(symbol);
         BigDecimal deposit = balanceManager.allocateFundsForTransaction();
-        BigDecimal makerFee = deposit.divide(new BigDecimal("100")).multiply(this.percentMakerFee);
-        BigDecimal depositWithoutFee = deposit.subtract(makerFee);
-        BigDecimal assetAmount = depositWithoutFee.divide(assetPrice, 1, RoundingMode.DOWN);
 
+        BigDecimal assetAmount = deposit.divide(assetPrice, 1, RoundingMode.DOWN);
+        BigDecimal costsForAsset = assetAmount.multiply(assetPrice);
+
+        BigDecimal makerFee = costsForAsset.divide(new BigDecimal("100")).multiply(this.percentMakerFee);
+
+        BigDecimal totalCosts = costsForAsset.add(makerFee);
+
+        BigDecimal differenceBetweenDepositAndCosts = deposit.subtract(totalCosts);
+
+        if(differenceBetweenDepositAndCosts.doubleValue() > 0) {
+            balanceManager.accumulateFounds(differenceBetweenDepositAndCosts);
+        } else if (differenceBetweenDepositAndCosts.doubleValue() < 0) {
+            balanceManager.allocateAdditionalFunds(differenceBetweenDepositAndCosts.abs());
+        }
 
         FakeBargainEntity fakeOrderEntity = new FakeBargainEntity();
         fakeOrderEntity.setUuid(UUID.randomUUID());
@@ -129,7 +140,7 @@ public class TestBinanceTraderBotImpl implements ITraderBot {
         fakeOrderEntity.setBuyPrice(assetPrice);
         fakeOrderEntity.setAssetAmount(assetAmount);
         fakeOrderEntity.setMakerFee(makerFee);
-        fakeOrderEntity.setSpendOnPurchase(deposit);
+        fakeOrderEntity.setTotalSpent(totalCosts);
 
         return fakeOrderDao.save(fakeOrderEntity);
     }
@@ -138,11 +149,15 @@ public class TestBinanceTraderBotImpl implements ITraderBot {
 
         BigDecimal currentPrice = getSymbolPrice(fakeOrderEntity.getSymbol());
         BigDecimal assetAmount = fakeOrderEntity.getAssetAmount();
-        BigDecimal spent = fakeOrderEntity.getSpendOnPurchase();
+        BigDecimal spent = fakeOrderEntity.getTotalSpent();
         BigDecimal buyPrice = fakeOrderEntity.getBuyPrice();
 
         BigDecimal percentDifference = getPercentDifference(buyPrice, currentPrice);
-        BigDecimal currentFinanceResult = currentPrice.multiply(assetAmount).subtract(spent);
+
+        BigDecimal takerFee = currentPrice.multiply(assetAmount).divide(new BigDecimal("100")).multiply(percentTakerFee);
+
+
+        BigDecimal currentFinanceResult = currentPrice.multiply(assetAmount).subtract(takerFee).subtract(spent);
 
         fakeOrderEntity.setPricePercentDifference(percentDifference);
         fakeOrderEntity.setCurrentFinanceResult(currentFinanceResult);
@@ -152,17 +167,14 @@ public class TestBinanceTraderBotImpl implements ITraderBot {
 
         if (percentDifference.doubleValue() >= testTradingProperties.getGain().doubleValue()) {
 
-            BigDecimal takerFee = currentFinanceResult.divide(new BigDecimal("100")).multiply(percentTakerFee);
-
-            BigDecimal financeResultWithOutTakerFee = currentFinanceResult.subtract(takerFee);
             fakeOrderEntity.setTakerFee(takerFee);
-            fakeOrderEntity.setFinanceResult(financeResultWithOutTakerFee);
+            fakeOrderEntity.setFinanceResult(currentFinanceResult);
             fakeOrderEntity.setSellTime(LocalDateTime.now());
             fakeOrderEntity.setSellPrice(currentPrice);
             fakeOrderEntity.setStatus(EOrderStatus.SOLD);
 
             notifyToTelegram(fakeOrderEntity, EEventType.ASSET_WAS_SOLD);
-            balanceManager.accumulateFounds(financeResultWithOutTakerFee);
+            balanceManager.accumulateFounds(currentFinanceResult);
             blackList.remove(fakeOrderEntity.getSymbol());
         }
 

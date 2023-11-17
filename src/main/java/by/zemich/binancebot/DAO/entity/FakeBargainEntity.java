@@ -44,7 +44,7 @@ public class FakeBargainEntity {
     private BigDecimal assetAmount;
 
     @Column(name = "spend_on_purchase")
-    private BigDecimal spendOnPurchase;
+    private BigDecimal totalSpent;
 
     @Column(name = "duration")
     private Long duration;
@@ -79,7 +79,7 @@ public class FakeBargainEntity {
                              BigDecimal sellPrice,
                              String symbol,
                              BigDecimal assetAmount,
-                             BigDecimal spendOnPurchase,
+                             BigDecimal totalSpent,
                              Long duration,
                              EOrderStatus status,
                              BigDecimal makerFee,
@@ -97,7 +97,7 @@ public class FakeBargainEntity {
         this.sellPrice = sellPrice;
         this.symbol = symbol;
         this.assetAmount = assetAmount;
-        this.spendOnPurchase = spendOnPurchase;
+        this.totalSpent = totalSpent;
         this.duration = duration;
         this.status = status;
         this.makerFee = makerFee;
@@ -183,12 +183,12 @@ public class FakeBargainEntity {
         this.assetAmount = assetAmount;
     }
 
-    public BigDecimal getSpendOnPurchase() {
-        return spendOnPurchase;
+    public BigDecimal getTotalSpent() {
+        return totalSpent;
     }
 
-    public void setSpendOnPurchase(BigDecimal spendOnPurchase) {
-        this.spendOnPurchase = spendOnPurchase;
+    public void setTotalSpent(BigDecimal spendOnPurchase) {
+        this.totalSpent = spendOnPurchase;
     }
 
     public Long getDuration() {

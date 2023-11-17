@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 
 public interface IBalanceManager {
     BigDecimal allocateFundsForTransaction();
+    BigDecimal allocateAdditionalFunds(BigDecimal additional);
     BigDecimal accumulateFounds(BigDecimal amount);
     BigDecimal getBalance();
 

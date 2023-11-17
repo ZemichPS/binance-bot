@@ -36,7 +36,20 @@ public class BalanceManagerImpl implements IBalanceManager {
     }
 
     @Override
+    public BigDecimal allocateAdditionalFunds(BigDecimal additional) {
+        if(balance.doubleValue() >= additional.doubleValue()){
+            balance = balance.subtract(additional);
+            return additional;
+        }
+
+        throw new RuntimeException("there is not enough balance");
+    }
+
+    @Override
     public BigDecimal accumulateFounds(BigDecimal amount) {
+        if(amount == null) throw new RuntimeException("amount can not be null");
+        if(amount.doubleValue() <= 0) throw new RuntimeException("amount must be bigger 0");
+
         balance = balance.add(amount);
         return balance;
     }
