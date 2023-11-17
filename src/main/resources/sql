@@ -1,0 +1,31 @@
+-- Table: app.fake_bargains
+
+-- DROP TABLE IF EXISTS app.fake_bargains;
+
+CREATE TABLE IF NOT EXISTS app.fake_bargains
+(
+    uuid uuid NOT NULL,
+    dt_update timestamp without time zone,
+    dt_create timestamp without time zone,
+    buy_time timestamp without time zone,
+    sell_time timestamp without time zone,
+    buy_price numeric,
+    sell_price numeric,
+    symbol text COLLATE pg_catalog."default",
+    status text COLLATE pg_catalog."default",
+    duration bigint,
+    price_percent_difference numeric,
+    asset_amount numeric,
+    spend_on_purchase numeric,
+    maker_fee numeric,
+    taker_fee numeric,
+    finance_result numeric,
+    current_finance_result numeric,
+    strategy_name text COLLATE pg_catalog."default",
+    CONSTRAINT fake_orders_pkey PRIMARY KEY (uuid)
+)
+
+TABLESPACE pg_default;
+
+ALTER TABLE IF EXISTS app.fake_bargains
+    OWNER to postgres;

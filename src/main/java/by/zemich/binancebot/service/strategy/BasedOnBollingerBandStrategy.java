@@ -75,10 +75,10 @@ public class BasedOnBollingerBandStrategy implements IStrategy {
                 new UnderIndicatorRule(openPriceIndicator, bbm)   //  ЦЕНА ОТКРЫТИЯ ПОД bbm
                         .and(new OverIndicatorRule(closePrice, openPriceIndicator) // БЫЧЬЯ СВЕЧА
                         .and(new OverIndicatorRule(closePrice, bbm)) //  ЦЕНА в настоящий момент над bmm
-                        .and(new OverIndicatorRule(bbw, 3.0)) // ШИРИНА ПОЛОС БОЛЛИНДЖЕРА ДАВОЛЬНА ВЫСОКА
-                        .and(new IsRisingRule(bbm, 14, 0.6)) // СРЕДНЯЯ РАСТЁТ
-                        .and(new InPipeRule(rsiIndicator, 58, 47)) // RSI В КАНАЛЕ
-                        .and(new IsRisingRule(balanceVolumeIndicator, 20, 0.4))); // ОБЪЁМЫ РАСТУТ
+                        .and(new OverIndicatorRule(bbw, 3.0))); // ШИРИНА ПОЛОС БОЛЛИНДЖЕРА ДАВОЛЬНА ВЫСОКА
+                  //      .and(new IsRisingRule(bbm, 14, 0.6)) // СРЕДНЯЯ РАСТЁТ
+                    //    .and(new InPipeRule(rsiIndicator, 58, 47)) // RSI В КАНАЛЕ
+                      //  .and(new IsRisingRule(balanceVolumeIndicator, 20, 0.4))); // ОБЪЁМЫ РАСТУТ
                         //.and(new UnderIndicatorRule(adxIndicator, 40)); // ADX
 
 
