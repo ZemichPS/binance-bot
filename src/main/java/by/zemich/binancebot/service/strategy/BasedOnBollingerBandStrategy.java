@@ -12,6 +12,7 @@ import org.ta4j.core.indicators.RSIIndicator;
 import org.ta4j.core.indicators.SMAIndicator;
 import org.ta4j.core.indicators.adx.ADXIndicator;
 import org.ta4j.core.indicators.bollinger.*;
+import org.ta4j.core.indicators.candles.RealBodyIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.indicators.helpers.HighPriceIndicator;
 import org.ta4j.core.indicators.helpers.LowPriceIndicator;
@@ -59,6 +60,8 @@ public class BasedOnBollingerBandStrategy implements IStrategy {
         PercentBIndicator percentB = new PercentBIndicator(closePrice, 20, 2.0);
         OnBalanceVolumeIndicator balanceVolumeIndicator = new OnBalanceVolumeIndicator(series);
 
+        RealBodyIndicator realBodyIndicator = new RealBodyIndicator(series);
+
 
         // Standard deviation
         StandardDeviationIndicator sd = new StandardDeviationIndicator(closePrice, 20);
@@ -72,14 +75,15 @@ public class BasedOnBollingerBandStrategy implements IStrategy {
         ADXIndicator adxIndicator = new ADXIndicator(series, 14);
 
         Rule entryRule =
-                new UnderIndicatorRule(openPriceIndicator, bbm)   //  ЦЕНА ОТКРЫТИЯ ПОД bbm
-                        .and(new OverIndicatorRule(closePrice, openPriceIndicator) // БЫЧЬЯ СВЕЧА
-                        .and(new OverIndicatorRule(closePrice, bbm)) //  ЦЕНА в настоящий момент над bmm
-                        .and(new OverIndicatorRule(bbw, 3.0))); // ШИРИНА ПОЛОС БОЛЛИНДЖЕРА ДАВОЛЬНА ВЫСОКА
-                  //      .and(new IsRisingRule(bbm, 14, 0.6)) // СРЕДНЯЯ РАСТЁТ
-                    //    .and(new InPipeRule(rsiIndicator, 58, 47)) // RSI В КАНАЛЕ
-                      //  .and(new IsRisingRule(balanceVolumeIndicator, 20, 0.4))); // ОБЪЁМЫ РАСТУТ
-                        //.and(new UnderIndicatorRule(adxIndicator, 40)); // ADX
+                new UnderIndicatorRule(openPriceIndicator, bbm)
+                        .and(new OverIndicatorRule(closePrice, bbm))
+                        .and(new OverIndicatorRule(bbw, 3.0))
+                        .and(new IsRisingRule(bbm, 30, 0.7))
+                        .and(new InPipeRule(rsiIndicator, 60, 45))
+                      //  .and(new IsRisingRule(balanceVolumeIndicator, 40, 0.2))
+                        //.and(new UnderIndicatorRule(adxIndicator, 45))
+                        .and(new NotRule(new OverIndicatorRule(highPriceIndicator, bbu)));
+
 
 
         Rule exitRule = new StopGainRule(closePrice, DecimalNum.valueOf("0.8"));

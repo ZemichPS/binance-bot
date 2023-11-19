@@ -2,6 +2,7 @@ package by.zemich.binancebot.endpoint.web.controller;
 
 import by.zemich.binancebot.DAO.entity.OrderEntity;
 import by.zemich.binancebot.core.dto.*;
+import by.zemich.binancebot.core.enums.EInterval;
 import by.zemich.binancebot.service.api.IAccountService;
 import by.zemich.binancebot.service.api.IOrderService;
 import by.zemich.binancebot.service.api.IStockMarketService;
@@ -20,6 +21,7 @@ import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.RSIIndicator;
 import org.ta4j.core.indicators.adx.ADXIndicator;
 import org.ta4j.core.indicators.bollinger.*;
+import org.ta4j.core.indicators.candles.RealBodyIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.indicators.statistics.CorrelationCoefficientIndicator;
 import org.ta4j.core.indicators.statistics.StandardDeviationIndicator;
@@ -66,6 +68,23 @@ public class SpotClientController {
     private ResponseEntity<AccountInformationResponseDto> accountInf() {
         AccountInformationQueryDto query = new AccountInformationQueryDto();
         return ResponseEntity.ok(accountService.getInformation(query).get());
+    }
+
+    @GetMapping("/real_body")
+    private ResponseEntity<Boolean> realBody(@RequestParam String symbol,
+                                            @RequestParam Integer index) {
+        KlineQueryDto query = KlineQueryDto.builder()
+                .symbol(symbol)
+                .interval(EInterval.D1.toString())
+                .limit(100)
+                .build();
+
+        BarSeries series = stockMarketService.getBarSeries(query).get();
+
+        RealBodyIndicator realBodyIndicator = new RealBodyIndicator(series);
+        Rule entryRule = new OverIndicatorRule(realBodyIndicator, 0);
+
+        return ResponseEntity.ok(entryRule.isSatisfied(index));
     }
 
 

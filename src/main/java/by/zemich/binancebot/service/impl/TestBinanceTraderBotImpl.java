@@ -6,6 +6,7 @@ import by.zemich.binancebot.DAO.entity.FakeBargainEntity;
 import by.zemich.binancebot.config.properties.TestTradingProperties;
 import by.zemich.binancebot.core.dto.*;
 import by.zemich.binancebot.core.enums.EEventType;
+import by.zemich.binancebot.core.enums.EInterval;
 import by.zemich.binancebot.core.enums.EOrderStatus;
 import by.zemich.binancebot.service.api.*;
 import lombok.extern.log4j.Log4j2;
@@ -14,7 +15,10 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.ta4j.core.BarSeries;
+import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
+import org.ta4j.core.indicators.candles.RealBodyIndicator;
+import org.ta4j.core.rules.OverIndicatorRule;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -51,6 +55,7 @@ public class TestBinanceTraderBotImpl implements ITraderBot {
 
         blackList.add("BUSDUSDT");
         blackList.add("USDTUSDT");
+        blackList.add("BTTCUSDT");
     }
 
 
@@ -84,33 +89,34 @@ public class TestBinanceTraderBotImpl implements ITraderBot {
                         if (blackList.contains(symbol)) return;
 
                         queryDto.setSymbol(symbol);
-                        queryDto.setInterval("15m");
+                        queryDto.setInterval(EInterval.M15.toString());
                         BarSeries series = stockMarketService.getBarSeries(queryDto).orElse(null);
 
-                        if (series.getBarCount() < 400) return;
+                        if (series.getBarCount() < 500) return;
 
-                        Strategy strategy = strategyMap.get("BOLLINGER_BAND_MAIN_STRATEGY").get(series);
-                        if (strategy.shouldEnter(series.getEndIndex())) {
-                            queryDto.setInterval("1h");
-                            BarSeries secondSeries = stockMarketService.getBarSeries(queryDto).orElse(null);
-                            Strategy sureStrategy = strategyMap.get("BOLLINGER_BAND_OLDER_TIMEFRAME_STRATEGY").get(secondSeries);
-                       //     if (sureStrategy.shouldEnter(secondSeries.getEndIndex())) {
+                        Strategy mainStrategy = strategyMap.get("BOLLINGER_BAND_MAIN_STRATEGY").get(series);
+                        if (mainStrategy.shouldEnter(series.getEndIndex())) {
+
+                            KlineQueryDto dailyQueryDto = KlineQueryDto.builder()
+                                    .symbol(symbol)
+                                    .limit(50)
+                                    .interval(EInterval.H4.toString())
+                                    .build();
+
+                            BarSeries olderSeries = stockMarketService.getBarSeries(dailyQueryDto).orElse(null);
+                            Strategy olderStrategy = strategyMap.get("BOLLINGER_BAND_OLDER_TIMEFRAME_STRATEGY").get(olderSeries);
+
+                            //     if (olderStrategy.shouldEnter(olderSeries.getEndIndex())) {
                             if (true) {
-                                FakeBargainEntity createdFakeBargain = createFakeBargain(symbol);
-                                notifyToTelegram(createdFakeBargain, EEventType.ENDPOINT_WAS_FOUNDED);
-                                blackList.add(symbol);
+                                synchronized (TestBinanceTraderBotImpl.class) {
+                                    FakeBargainEntity createdFakeBargain = createFakeBargain(symbol);
+                                    notifyToTelegram(createdFakeBargain, EEventType.ASSET_WAS_BOUGHT);
+                                    blackList.add(symbol);
+                                }
                             }
                         }
                     });
                 }, () -> log.warn("Symbol list is empty"));
-    }
-
-    @Scheduled(fixedDelay = 30_000, initialDelay = 2_000)
-    @Async
-    public void checkOrder() {
-        fakeOrderDao.findAllByStatus(EOrderStatus.NEW).ifPresent(list -> {
-            list.forEach(this::check);
-        });
     }
 
     private FakeBargainEntity createFakeBargain(String symbol) {
@@ -126,7 +132,7 @@ public class TestBinanceTraderBotImpl implements ITraderBot {
 
         BigDecimal differenceBetweenDepositAndCosts = deposit.subtract(totalCosts);
 
-        if(differenceBetweenDepositAndCosts.doubleValue() > 0) {
+        if (differenceBetweenDepositAndCosts.doubleValue() > 0) {
             balanceManager.accumulateFounds(differenceBetweenDepositAndCosts);
         } else if (differenceBetweenDepositAndCosts.doubleValue() < 0) {
             balanceManager.allocateAdditionalFunds(differenceBetweenDepositAndCosts.abs());
@@ -145,40 +151,48 @@ public class TestBinanceTraderBotImpl implements ITraderBot {
         return fakeOrderDao.save(fakeOrderEntity);
     }
 
+    @Scheduled(fixedDelay = 30_000, initialDelay = 2_000)
+    @Async
+    public void checkOrder() {
+        fakeOrderDao.findAllByStatus(EOrderStatus.NEW).ifPresent(list -> {
+            list.forEach(this::check);
+        });
+    }
+
     private FakeBargainEntity check(FakeBargainEntity fakeOrderEntity) {
+        synchronized (TestBinanceTraderBotImpl.class) {
+            BigDecimal currentPrice = getSymbolPrice(fakeOrderEntity.getSymbol());
+            BigDecimal assetAmount = fakeOrderEntity.getAssetAmount();
+            BigDecimal spent = fakeOrderEntity.getTotalSpent();
+            BigDecimal buyPrice = fakeOrderEntity.getBuyPrice();
 
-        BigDecimal currentPrice = getSymbolPrice(fakeOrderEntity.getSymbol());
-        BigDecimal assetAmount = fakeOrderEntity.getAssetAmount();
-        BigDecimal spent = fakeOrderEntity.getTotalSpent();
-        BigDecimal buyPrice = fakeOrderEntity.getBuyPrice();
+            BigDecimal percentDifference = getPercentDifference(buyPrice, currentPrice);
 
-        BigDecimal percentDifference = getPercentDifference(buyPrice, currentPrice);
+            BigDecimal takerFee = currentPrice.multiply(assetAmount).divide(new BigDecimal("100")).multiply(percentTakerFee);
 
-        BigDecimal takerFee = currentPrice.multiply(assetAmount).divide(new BigDecimal("100")).multiply(percentTakerFee);
+            BigDecimal currentFinanceResult = currentPrice.multiply(assetAmount).subtract(takerFee).subtract(spent);
 
-
-        BigDecimal currentFinanceResult = currentPrice.multiply(assetAmount).subtract(takerFee).subtract(spent);
-
-        fakeOrderEntity.setPricePercentDifference(percentDifference);
-        fakeOrderEntity.setCurrentFinanceResult(currentFinanceResult);
-        fakeOrderEntity.setDuration(Duration.between(fakeOrderEntity.getBuyTime(),
-                LocalDateTime.now()).toMinutes());
+            fakeOrderEntity.setPricePercentDifference(percentDifference);
+            fakeOrderEntity.setCurrentFinanceResult(currentFinanceResult);
+            fakeOrderEntity.setDuration(Duration.between(fakeOrderEntity.getBuyTime(),
+                    LocalDateTime.now()).toMinutes());
 
 
-        if (percentDifference.doubleValue() >= testTradingProperties.getGain().doubleValue()) {
+            if (percentDifference.doubleValue() >= testTradingProperties.getGain().doubleValue()) {
 
-            fakeOrderEntity.setTakerFee(takerFee);
-            fakeOrderEntity.setFinanceResult(currentFinanceResult);
-            fakeOrderEntity.setSellTime(LocalDateTime.now());
-            fakeOrderEntity.setSellPrice(currentPrice);
-            fakeOrderEntity.setStatus(EOrderStatus.SOLD);
+                fakeOrderEntity.setTakerFee(takerFee);
+                fakeOrderEntity.setFinanceResult(currentFinanceResult);
+                fakeOrderEntity.setSellTime(LocalDateTime.now());
+                fakeOrderEntity.setSellPrice(currentPrice);
+                fakeOrderEntity.setStatus(EOrderStatus.SOLD);
 
-            notifyToTelegram(fakeOrderEntity, EEventType.ASSET_WAS_SOLD);
-            balanceManager.accumulateFounds(currentFinanceResult);
-            blackList.remove(fakeOrderEntity.getSymbol());
+                notifyToTelegram(fakeOrderEntity, EEventType.ASSET_WAS_SOLD);
+                balanceManager.accumulateFounds(currentPrice.multiply(assetAmount.subtract(takerFee)));
+                blackList.remove(fakeOrderEntity.getSymbol());
+            }
+
+            return fakeOrderDao.save(fakeOrderEntity);
         }
-
-        return fakeOrderDao.save(fakeOrderEntity);
     }
 
     private BigDecimal getSymbolPrice(String symbol) {

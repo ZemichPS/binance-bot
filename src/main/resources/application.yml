@@ -4,7 +4,7 @@ spring:
   task:
     scheduling:
       pool:
-        size: 1
+        size: 3
   # jackson config
   jackson:
     serialization:
@@ -60,10 +60,13 @@ trade:
 
 test:
   trading:
-    gain: 0.3
+    gain: 0.4
     deposit: 20
     minDeposit: 12
     balance: 200
+
+
+
 
 
 

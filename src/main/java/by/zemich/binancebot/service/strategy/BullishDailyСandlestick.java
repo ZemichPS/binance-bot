@@ -13,12 +13,12 @@ import org.ta4j.core.indicators.bollinger.BollingerBandWidthIndicator;
 import org.ta4j.core.indicators.bollinger.BollingerBandsLowerIndicator;
 import org.ta4j.core.indicators.bollinger.BollingerBandsMiddleIndicator;
 import org.ta4j.core.indicators.bollinger.BollingerBandsUpperIndicator;
+import org.ta4j.core.indicators.candles.RealBodyIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.indicators.helpers.OpenPriceIndicator;
 import org.ta4j.core.indicators.statistics.StandardDeviationIndicator;
 import org.ta4j.core.num.DecimalNum;
-import org.ta4j.core.rules.StopGainRule;
-import org.ta4j.core.rules.UnderIndicatorRule;
+import org.ta4j.core.rules.*;
 
 
 @Component
@@ -47,8 +47,9 @@ public class BullishDailyСandlestick implements IStrategy {
     private Strategy build() {
 
         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
-        OpenPriceIndicator openPriceIndicator = new OpenPriceIndicator(series);
-        Rule entryRule = new UnderIndicatorRule(openPriceIndicator, closePrice);
+        RealBodyIndicator realBodyIndicator = new RealBodyIndicator(series);
+
+        Rule entryRule = new OverIndicatorRule(realBodyIndicator, 0);
         Rule exitRule = new StopGainRule(closePrice, DecimalNum.valueOf("0.8"));
         strategy = new BaseStrategy(name, entryRule, exitRule);
         return strategy;

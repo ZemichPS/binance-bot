@@ -24,6 +24,7 @@ public enum EInterval {
 
     private String parameterName;
 
+
     EInterval(String parameterName) {
         this.parameterName = parameterName;
     }

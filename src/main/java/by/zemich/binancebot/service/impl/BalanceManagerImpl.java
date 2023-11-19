@@ -23,13 +23,16 @@ public class BalanceManagerImpl implements IBalanceManager {
 
     @Override
     public BigDecimal allocateFundsForTransaction() {
-        if (balance.doubleValue() >= deposit.doubleValue()) {
+        if (balance.compareTo(deposit) > 0) {
             balance = balance.subtract(deposit);
             return deposit;
         }
 
-        if (balance.doubleValue() > minDeposit.doubleValue()) {
-            return balance;
+
+        if (balance.compareTo(minDeposit) > 0) {
+            BigDecimal remain = balance;
+            balance = new BigDecimal("0");
+            return remain;
         }
 
         throw new RuntimeException("Deposit is not enough");
@@ -37,7 +40,7 @@ public class BalanceManagerImpl implements IBalanceManager {
 
     @Override
     public BigDecimal allocateAdditionalFunds(BigDecimal additional) {
-        if(balance.doubleValue() >= additional.doubleValue()){
+        if (balance.doubleValue() >= additional.doubleValue()) {
             balance = balance.subtract(additional);
             return additional;
         }
@@ -47,8 +50,8 @@ public class BalanceManagerImpl implements IBalanceManager {
 
     @Override
     public BigDecimal accumulateFounds(BigDecimal amount) {
-        if(amount == null) throw new RuntimeException("amount can not be null");
-        if(amount.doubleValue() <= 0) throw new RuntimeException("amount must be bigger 0");
+        if (amount == null) throw new RuntimeException("amount can not be null");
+        if (amount.doubleValue() <= 0) throw new RuntimeException("amount must be bigger 0");
 
         balance = balance.add(amount);
         return balance;
