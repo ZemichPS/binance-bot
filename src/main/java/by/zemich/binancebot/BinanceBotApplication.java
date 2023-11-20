@@ -1,10 +1,7 @@
 package by.zemich.binancebot;
 
 
-import by.zemich.binancebot.config.properties.PrivateProperties;
-import by.zemich.binancebot.config.properties.TelegramProperties;
-import by.zemich.binancebot.config.properties.TestTradingProperties;
-import by.zemich.binancebot.config.properties.TradeProperties;
+import by.zemich.binancebot.config.properties.*;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
@@ -13,7 +10,8 @@ import org.springframework.boot.context.properties.EnableConfigurationProperties
 		PrivateProperties.class,
 		TelegramProperties.class,
 		TradeProperties.class,
-		TestTradingProperties.class})
+		TestTradingProperties.class,
+		RealTradeProperties.class})
 @SpringBootApplication
 public class BinanceBotApplication {
 

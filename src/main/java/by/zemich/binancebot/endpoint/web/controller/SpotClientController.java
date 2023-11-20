@@ -2,12 +2,13 @@ package by.zemich.binancebot.endpoint.web.controller;
 
 import by.zemich.binancebot.DAO.entity.OrderEntity;
 import by.zemich.binancebot.core.dto.*;
+import by.zemich.binancebot.core.dto.binance.*;
 import by.zemich.binancebot.core.enums.EInterval;
 import by.zemich.binancebot.service.api.IAccountService;
 import by.zemich.binancebot.service.api.IOrderService;
 import by.zemich.binancebot.service.api.IStockMarketService;
 
-import by.zemich.binancebot.core.dto.TickerSymbolShortQuery;
+import by.zemich.binancebot.core.dto.binance.TickerSymbolShortQuery;
 
 import by.zemich.binancebot.service.api.ITradeManager;
 import by.zemich.binancebot.service.strategy.BasedOnBollingerBandStrategy;

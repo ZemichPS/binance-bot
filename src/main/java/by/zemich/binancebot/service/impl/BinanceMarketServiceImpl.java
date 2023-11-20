@@ -1,10 +1,10 @@
 package by.zemich.binancebot.service.impl;
 
 import by.zemich.binancebot.core.dto.*;
+import by.zemich.binancebot.core.dto.binance.*;
 import by.zemich.binancebot.service.api.IConverter;
 import by.zemich.binancebot.service.api.IStockMarketService;
-import by.zemich.binancebot.core.dto.TickerSymbolShortQuery;
-import by.zemich.binancebot.service.api.ITradeManager;
+import by.zemich.binancebot.core.dto.binance.TickerSymbolShortQuery;
 import com.binance.connector.client.SpotClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;

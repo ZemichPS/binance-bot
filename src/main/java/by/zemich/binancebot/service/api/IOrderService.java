@@ -2,6 +2,7 @@ package by.zemich.binancebot.service.api;
 
 import by.zemich.binancebot.DAO.entity.OrderEntity;
 import by.zemich.binancebot.core.dto.*;
+import by.zemich.binancebot.core.dto.binance.*;
 import by.zemich.binancebot.core.enums.EOrderStatus;
 
 import java.util.List;

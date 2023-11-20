@@ -119,18 +119,21 @@ public class BargainServiceImpl implements IBargainService {
     }
 
     @Override
-    public Optional<List<BargainEntity>> updateOpenStatus() {
+    public Optional<List<BargainEntity>> checkOnFillBuyOrder() {
         List<BargainEntity> bargainEntities = new ArrayList<>();
 
-        bargainDao.findAllByStatus(EBargainStatus.CREATED).orElseThrow().forEach(bargainEntity -> {
-                    if (bargainEntity.getOrders() != null && bargainEntity.getOrders().size() == 1) {
-                        OrderDto orderDto = conversionService.convert(bargainEntity.getOrders().get(0), OrderDto.class);
-                        // сравниваем статусы
-                        if (orderService.updateStatus(orderDto, EOrderStatus.FILLED).isPresent()) {
-                            bargainEntities.add(bargainEntity);
+        bargainDao.findAllByStatus(EBargainStatus.OPEN_BUY_ORDER_CREATED).ifPresent(
+                bargainEntityList -> bargainEntityList.forEach(bargainEntity -> {
+                            if (bargainEntity.getOrders() != null)
+                                if (bargainEntity.getOrders().size() == 1) {
+                                    OrderDto orderDto = conversionService.convert(bargainEntity.getOrders().get(0), OrderDto.class);
+                                    // сравниваем статусы
+                                    if (orderService.updateStatus(orderDto, EOrderStatus.FILLED).isPresent()) {
+                                        bargainEntities.add(bargainEntity);
+                                    }
+                                }
                         }
-                    }
-                }
+                )
         );
         return Optional.of(bargainEntities);
     }

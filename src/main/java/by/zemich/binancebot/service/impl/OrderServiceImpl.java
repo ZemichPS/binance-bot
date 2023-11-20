@@ -3,13 +3,13 @@ package by.zemich.binancebot.service.impl;
 import by.zemich.binancebot.DAO.api.IOrderDao;
 import by.zemich.binancebot.DAO.entity.OrderEntity;
 import by.zemich.binancebot.core.dto.*;
+import by.zemich.binancebot.core.dto.binance.*;
 import by.zemich.binancebot.core.enums.EOrderStatus;
 import by.zemich.binancebot.core.exeption.NoSuchEntityException;
 import by.zemich.binancebot.service.api.IConverter;
 import by.zemich.binancebot.service.api.IOrderService;
 import by.zemich.binancebot.service.api.IStockMarketService;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.util.BeanUtil;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.BeanUtils;
 import org.springframework.core.convert.ConversionService;
@@ -72,20 +72,25 @@ public class OrderServiceImpl implements IOrderService {
     @Override
     public Optional<OrderEntity> updateStatus(OrderDto orderDto, EOrderStatus conditionalStatus) {
 
-        QueryOrderResponseDto queryOrderResponse = stockMarketService.getOrder(QueryOrderDto.builder()
+        QueryOrderDto queryOrder = QueryOrderDto.builder()
                 .symbol(orderDto.getSymbol())
                 .orderId(orderDto.getOrderId())
-                .build()).orElseThrow(RuntimeException::new);
+                .build();
 
-         if(!orderDto.getStatus().equals(queryOrderResponse.getStatus()) ){
 
-             if(queryOrderResponse.getStatus().equals(conditionalStatus)) {
-                 orderDto.setStatus(queryOrderResponse.getStatus());
-                 OrderEntity orderEntity = conversionService.convert(orderDto, OrderEntity.class);
 
-                 return Optional.of(orderDao.save(orderEntity));
-             }
-         }
+            QueryOrderResponseDto queryOrderResponse = stockMarketService.getOrder(queryOrder).orElseThrow(RuntimeException::new);
+
+            if (!orderDto.getStatus().equals(queryOrderResponse.getStatus())) {
+
+                if (queryOrderResponse.getStatus().name().equals(conditionalStatus.name())) {
+                    orderDto.setStatus(queryOrderResponse.getStatus());
+                    OrderEntity orderEntity = conversionService.convert(orderDto, OrderEntity.class);
+
+                    return Optional.of(orderDao.save(orderEntity));
+                }
+            }
+
 
         return Optional.empty();
     }

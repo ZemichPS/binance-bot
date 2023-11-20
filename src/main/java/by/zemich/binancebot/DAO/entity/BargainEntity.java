@@ -3,6 +3,7 @@ package by.zemich.binancebot.DAO.entity;
 import by.zemich.binancebot.core.enums.EBargainStatus;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.SourceType;
 import org.hibernate.annotations.UpdateTimestamp;
 
@@ -27,14 +28,6 @@ public class BargainEntity {
     @Column(name = "dt_update")
     private Timestamp dtUpdate;
 
-    @OneToMany(targetEntity = OrderEntity.class,
-            cascade = CascadeType.REFRESH,
-            fetch = FetchType.EAGER,
-            mappedBy = "bargain",
-            orphanRemoval = true)
-    //@JoinColumn(name = "uuid")
-    private List<OrderEntity> orders;
-
     @Column(name = "percentage_result")
     private BigDecimal percentageResult;
     @Column(name = "finance_result")
@@ -56,32 +49,26 @@ public class BargainEntity {
     @Column(name = "current_percentage_result")
     private BigDecimal currentPercentageResult;
 
+    @OneToMany(fetch = FetchType.EAGER)
+    @JoinColumn(name = "uuid")
+    private List<OrderEntity> orders;
 
-    public BargainEntity(UUID uuid,
-                         Timestamp dtUpdate,
-                         Timestamp dtCreate,
-                         BigDecimal percentageResult,
-                         BigDecimal financeResult,
-                         Long timeInWork,
-                         Timestamp finishTime,
-                         EBargainStatus status,
-                         String symbol,
-                         BigDecimal currentResult,
-                         BigDecimal currentPercentageResult) {
+    public BargainEntity() {
+    }
+
+    public BargainEntity(UUID uuid, Timestamp dtCreate, Timestamp dtUpdate, BigDecimal percentageResult, BigDecimal financeResult, Long timeInWork, Timestamp finishTime, EBargainStatus status, String symbol, BigDecimal currentFinanceResult, BigDecimal currentPercentageResult, List<OrderEntity> orders) {
         this.uuid = uuid;
-        this.dtUpdate = dtUpdate;
         this.dtCreate = dtCreate;
+        this.dtUpdate = dtUpdate;
         this.percentageResult = percentageResult;
         this.financeResult = financeResult;
         this.timeInWork = timeInWork;
         this.finishTime = finishTime;
         this.status = status;
         this.symbol = symbol;
-        this.currentFinanceResult = currentResult;
+        this.currentFinanceResult = currentFinanceResult;
         this.currentPercentageResult = currentPercentageResult;
-    }
-
-    public BargainEntity() {
+        this.orders = orders;
     }
 
     public UUID getUuid() {
@@ -92,14 +79,6 @@ public class BargainEntity {
         this.uuid = uuid;
     }
 
-    public Timestamp getDtUpdate() {
-        return dtUpdate;
-    }
-
-    public void setDtUpdate(Timestamp dtUpdate) {
-        this.dtUpdate = dtUpdate;
-    }
-
     public Timestamp getDtCreate() {
         return dtCreate;
     }
@@ -108,12 +87,12 @@ public class BargainEntity {
         this.dtCreate = dtCreate;
     }
 
-    public List<OrderEntity> getOrders() {
-        return orders;
+    public Timestamp getDtUpdate() {
+        return dtUpdate;
     }
 
-    public void setOrders(List<OrderEntity> orders) {
-        this.orders = orders;
+    public void setDtUpdate(Timestamp dtUpdate) {
+        this.dtUpdate = dtUpdate;
     }
 
     public BigDecimal getPercentageResult() {
@@ -180,21 +159,11 @@ public class BargainEntity {
         this.currentPercentageResult = currentPercentageResult;
     }
 
-    @Override
-    public String toString() {
-        return "BargainEntity{" +
-                "uuid=" + uuid +
-                ", dtCreate=" + dtCreate +
-                ", dtUpdate=" + dtUpdate +
-                ", orders=" + orders +
-                ", percentageResult=" + percentageResult +
-                ", financeResult=" + financeResult +
-                ", timeInWork=" + timeInWork +
-                ", finishTime=" + finishTime +
-                ", status=" + status +
-                ", symbol='" + symbol + '\'' +
-                ", currentResult=" + currentFinanceResult +
-                ", currentPercentageResult=" + currentPercentageResult +
-                '}';
+    public List<OrderEntity> getOrders() {
+        return orders;
+    }
+
+    public void setOrders(List<OrderEntity> orders) {
+        this.orders = orders;
     }
 }

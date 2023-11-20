@@ -55,15 +55,17 @@ telegram:
   chatID: 852348061
   name: MTCCurrencyBot
 
-trade:
-  gain: 0.6
-
 test:
   trading:
-    gain: 0.4
+    gain: 0.6
     deposit: 20
     minDeposit: 12
     balance: 200
+
+trading:
+  gain: 0.6
+  deposit: 12
+
 
 
 

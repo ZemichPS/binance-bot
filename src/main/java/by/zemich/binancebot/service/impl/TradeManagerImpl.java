@@ -1,18 +1,16 @@
 package by.zemich.binancebot.service.impl;
 
 import by.zemich.binancebot.DAO.entity.OrderEntity;
-import by.zemich.binancebot.config.properties.TradeProperties;
+import by.zemich.binancebot.config.properties.RealTradeProperties;
 import by.zemich.binancebot.core.dto.*;
+import by.zemich.binancebot.core.dto.binance.*;
 import by.zemich.binancebot.core.enums.EEventType;
 import by.zemich.binancebot.core.enums.EOrderType;
 import by.zemich.binancebot.core.enums.ESide;
 import by.zemich.binancebot.core.enums.ETimeInForce;
 import by.zemich.binancebot.service.api.*;
-import com.binance.connector.client.exceptions.BinanceClientException;
-import com.fasterxml.jackson.core.JsonProcessingException;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
-import org.springframework.validation.BindException;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -27,13 +25,17 @@ public class TradeManagerImpl implements ITradeManager {
     private final IOrderService orderService;
     private final INotifier notifier;
     private final IEventManager eventCreate;
-    private final TradeProperties tradeProperties;
+    private final RealTradeProperties tradeProperties;
     private final IBargainService bargainService;
     private final List<String> blackList = new ArrayList<>(List.of("BUSDUSDT", "USDTUSDT"));
 
     public TradeManagerImpl(IStockMarketService stockMarketService,
                             IConverter converter,
-                            IOrderService orderService, INotifier notifier, IEventManager eventCreate, TradeProperties tradeProperties, IBargainService bargainService) {
+                            IOrderService orderService,
+                            INotifier notifier,
+                            IEventManager eventCreate,
+                            RealTradeProperties tradeProperties,
+                            IBargainService bargainService) {
         this.stockMarketService = stockMarketService;
         this.converter = converter;
         this.orderService = orderService;
@@ -47,7 +49,7 @@ public class TradeManagerImpl implements ITradeManager {
     @Override
     public OrderDto createBuyLimitOrderByAskPrice(String symbol) {
         BigDecimal askPrice = getAskPrice(symbol);
-        BigDecimal quantity = tradeProperties.getDeposit().divide(askPrice, 0, RoundingMode.HALF_UP);
+        BigDecimal quantity = tradeProperties.getDeposit().divide(askPrice, 1, RoundingMode.HALF_DOWN);
 
         NewOrderRequestDto newOrderRequest = NewOrderRequestDto.builder()
                 .symbol(symbol)
@@ -71,7 +73,7 @@ public class TradeManagerImpl implements ITradeManager {
     public OrderDto createBuyLimitOrderByBidPrice(String symbol) {
 
         BigDecimal bidPrice = getBidPrice(symbol);
-        BigDecimal quantity = tradeProperties.getDeposit().divide(bidPrice, 0, RoundingMode.HALF_UP);
+        BigDecimal quantity = tradeProperties.getDeposit().divide(bidPrice, 1, RoundingMode.HALF_DOWN);
 
         NewOrderRequestDto newOrderRequest = NewOrderRequestDto.builder()
                 .symbol(symbol)
@@ -97,11 +99,11 @@ public class TradeManagerImpl implements ITradeManager {
         OrderDto oldOrderDto = getOrderById(orderId);
 
         String symbol = oldOrderDto.getSymbol();
-        BigDecimal gain = percent(oldOrderDto.getPrice(), tradeProperties.getGain());
+        BigDecimal gainIncome = percent(oldOrderDto.getPrice(), tradeProperties.getGain());
 
         NewOrderRequestDto newOrderRequest = NewOrderRequestDto.builder()
                 .symbol(symbol)
-                .price(oldOrderDto.getPrice().add(gain))
+                .price(oldOrderDto.getPrice().add(gainIncome))
                 .side(ESide.SELL)
                 .type(EOrderType.LIMIT)
                 .quantity(oldOrderDto.getExecutedQty())
@@ -110,47 +112,40 @@ public class TradeManagerImpl implements ITradeManager {
                 .build();
 
         OrderEntity sellOrderEntity = orderService.create(newOrderRequest).orElseThrow(RuntimeException::new);
-        OrderDto sellOrderDto = convertOrderEntityToDto(sellOrderEntity);
 
-        EventDto event = eventCreate.get(EEventType.SELL_LIMIT_ORDER, sellOrderDto);
-        notifier.notify(event);
 
-        return sellOrderDto;
+        return convertOrderEntityToDto(sellOrderEntity);
     }
 
     @Override
     public OrderDto createStopLimitOrder(Long orderId) {
 
-        OrderDto oldOrderDto = getOrderById(orderId);
+        OrderDto buyOrderDto = getOrderById(orderId);
 
-        String symbol = oldOrderDto.getSymbol();
-        BigDecimal gain = percent(oldOrderDto.getPrice(), tradeProperties.getGain());
+        String symbol = buyOrderDto.getSymbol();
+        BigDecimal gain = percent(buyOrderDto.getPrice(), tradeProperties.getGain());
 
         NewOrderRequestDto newOrderRequest = NewOrderRequestDto.builder()
                 .symbol(symbol)
-                .price(oldOrderDto.getPrice().add(gain))
-                .stopPrice(oldOrderDto.getPrice().add(gain))
+                .price(buyOrderDto.getPrice().add(gain))
+                .stopPrice(buyOrderDto.getPrice().add(gain))
                 .side(ESide.SELL)
-                .type(EOrderType.STOP_LOSS_LIMIT)
-                .quantity(oldOrderDto.getExecutedQty())
+                .type(EOrderType.TAKE_PROFIT_LIMIT)
+                .quantity(buyOrderDto.getExecutedQty())
                 .timeInForce(ETimeInForce.IOC)
                 .newOrderRespType(ENewOrderRespType.FULL)
                 .build();
 
         OrderEntity sellOrderEntity = orderService.create(newOrderRequest).orElseThrow(RuntimeException::new);
-        OrderDto stopLimitOrder = convertOrderEntityToDto(sellOrderEntity);
-
-        EventDto event = eventCreate.get(EEventType.STOP_LIMIT_ORDER, stopLimitOrder);
-        notifier.notify(event);
 
 
-        return stopLimitOrder;
+        return convertOrderEntityToDto(sellOrderEntity);
     }
 
 
     private BigDecimal getUSDTBalance() {
         AccountInformationQueryDto accountInformation = new AccountInformationQueryDto();
-        AccountInformationResponseDto information  = stockMarketService.getAccountInformation(converter.dtoToMap(accountInformation)).orElseThrow();
+        AccountInformationResponseDto information = stockMarketService.getAccountInformation(converter.dtoToMap(accountInformation)).orElseThrow();
         return information.getBalances().stream()
                 .filter(balanceDto -> balanceDto.getAsset().equals("USDT"))
                 .findFirst()
@@ -187,8 +182,6 @@ public class TradeManagerImpl implements ITradeManager {
     private BigDecimal percent(BigDecimal value, BigDecimal percent) {
         return value.multiply(percent).divide(new BigDecimal(100), RoundingMode.DOWN);
     }
-
-
 
 
 }

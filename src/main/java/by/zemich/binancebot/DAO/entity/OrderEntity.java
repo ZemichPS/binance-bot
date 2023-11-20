@@ -1,6 +1,5 @@
 package by.zemich.binancebot.DAO.entity;
 
-import by.zemich.binancebot.core.dto.NewOrderFullResponseDto;
 import by.zemich.binancebot.core.enums.EOrderStatus;
 import by.zemich.binancebot.core.enums.EOrderType;
 import by.zemich.binancebot.core.enums.ESide;
@@ -64,11 +63,6 @@ public class OrderEntity {
     @Column(name = "self_trade_prevention_mode")
     private String selfTradePreventionMode;
 
-    @ManyToOne(targetEntity = BargainEntity.class, fetch = FetchType.LAZY, cascade = CascadeType.REFRESH)
-    private BargainEntity bargain;
-
-    //  private List<FillsDto> fills;
-
     public OrderEntity() {
     }
 
@@ -99,8 +93,8 @@ public class OrderEntity {
         return uuid;
     }
 
-    public void setUuid(UUID uuid) {
-        this.uuid = uuid;
+    public void setUuid(UUID order_uuid) {
+        this.uuid = order_uuid;
     }
 
     public Timestamp getDtUpdate() {
@@ -253,40 +247,5 @@ public class OrderEntity {
 
     public void setSelfTradePreventionMode(String selfTradePreventionMode) {
         this.selfTradePreventionMode = selfTradePreventionMode;
-    }
-
-    public BargainEntity getBargain() {
-        return bargain;
-    }
-
-    public void setBargain(BargainEntity bargain) {
-        this.bargain = bargain;
-    }
-
-    @Override
-    public String toString() {
-        return "OrderEntity{" +
-                "uuid=" + uuid +
-                ", dtUpdate=" + dtUpdate +
-                ", dtCreate=" + dtCreate +
-                ", symbol='" + symbol + '\'' +
-                ", orderId=" + orderId +
-                ", orderListId=" + orderListId +
-                ", clientOrderId='" + clientOrderId + '\'' +
-                ", transactTime=" + transactTime +
-                ", price=" + price +
-                ", stopPrice=" + stopPrice +
-                ", origQty=" + origQty +
-                ", executedQty=" + executedQty +
-                ", cummulativeQuoteQty=" + cummulativeQuoteQty +
-                ", status=" + status +
-                ", timeInForce=" + timeInForce +
-                ", type=" + type +
-                ", side=" + side +
-                ", isWorking=" + isWorking +
-                ", workingTime=" + workingTime +
-                ", selfTradePreventionMode='" + selfTradePreventionMode + '\'' +
-                ", bargain=" + bargain +
-                '}';
     }
 }

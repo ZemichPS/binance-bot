@@ -1,18 +1,14 @@
 package by.zemich.binancebot.service.converter.JsonComponents;
 
 
-import by.zemich.binancebot.core.dto.AccountInformationResponseDto;
-import by.zemich.binancebot.core.dto.BalanceDto;
-import by.zemich.binancebot.core.dto.CommissionRateDto;
+import by.zemich.binancebot.core.dto.binance.AccountInformationResponseDto;
+import by.zemich.binancebot.core.dto.binance.BalanceDto;
+import by.zemich.binancebot.core.dto.binance.CommissionRateDto;
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.ObjectCodec;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.*;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import org.json.JSONObject;
 import org.springframework.boot.jackson.JsonObjectDeserializer;
 
-import java.io.DataInput;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.RoundingMode;

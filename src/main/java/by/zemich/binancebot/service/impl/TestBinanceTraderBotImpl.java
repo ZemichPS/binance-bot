@@ -5,6 +5,8 @@ import by.zemich.binancebot.DAO.api.IFakeOrderDao;
 import by.zemich.binancebot.DAO.entity.FakeBargainEntity;
 import by.zemich.binancebot.config.properties.TestTradingProperties;
 import by.zemich.binancebot.core.dto.*;
+import by.zemich.binancebot.core.dto.binance.KlineQueryDto;
+import by.zemich.binancebot.core.dto.binance.SymbolPriceTickerDto;
 import by.zemich.binancebot.core.enums.EEventType;
 import by.zemich.binancebot.core.enums.EInterval;
 import by.zemich.binancebot.core.enums.EOrderStatus;
@@ -13,12 +15,8 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
 import org.ta4j.core.BarSeries;
-import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
-import org.ta4j.core.indicators.candles.RealBodyIndicator;
-import org.ta4j.core.rules.OverIndicatorRule;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -27,7 +25,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 
-@Component
+//@Component
 @EnableScheduling
 @Log4j2
 public class TestBinanceTraderBotImpl implements ITraderBot {
@@ -56,6 +54,7 @@ public class TestBinanceTraderBotImpl implements ITraderBot {
         blackList.add("BUSDUSDT");
         blackList.add("USDTUSDT");
         blackList.add("BTTCUSDT");
+        blackList.add("PEPEUSDT");
     }
 
 
@@ -89,29 +88,32 @@ public class TestBinanceTraderBotImpl implements ITraderBot {
                         if (blackList.contains(symbol)) return;
 
                         queryDto.setSymbol(symbol);
-                        queryDto.setInterval(EInterval.M15.toString());
-                        BarSeries series = stockMarketService.getBarSeries(queryDto).orElse(null);
+                        queryDto.setInterval(EInterval.M30.toString());
+                        BarSeries series = stockMarketService.getBarSeries(queryDto).orElseThrow(RuntimeException::new);
 
                         if (series.getBarCount() < 500) return;
 
                         Strategy mainStrategy = strategyMap.get("BOLLINGER_BAND_MAIN_STRATEGY").get(series);
+                        Strategy additionalStrategy = strategyMap.get("BEAR_CANDLESTICK_UNDER_BBM").get(series);
                         if (mainStrategy.shouldEnter(series.getEndIndex())) {
+                            if (additionalStrategy.shouldEnter(series.getBarCount() - 2)) {
 
-                            KlineQueryDto dailyQueryDto = KlineQueryDto.builder()
-                                    .symbol(symbol)
-                                    .limit(50)
-                                    .interval(EInterval.H4.toString())
-                                    .build();
+//                            KlineQueryDto dailyQueryDto = KlineQueryDto.builder()
+//                                    .symbol(symbol)
+//                                    .limit(50)
+//                                    .interval(EInterval.H4.toString())
+//                                    .build();
 
-                            BarSeries olderSeries = stockMarketService.getBarSeries(dailyQueryDto).orElse(null);
-                            Strategy olderStrategy = strategyMap.get("BOLLINGER_BAND_OLDER_TIMEFRAME_STRATEGY").get(olderSeries);
+                                //     BarSeries olderSeries = stockMarketService.getBarSeries(dailyQueryDto).orElse(null);
+                                //  Strategy olderStrategy = strategyMap.get("BOLLINGER_BAND_OLDER_TIMEFRAME_STRATEGY").get(olderSeries);
 
-                            //     if (olderStrategy.shouldEnter(olderSeries.getEndIndex())) {
-                            if (true) {
-                                synchronized (TestBinanceTraderBotImpl.class) {
-                                    FakeBargainEntity createdFakeBargain = createFakeBargain(symbol);
-                                    notifyToTelegram(createdFakeBargain, EEventType.ASSET_WAS_BOUGHT);
-                                    blackList.add(symbol);
+                                //     if (olderStrategy.shouldEnter(olderSeries.getEndIndex())) {
+                                if (true) {
+                                    synchronized (TestBinanceTraderBotImpl.class) {
+                                        FakeBargainEntity createdFakeBargain = createFakeBargain(symbol);
+                                        notifyToTelegram(createdFakeBargain, EEventType.ASSET_WAS_BOUGHT);
+                                        blackList.add(symbol);
+                                    }
                                 }
                             }
                         }
@@ -147,6 +149,8 @@ public class TestBinanceTraderBotImpl implements ITraderBot {
         fakeOrderEntity.setAssetAmount(assetAmount);
         fakeOrderEntity.setMakerFee(makerFee);
         fakeOrderEntity.setTotalSpent(totalCosts);
+
+        blackList.add(symbol);
 
         return fakeOrderDao.save(fakeOrderEntity);
     }

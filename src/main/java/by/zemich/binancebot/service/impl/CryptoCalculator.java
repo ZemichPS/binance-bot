@@ -1,7 +1,6 @@
 package by.zemich.binancebot.service.impl;
 
 import by.zemich.binancebot.core.dto.BarDto;
-import by.zemich.binancebot.core.dto.ChangePriceDTO;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;

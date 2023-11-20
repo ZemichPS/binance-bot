@@ -4,7 +4,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.math.BigDecimal;
 
-@ConfigurationProperties(prefix = "trade")
+@ConfigurationProperties(prefix = "test.trade")
 public class TradeProperties {
     private BigDecimal gain;
     private BigDecimal deposit;

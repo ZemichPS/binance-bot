@@ -19,7 +19,6 @@ public class BargainDto {
     private UUID uuid;
     private Timestamp dtCreate;
     private Timestamp dtUpdate;
-    private List<OrderDto> orders;
     private BigDecimal percentageResult;
     private BigDecimal financeResult;
     private Long timeInWork;
@@ -28,5 +27,6 @@ public class BargainDto {
     private String symbol;
     private BigDecimal currentFinanceResult;
     private BigDecimal currentPercentageResult;
+    private List<OrderDto> orders;
 
 }

@@ -1,8 +1,7 @@
 package by.zemich.binancebot.service.converter;
 
 import by.zemich.binancebot.DAO.entity.OrderEntity;
-import by.zemich.binancebot.core.dto.NewOrderFullResponseDto;
-import by.zemich.binancebot.core.enums.EOrderStatus;
+import by.zemich.binancebot.core.dto.binance.NewOrderFullResponseDto;
 import org.springframework.core.convert.converter.Converter;
 
 public class NewOrderFullResponseDtoToOrderEntity implements Converter<NewOrderFullResponseDto, OrderEntity> {

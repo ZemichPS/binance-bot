@@ -39,11 +39,9 @@ public class EventManagerImpl implements IEventManager {
 
         String eventText = MessageFormat.format("""
                         Error: {0} \n
-                        Cause: {1} \n
                         Error code: {3} \n
                         """,
                 binanceClientException.getErrMsg(),
-                binanceClientException.getCause().getMessage(),
                 binanceClientException.getErrorCode());
 
         return EventDto.builder()

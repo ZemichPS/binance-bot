@@ -74,15 +74,27 @@ public class BasedOnBollingerBandStrategy implements IStrategy {
         PPOIndicator ppoIndicator = new PPOIndicator(closePrice);
         ADXIndicator adxIndicator = new ADXIndicator(series, 14);
 
+//        Rule entryRule =
+//                new UnderIndicatorRule(openPriceIndicator, bbm)
+//                        .and(new OverIndicatorRule(closePrice, bbm))
+//                        .and(new OverIndicatorRule(bbw, 3.5))
+//                        .and(new IsRisingRule(bbm, 30, 0.7))
+//                        .and(new InPipeRule(rsiIndicator, 60, 45))
+//                      //  .and(new IsRisingRule(balanceVolumeIndicator, 40, 0.2))
+//                        //.and(new UnderIndicatorRule(adxIndicator, 45))
+//                        .and(new NotRule(new OverIndicatorRule(highPriceIndicator, bbu)));
+
         Rule entryRule =
                 new UnderIndicatorRule(openPriceIndicator, bbm)
-                        .and(new OverIndicatorRule(closePrice, bbm))
-                        .and(new OverIndicatorRule(bbw, 3.0))
-                        .and(new IsRisingRule(bbm, 30, 0.7))
-                        .and(new InPipeRule(rsiIndicator, 60, 45))
-                      //  .and(new IsRisingRule(balanceVolumeIndicator, 40, 0.2))
+                       // .and(new OverIndicatorRule(closePrice, bbm))
+                      //  .and(new OverIndicatorRule(bbw, 3.5))
+                     //   .and(new IsRisingRule(bbm, 30, 0.7))
+                   //     .and(new InPipeRule(rsiIndicator, 60, 45))
+                        //  .and(new IsRisingRule(balanceVolumeIndicator, 40, 0.2))
                         //.and(new UnderIndicatorRule(adxIndicator, 45))
                         .and(new NotRule(new OverIndicatorRule(highPriceIndicator, bbu)));
+
+
 
 
 

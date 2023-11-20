@@ -1,6 +1,7 @@
 package by.zemich.binancebot.service.api;
 
 import by.zemich.binancebot.core.dto.*;
+import by.zemich.binancebot.core.dto.binance.*;
 import org.ta4j.core.BarSeries;
 
 import java.util.List;
