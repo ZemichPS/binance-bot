@@ -72,12 +72,14 @@ public class TradeManagerImpl implements ITradeManager {
 
     public OrderDto createBuyLimitOrderByBidPrice(String symbol) {
 
-        BigDecimal bidPrice = getBidPrice(symbol);
-        BigDecimal quantity = tradeProperties.getDeposit().divide(bidPrice, 1, RoundingMode.HALF_DOWN);
+        //BigDecimal bidPrice = getBidPrice(symbol).setScale(2,RoundingMode.DOWN);
+
+        BigDecimal currentPrice = getSymbolPrice(symbol);
+        BigDecimal quantity = tradeProperties.getDeposit().divide(currentPrice, 1, RoundingMode.HALF_DOWN);
 
         NewOrderRequestDto newOrderRequest = NewOrderRequestDto.builder()
                 .symbol(symbol)
-                .price(bidPrice)
+                .price(currentPrice)
                 .side(ESide.BUY)
                 .type(EOrderType.LIMIT)
                 .quantity(quantity)
@@ -101,12 +103,15 @@ public class TradeManagerImpl implements ITradeManager {
         String symbol = oldOrderDto.getSymbol();
         BigDecimal gainIncome = percent(oldOrderDto.getPrice(), tradeProperties.getGain());
 
+        BigDecimal quantity = oldOrderDto.getOrigQty();//.setScale(2,RoundingMode.DOWN);
+        BigDecimal price = oldOrderDto.getPrice().add(gainIncome).setScale(2, RoundingMode.DOWN);
+
         NewOrderRequestDto newOrderRequest = NewOrderRequestDto.builder()
                 .symbol(symbol)
-                .price(oldOrderDto.getPrice().add(gainIncome))
+                .price(price)
                 .side(ESide.SELL)
                 .type(EOrderType.LIMIT)
-                .quantity(oldOrderDto.getExecutedQty())
+                .quantity(quantity)
                 .timeInForce(ETimeInForce.GTC)
                 .newOrderRespType(ENewOrderRespType.FULL)
                 .build();
@@ -183,5 +188,13 @@ public class TradeManagerImpl implements ITradeManager {
         return value.multiply(percent).divide(new BigDecimal(100), RoundingMode.DOWN);
     }
 
+    private BigDecimal getSymbolPrice(String symbol) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("symbol", symbol);
+        SymbolPriceTickerDto symbolPriceTicker = stockMarketService.getSymbolPriceTicker(params).orElseThrow();
+
+        return symbolPriceTicker.getPrice();
+
+    }
 
 }

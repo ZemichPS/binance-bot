@@ -2,6 +2,7 @@ package by.zemich.binancebot.service.api;
 
 import by.zemich.binancebot.core.dto.*;
 import by.zemich.binancebot.core.dto.binance.*;
+import by.zemich.binancebot.core.enums.EOrderStatus;
 import org.ta4j.core.BarSeries;
 
 import java.util.List;
@@ -10,7 +11,7 @@ import java.util.Optional;
 
 public interface IStockMarketService {
     Optional<List<BarDto>> getBars(KlineQueryDto klineQuery);
-    Optional<QueryOrderResponseDto> getOrder(QueryOrderDto queryOrder);
+    Optional<List<EOrderStatus>> getOrderStatus(QueryOrderDto queryOrder);
     Optional<BarSeries> getBarSeries(KlineQueryDto klineQuery);
     Optional<ExchangeInfoResponseDto> getExchangeInfo(ExchangeInfoQueryDto queryDto);
     Optional<List<SymbolShortDto>> getAllSymbols(TickerSymbolShortQuery query);

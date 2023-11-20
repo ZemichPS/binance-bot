@@ -79,12 +79,12 @@ public class OrderServiceImpl implements IOrderService {
 
 
 
-            QueryOrderResponseDto queryOrderResponse = stockMarketService.getOrder(queryOrder).orElseThrow(RuntimeException::new);
+            EOrderStatus updatedStatus = stockMarketService.getOrderStatus(queryOrder).orElseThrow(RuntimeException::new).get(0);
 
-            if (!orderDto.getStatus().equals(queryOrderResponse.getStatus())) {
+            if (!orderDto.getStatus().equals(updatedStatus)) {
 
-                if (queryOrderResponse.getStatus().name().equals(conditionalStatus.name())) {
-                    orderDto.setStatus(queryOrderResponse.getStatus());
+                if (updatedStatus.equals(conditionalStatus)) {
+                    orderDto.setStatus(updatedStatus);
                     OrderEntity orderEntity = conversionService.convert(orderDto, OrderEntity.class);
 
                     return Optional.of(orderDao.save(orderEntity));

@@ -2,6 +2,8 @@ package by.zemich.binancebot.service.impl;
 
 import by.zemich.binancebot.core.dto.*;
 import by.zemich.binancebot.core.dto.binance.*;
+import by.zemich.binancebot.core.enums.EOrderStatus;
+import by.zemich.binancebot.core.enums.ETimeInForce;
 import by.zemich.binancebot.service.api.IConverter;
 import by.zemich.binancebot.service.api.IStockMarketService;
 import by.zemich.binancebot.core.dto.binance.TickerSymbolShortQuery;
@@ -41,12 +43,14 @@ public class BinanceMarketServiceImpl implements IStockMarketService {
     }
 
     @Override
-    public Optional<QueryOrderResponseDto> getOrder(QueryOrderDto queryOrder) {
+    public Optional<List<EOrderStatus>> getOrderStatus(QueryOrderDto queryOrder) {
         String result = spotClient.createTrade().getOrders(converter.dtoToMap(queryOrder));
         try {
-            QueryOrderResponseDto queryOrderResponse = objectMapper.readValue(result, QueryOrderResponseDto.class);
-            return Optional.of(queryOrderResponse);
-        } catch (JsonProcessingException e) {
+
+            List<EOrderStatus> statuses = this.getOrderStatus(result);
+
+            return Optional.of(statuses);
+        } catch (Exception e) {
             throw new RuntimeException(e);
         }
     }
@@ -249,6 +253,46 @@ public class BinanceMarketServiceImpl implements IStockMarketService {
         });
 
         return symbols;
+    }
+
+    private List<QueryOrderResponseDto> orderResponseConverter(String response) {
+        List<QueryOrderResponseDto> symbols = new ArrayList<>();
+        List<Object> objectList = new JacksonJsonParser().parseList(response);
+        objectList.stream().forEach(object -> {
+
+            LinkedHashMap<String, String> map = (LinkedHashMap<String, String>) object;
+
+            QueryOrderResponseDto orderResponse = new QueryOrderResponseDto();
+            orderResponse.setSymbol(map.get("symbol").toString());
+            orderResponse.setOrderId(Long.valueOf(map.get("orderId").toString()));
+            orderResponse.setOrderListId(Long.valueOf(map.get("orderListId").toString()));
+            orderResponse.setClientOrderId(map.get("clientOrderId").toString());
+            orderResponse.setPrice(new BigDecimal(map.get("price").toString()));
+            orderResponse.setOrigQty(new BigDecimal(map.get("origQty").toString()));
+            orderResponse.setExecutedQty(new BigDecimal(map.get("executedQty").toString()));
+
+            orderResponse.setCummulativeQuoteQty(new BigDecimal(map.get("cummulativeQuoteQty").toString()));
+            orderResponse.setStatus(EOrderStatus.valueOf(map.get("status").toString()));
+            orderResponse.setTimeInForce(ETimeInForce.valueOf(map.get("timeInForce").toString()));
+
+            symbols.add(orderResponse);
+        });
+
+        return symbols;
+    }
+
+    private List<EOrderStatus> getOrderStatus(String response) {
+        List<EOrderStatus> statuses = new ArrayList<>();
+        List<Object> objectList = new JacksonJsonParser().parseList(response);
+        objectList.stream().forEach(object -> {
+
+            LinkedHashMap<String, String> map = (LinkedHashMap<String, String>) object;
+            QueryOrderResponseDto orderResponse = new QueryOrderResponseDto();
+            EOrderStatus status = EOrderStatus.valueOf(map.get("status").toString());
+            statuses.add(status);
+        });
+
+        return statuses;
     }
 
 }
