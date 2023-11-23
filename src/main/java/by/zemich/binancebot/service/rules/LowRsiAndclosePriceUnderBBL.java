@@ -11,17 +11,17 @@ import org.ta4j.core.indicators.helpers.HighPriceIndicator;
 import org.ta4j.core.indicators.helpers.LowPriceIndicator;
 import org.ta4j.core.indicators.helpers.OpenPriceIndicator;
 import org.ta4j.core.indicators.statistics.StandardDeviationIndicator;
+import org.ta4j.core.num.DoubleNum;
+import org.ta4j.core.num.Num;
 import org.ta4j.core.rules.*;
 
 
 @Component
 public class LowRsiAndclosePriceUnderBBL extends TradeRule {
-    private final String name = "LOW_RSI_AND_CLOSE_PRICE_UNDER_BBL_RULE";
-
 
     @Override
     public String getName() {
-        return name;
+        return  "LOW_RSI_AND_CLOSE_PRICE_UNDER_BBL_RULE";
     }
 
 
@@ -46,12 +46,10 @@ public class LowRsiAndclosePriceUnderBBL extends TradeRule {
         BollingerBandsUpperIndicator bbu = new BollingerBandsUpperIndicator(bbm, sd);
         BollingerBandWidthIndicator bbw = new BollingerBandWidthIndicator(bbu, bbm, bbl);
 
-
-
         return new UnderIndicatorRule(closePrice, bbl)
                 .and(new UnderIndicatorRule(rsiIndicator, 30))
-                .and(new OverIndicatorRule(bbw, 4))
-                .and(new IsFallingRule(bbm, 30, 0.4))
+                .and(new OverIndicatorRule(bbw, 5))
+                .and(new InSlopeRule(bbm, 10, DoubleNum.valueOf(0.2), DoubleNum.valueOf(0.7)))
                 //   .and(new IsRisingRule(bbm, 20, 0.75))
                 //      .and(new InPipeRule(rsiIndicator, 60, 45))
                 //  .and(new IsRisingRule(balanceVolumeIndicator, 40, 0.2))

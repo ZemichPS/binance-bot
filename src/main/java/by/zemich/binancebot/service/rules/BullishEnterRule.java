@@ -19,7 +19,7 @@ import org.ta4j.core.indicators.statistics.StandardDeviationIndicator;
 import org.ta4j.core.indicators.volume.OnBalanceVolumeIndicator;
 import org.ta4j.core.rules.*;
 
-@Component
+//@Component
 public class BullishEnterRule extends TradeRule {
     private final String name = "BULLISH_RULE";
 
@@ -47,7 +47,7 @@ public class BullishEnterRule extends TradeRule {
 
         return new UnderIndicatorRule(lowPriceIndicator, bbm)
                 .and(new OverIndicatorRule(closePrice, bbm))
-                .and(new OverIndicatorRule(closePrice, openPriceIndicator))
+            //    .and(new OverIndicatorRule(closePrice, openPriceIndicator))
                 .and(new OverIndicatorRule(bbw, 6))
                 .and(new IsRisingRule(bbm, 14, 0.8))
                 .and(new InPipeRule(rsiIndicator, 60, 45))

@@ -17,7 +17,7 @@ import org.ta4j.core.indicators.helpers.OpenPriceIndicator;
 import org.ta4j.core.indicators.statistics.StandardDeviationIndicator;
 import org.ta4j.core.indicators.volume.OnBalanceVolumeIndicator;
 import org.ta4j.core.rules.*;
-@Component
+//@Component
 public class MainEnterRule extends TradeRule {
 
     private final String name = "MAIN_ENTER_RULE";
