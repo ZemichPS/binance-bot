@@ -61,12 +61,10 @@ public class FakeBargainEntity {
     private BigDecimal financeResult;
     @Column(name = "current_finance_result")
     private BigDecimal currentFinanceResult;
-
-
     @Column(name = "price_percent_difference")
     private BigDecimal pricePercentDifference;
     @Column(name = "strategy_name")
-    private BigDecimal strategyName;
+    private String strategyName;
 
 
 
@@ -87,7 +85,7 @@ public class FakeBargainEntity {
                              BigDecimal financeResult,
                              BigDecimal currentFinanceResult,
                              BigDecimal pricePercentDifference,
-                             BigDecimal strategyName) {
+                             String strategyName) {
         this.uuid = uuid;
         this.dtUpdate = dtUpdate;
         this.dtCreate = dtCreate;
@@ -247,11 +245,11 @@ public class FakeBargainEntity {
         this.currentFinanceResult = currentFinanceResult;
     }
 
-    public BigDecimal getStrategyName() {
+    public String getStrategyName() {
         return strategyName;
     }
 
-    public void setStrategyName(BigDecimal strategyName) {
+    public void setStrategyName(String strategyName) {
         this.strategyName = strategyName;
     }
 }

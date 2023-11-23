@@ -57,13 +57,13 @@ telegram:
 
 test:
   trading:
-    gain: 0.6
+    gain: 0.8
     deposit: 20
     minDeposit: 12
-    balance: 200
+    balance: 1000
 
 trading:
-  gain: 0.6
+  gain: 1
   deposit: 14
 
 

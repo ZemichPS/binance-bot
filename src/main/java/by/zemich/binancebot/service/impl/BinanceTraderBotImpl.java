@@ -14,15 +14,15 @@ import org.springframework.core.convert.ConversionService;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
-import org.springframework.stereotype.Component;
 import org.ta4j.core.BarSeries;
+import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
 
 
 import java.util.*;
 
 
-@Component
+//@Component
 @EnableScheduling
 @Log4j2
 public class BinanceTraderBotImpl implements ITraderBot {
@@ -32,9 +32,10 @@ public class BinanceTraderBotImpl implements ITraderBot {
     private final IEventManager eventManager;
     private final IBargainService bargainService;
     private final ConversionService conversionService;
-    private final Map<String, IStrategy> strategyMap = new HashMap<>();
+    private final Map<String, IRule> strategyMap = new HashMap<>();
     private final List<String> blackList = new ArrayList<>();
     private Integer counter = Integer.valueOf(1);
+    private final String strategyName = "";
 
     public BinanceTraderBotImpl(IStockMarketService stockMarketService,
                                 ITradeManager tradeManager,
@@ -62,7 +63,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
 
 
     @Override
-    public void registerStrategy(String name, IStrategy strategyManager) {
+    public void registerStrategy(String name, IRule strategyManager) {
         strategyMap.put(name, strategyManager);
     }
 
@@ -86,19 +87,13 @@ public class BinanceTraderBotImpl implements ITraderBot {
 
                     BarSeries series = stockMarketService.getBarSeries(queryDto).orElseThrow(RuntimeException::new);
 
-                    Strategy mainStrategy = strategyMap.get("BOLLINGER_BAND_MAIN_STRATEGY").get(series);
-                    Strategy additionalStrategy = strategyMap.get("BEAR_CANDLESTICK_UNDER_BBM").get(series);
+                    Rule mainRule = strategyMap.get("BOLLINGER_BAND_MAIN_STRATEGY").get(series);
+                    Rule additionalRule = strategyMap.get("BEAR_CANDLESTICK_UNDER_BBM").get(series);
 
-                    if (mainStrategy.shouldEnter(series.getEndIndex())) {
-
-                        //      if (additionalStrategy.shouldEnter(series.getBarCount() - 2)) {
-
-                            synchronized (BinanceTraderBotImpl.class) {
-                                if (counter <= 0) return;
-                                createBargain(symbol);
-
-
-
+                    if (mainRule.isSatisfied(series.getEndIndex())) {
+                        synchronized (BinanceTraderBotImpl.class) {
+                            if (counter <= 0) return;
+                            createBargain(symbol);
                         }
                     }
                 });
@@ -167,13 +162,12 @@ public class BinanceTraderBotImpl implements ITraderBot {
             OrderDto buyOrder = tradeManager.createBuyLimitOrderByBidPrice(symbol);
 
 
-
             BargainDto newBargain = new BargainDto();
             newBargain.setUuid(UUID.randomUUID());
             newBargain.setStatus(EBargainStatus.OPEN_BUY_ORDER_CREATED);
             newBargain.setOrders(List.of(buyOrder));
 
-            if(buyOrder.getStatus().equals(EOrderStatus.FILLED)){
+            if (buyOrder.getStatus().equals(EOrderStatus.FILLED)) {
                 OrderDto sellOrderDto = tradeManager.createSellLimitOrder(buyOrder.getOrderId());
                 newBargain.getOrders().add(sellOrderDto);
             }

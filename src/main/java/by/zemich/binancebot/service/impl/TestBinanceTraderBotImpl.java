@@ -15,7 +15,9 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Component;
 import org.ta4j.core.BarSeries;
+import org.ta4j.core.Rule;
 import org.ta4j.core.Strategy;
 
 import java.math.BigDecimal;
@@ -25,7 +27,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 
-//@Component
+@Component
 @EnableScheduling
 @Log4j2
 public class TestBinanceTraderBotImpl implements ITraderBot {
@@ -34,7 +36,7 @@ public class TestBinanceTraderBotImpl implements ITraderBot {
     private final TestTradingProperties testTradingProperties;
 
     private final IFakeOrderDao fakeOrderDao;
-    private final Map<String, IStrategy> strategyMap = new HashMap<>();
+    private final Map<String, IRule> ruleMap = new HashMap<>();
 
     private final IBalanceManager balanceManager;
 
@@ -42,7 +44,6 @@ public class TestBinanceTraderBotImpl implements ITraderBot {
     private final BigDecimal percentTakerFee = new BigDecimal("0.1");
 
     private final List<String> blackList = new ArrayList<>();
-
 
     public TestBinanceTraderBotImpl(IStockMarketService stockMarketService, INotifier notifier, TestTradingProperties testTradingProperties, IFakeOrderDao fakeOrderDao, IBalanceManager balanceManager) {
         this.stockMarketService = stockMarketService;
@@ -59,8 +60,8 @@ public class TestBinanceTraderBotImpl implements ITraderBot {
 
 
     @Override
-    public void registerStrategy(String name, IStrategy strategyManager) {
-        strategyMap.put(name, strategyManager);
+    public void registerStrategy(String name, IRule strategyManager) {
+        ruleMap.put(name, strategyManager);
     }
 
     @Override
@@ -83,7 +84,7 @@ public class TestBinanceTraderBotImpl implements ITraderBot {
 
         stockMarketService.getSpotSymbols().ifPresentOrElse(
                 symbolList -> {
-                    symbolList.forEach(symbol -> {
+                    symbolList.stream().forEach(symbol -> {
 
                         if (blackList.contains(symbol)) return;
 
@@ -93,35 +94,21 @@ public class TestBinanceTraderBotImpl implements ITraderBot {
 
                         if (series.getBarCount() < 500) return;
 
-                        Strategy mainStrategy = strategyMap.get("BOLLINGER_BAND_MAIN_STRATEGY").get(series);
-                        Strategy additionalStrategy = strategyMap.get("BEAR_CANDLESTICK_UNDER_BBM").get(series);
-                        if (mainStrategy.shouldEnter(series.getEndIndex())) {
-                            if (additionalStrategy.shouldEnter(series.getBarCount() - 2)) {
-
-//                            KlineQueryDto dailyQueryDto = KlineQueryDto.builder()
-//                                    .symbol(symbol)
-//                                    .limit(50)
-//                                    .interval(EInterval.H4.toString())
-//                                    .build();
-
-                                //     BarSeries olderSeries = stockMarketService.getBarSeries(dailyQueryDto).orElse(null);
-                                //  Strategy olderStrategy = strategyMap.get("BOLLINGER_BAND_OLDER_TIMEFRAME_STRATEGY").get(olderSeries);
-
-                                //     if (olderStrategy.shouldEnter(olderSeries.getEndIndex())) {
-                                if (true) {
-                                    synchronized (TestBinanceTraderBotImpl.class) {
-                                        FakeBargainEntity createdFakeBargain = createFakeBargain(symbol);
-                                        notifyToTelegram(createdFakeBargain, EEventType.ASSET_WAS_BOUGHT);
-                                        blackList.add(symbol);
+                        ruleMap.values().stream().forEach(
+                                rule -> {
+                                    if (rule.get(series).isSatisfied(series.getEndIndex())) {
+                                        synchronized (TestBinanceTraderBotImpl.class) {
+                                            FakeBargainEntity createdFakeBargain = createFakeBargain(symbol, rule.getName());
+                                            notifyToTelegram(createdFakeBargain, EEventType.ASSET_WAS_BOUGHT);
+                                        }
                                     }
                                 }
-                            }
-                        }
+                        );
                     });
                 }, () -> log.warn("Symbol list is empty"));
     }
 
-    private FakeBargainEntity createFakeBargain(String symbol) {
+    private FakeBargainEntity createFakeBargain(String symbol, String ruleName) {
         BigDecimal assetPrice = getSymbolPrice(symbol);
         BigDecimal deposit = balanceManager.allocateFundsForTransaction();
 
@@ -149,6 +136,7 @@ public class TestBinanceTraderBotImpl implements ITraderBot {
         fakeOrderEntity.setAssetAmount(assetAmount);
         fakeOrderEntity.setMakerFee(makerFee);
         fakeOrderEntity.setTotalSpent(totalCosts);
+        fakeOrderEntity.setStrategyName(ruleName);
 
         blackList.add(symbol);
 
