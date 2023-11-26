@@ -309,20 +309,20 @@
 //
 //
 //    // Правило перепроданности по RSI
-//    TradeRule underRsiRule = new UnderIndicatorRule(rsiIndicator, 30);
+//    TradeStrategy underRsiRule = new UnderIndicatorRule(rsiIndicator, 30);
 //    // Правило пробития нижнего уровня BB
-//    TradeRule underPercentB = new UnderIndicatorRule(percentB, 0);
+//    TradeStrategy underPercentB = new UnderIndicatorRule(percentB, 0);
 //    // Правило MAX width канала Боллиджера
-//    TradeRule isHighestRule = new IsHighestRule(bbw, 7);
+//    TradeStrategy isHighestRule = new IsHighestRule(bbw, 7);
 //
-//    TradeRule waitCountBarRule = new WaitForRule(Trade.TradeType.BUY, 4);
+//    TradeStrategy waitCountBarRule = new WaitForRule(Trade.TradeType.BUY, 4);
 //
 //
 //    // Resulted enter rule
-//    TradeRule enterRule = underRsiRule.and(underPercentB);
+//    TradeStrategy enterRule = underRsiRule.and(underPercentB);
 //
 //    // ResultedExitRule
-//    TradeRule exitRule = new StopGainRule(closePrice, DecimalNum.valueOf("0.8"));
+//    TradeStrategy exitRule = new StopGainRule(closePrice, DecimalNum.valueOf("0.8"));
 //
 //
 //    Strategy firstStrategy = new BaseStrategy(enterRule, exitRule);

@@ -18,7 +18,6 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.Rule;
-import org.ta4j.core.Strategy;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -36,7 +35,7 @@ public class TestBinanceTraderBotImpl implements ITraderBot {
     private final TestTradingProperties testTradingProperties;
 
     private final IFakeOrderDao fakeOrderDao;
-    private final Map<String, IRule> ruleMap = new HashMap<>();
+    private final Map<String, IStrategy> stragegyMap = new HashMap<>();
 
     private final IBalanceManager balanceManager;
 
@@ -60,8 +59,8 @@ public class TestBinanceTraderBotImpl implements ITraderBot {
 
 
     @Override
-    public void registerStrategy(String name, IRule strategyManager) {
-        ruleMap.put(name, strategyManager);
+    public void registerStrategy(String name, IStrategy strategyManager) {
+        stragegyMap.put(name, strategyManager);
     }
 
     @Override
@@ -71,7 +70,7 @@ public class TestBinanceTraderBotImpl implements ITraderBot {
 
 
     @Scheduled(fixedDelay = 40_000, initialDelay = 1_000)
-    @Async
+
     @Override
     public void lookForEnterPosition() {
         log.info("Balance is: " + balanceManager.getBalance());
@@ -81,32 +80,81 @@ public class TestBinanceTraderBotImpl implements ITraderBot {
         KlineQueryDto queryDto = new KlineQueryDto();
         queryDto.setLimit(500);
 
+        List<String> symbolsList = stockMarketService.getSpotSymbols().orElseThrow();
 
-        stockMarketService.getSpotSymbols().ifPresentOrElse(
-                symbolList -> {
-                    symbolList.stream().forEach(symbol -> {
+        // наполняем map свечами
+        Map<String, BarSeries> seriesMap = new HashMap<>();
 
-                        if (blackList.contains(symbol)) return;
+        symbolsList.forEach(symbol -> {
+            EInterval interval = EInterval.M15;
+            queryDto.setSymbol(symbol);
+            queryDto.setInterval(interval.toString());
+            BarSeries series = stockMarketService.getBarSeries(queryDto).orElseThrow(RuntimeException::new);
+            seriesMap.put(interval.toString(), series);
 
-                        queryDto.setSymbol(symbol);
-                        queryDto.setInterval(EInterval.M30.toString());
-                        BarSeries series = stockMarketService.getBarSeries(queryDto).orElseThrow(RuntimeException::new);
+        });
 
-                        if (series.getBarCount() < 500) return;
+        symbolsList.forEach(symbol -> {
+            EInterval interval = EInterval.M30;
+            queryDto.setSymbol(symbol);
+            queryDto.setInterval(interval.toString());
+            BarSeries series = stockMarketService.getBarSeries(queryDto).orElseThrow(RuntimeException::new);
+            seriesMap.put(interval.toString(), series);
 
-                        ruleMap.values().stream().forEach(
-                                rule -> {
-                                    if (rule.get(series).isSatisfied(series.getEndIndex())) {
-                                        synchronized (TestBinanceTraderBotImpl.class) {
-                                            FakeBargainEntity createdFakeBargain = createFakeBargain(symbol, rule.getName());
-                                            notifyToTelegram(createdFakeBargain, EEventType.ASSET_WAS_BOUGHT);
+        });
+
+        symbolsList.forEach(symbol -> {
+            EInterval interval = EInterval.H1;
+            queryDto.setSymbol(symbol);
+            queryDto.setInterval(interval.toString());
+            BarSeries series = stockMarketService.getBarSeries(queryDto).orElseThrow(RuntimeException::new);
+            seriesMap.put(interval.toString(), series);
+
+        });
+
+        stragegyMap.values().stream().forEach(
+                mainStrategy -> {
+                    symbolsList.forEach(
+                            symbol -> {
+                                if (blackList.contains(symbol)) return;
+                                queryDto.setSymbol(symbol);
+                                queryDto.setInterval(mainStrategy.getInterval().toString());
+
+                                BarSeries series = stockMarketService.getBarSeries(queryDto).orElseThrow(RuntimeException::new);
+
+                                if (series.getBarCount() < 500) return;
+
+                                if (mainStrategy.getEnterRule(series).isSatisfied(series.getEndIndex())) {
+
+                                    if(Objects.nonNull(mainStrategy.getAdditionalStrategy())){
+
+                                        IStrategy additionalStrategy = mainStrategy.getAdditionalStrategy();
+                                        EInterval intervalForAdditionalStrategy = additionalStrategy.getAdditionalStrategy().getInterval();
+                                        BarSeries additionalSeries = series;
+
+                                        if(!queryDto.getInterval().toString().equals(intervalForAdditionalStrategy.toString())) {
+                                            queryDto.setInterval(intervalForAdditionalStrategy.toString());
+                                            additionalSeries = stockMarketService.getBarSeries(queryDto).orElseThrow(RuntimeException::new);
                                         }
+
+                                        Rule additionalRule = additionalStrategy.getEnterRule(additionalSeries);
+                                        if(!additionalRule.isSatisfied(additionalSeries.getEndIndex())) return;
                                     }
+
+                                    synchronized (TestBinanceTraderBotImpl.class) {
+                                        FakeBargainEntity createdFakeBargain = createFakeBargain(symbol, mainStrategy.getName());
+                                        notifyToTelegram(createdFakeBargain, EEventType.ASSET_WAS_BOUGHT);
+                                    }
+
                                 }
-                        );
-                    });
-                }, () -> log.warn("Symbol list is empty"));
+                            }
+                    );
+                }
+        );
+
     }
+
+
 
     private FakeBargainEntity createFakeBargain(String symbol, String ruleName) {
         BigDecimal assetPrice = getSymbolPrice(symbol);
@@ -170,7 +218,10 @@ public class TestBinanceTraderBotImpl implements ITraderBot {
                     LocalDateTime.now()).toMinutes());
 
 
-            if (percentDifference.doubleValue() >= testTradingProperties.getGain().doubleValue()) {
+            String ruleName = fakeOrderEntity.getStrategyName();
+            BigDecimal goalPercent = stragegyMap.get(ruleName).getGoalPercentage();
+
+            if (percentDifference.doubleValue() >= goalPercent.doubleValue()) {
 
                 fakeOrderEntity.setTakerFee(takerFee);
                 fakeOrderEntity.setFinanceResult(currentFinanceResult);

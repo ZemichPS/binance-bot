@@ -1,5 +1,7 @@
 package by.zemich.binancebot.service.rules;
 
+import by.zemich.binancebot.core.enums.EInterval;
+import by.zemich.binancebot.service.api.IStrategy;
 import org.springframework.stereotype.Component;
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.Rule;
@@ -11,17 +13,32 @@ import org.ta4j.core.indicators.helpers.HighPriceIndicator;
 import org.ta4j.core.indicators.helpers.LowPriceIndicator;
 import org.ta4j.core.indicators.helpers.OpenPriceIndicator;
 import org.ta4j.core.indicators.statistics.StandardDeviationIndicator;
-import org.ta4j.core.num.DoubleNum;
-import org.ta4j.core.num.Num;
 import org.ta4j.core.rules.*;
+
+import java.math.BigDecimal;
 
 
 @Component
-public class LowRsiAndclosePriceUnderBBL extends TradeRule {
+public class LowRsiAndClosePrice1HUnderBBL extends TradeStrategy {
 
     @Override
     public String getName() {
         return  "LOW_RSI_AND_CLOSE_PRICE_UNDER_BBL_RULE";
+    }
+
+    @Override
+    public BigDecimal getGoalPercentage() {
+        return new BigDecimal("1.6");
+    }
+
+    @Override
+    public EInterval getInterval() {
+        return EInterval.H1;
+    }
+
+    @Override
+    public IStrategy getAdditionalStrategy() {
+        return null;
     }
 
 
@@ -47,14 +64,9 @@ public class LowRsiAndclosePriceUnderBBL extends TradeRule {
         BollingerBandWidthIndicator bbw = new BollingerBandWidthIndicator(bbu, bbm, bbl);
 
         return new UnderIndicatorRule(closePrice, bbl)
-                .and(new UnderIndicatorRule(rsiIndicator, 30))
-                .and(new OverIndicatorRule(bbw, 5))
-                .and(new InSlopeRule(bbm, 10, DoubleNum.valueOf(0.2), DoubleNum.valueOf(0.7)))
-                //   .and(new IsRisingRule(bbm, 20, 0.75))
-                //      .and(new InPipeRule(rsiIndicator, 60, 45))
-                //  .and(new IsRisingRule(balanceVolumeIndicator, 40, 0.2))
-                //.and(new UnderIndicatorRule(adxIndicator, 45))
-                .and(new NotRule(new OverIndicatorRule(highPriceIndicator, bbu)));
+                .and(new UnderIndicatorRule(rsiIndicator, 29))
+                .and(new OverIndicatorRule(bbw, 5));
+                //.and(new IsFallingRule(bbw, 10, 0.1));
 
 
     }

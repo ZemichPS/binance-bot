@@ -4,7 +4,7 @@ public interface ITraderBot {
 
     void lookForEnterPosition();
 
-    void registerStrategy(String name, IRule strategyManager);
+    void registerStrategy(String name, IStrategy strategyManager);
 
     void checkBargain();
 
