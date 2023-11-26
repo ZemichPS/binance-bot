@@ -1,4 +1,4 @@
-package by.zemich.binancebot.service.rules;
+package by.zemich.binancebot.service.strategies;
 
 import by.zemich.binancebot.core.enums.EInterval;
 import by.zemich.binancebot.service.api.IStrategy;

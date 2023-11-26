@@ -44,15 +44,19 @@ public class TestBinanceTraderBotImpl implements ITraderBot {
 
     private final List<String> blackList = new ArrayList<>();
 
-    public TestBinanceTraderBotImpl(IStockMarketService stockMarketService, INotifier notifier, TestTradingProperties testTradingProperties, IFakeOrderDao fakeOrderDao, IBalanceManager balanceManager) {
+    private final IIndicatorReader indicatorReader;
+
+    public TestBinanceTraderBotImpl(IStockMarketService stockMarketService, INotifier notifier, TestTradingProperties testTradingProperties, IFakeOrderDao fakeOrderDao, IBalanceManager balanceManager, IIndicatorReader indicatorReader) {
         this.stockMarketService = stockMarketService;
         this.notifier = notifier;
         this.testTradingProperties = testTradingProperties;
         this.fakeOrderDao = fakeOrderDao;
         this.balanceManager = balanceManager;
+        this.indicatorReader = indicatorReader;
 
         blackList.add("BUSDUSDT");
         blackList.add("USDTUSDT");
+        blackList.add("USDCUSDT");
         blackList.add("BTTCUSDT");
         blackList.add("PEPEUSDT");
     }
@@ -70,7 +74,6 @@ public class TestBinanceTraderBotImpl implements ITraderBot {
 
 
     @Scheduled(fixedDelay = 40_000, initialDelay = 1_000)
-
     @Override
     public void lookForEnterPosition() {
         log.info("Balance is: " + balanceManager.getBalance());
@@ -82,41 +85,14 @@ public class TestBinanceTraderBotImpl implements ITraderBot {
 
         List<String> symbolsList = stockMarketService.getSpotSymbols().orElseThrow();
 
-        // наполняем map свечами
-        Map<String, BarSeries> seriesMap = new HashMap<>();
 
-        symbolsList.forEach(symbol -> {
-            EInterval interval = EInterval.M15;
-            queryDto.setSymbol(symbol);
-            queryDto.setInterval(interval.toString());
-            BarSeries series = stockMarketService.getBarSeries(queryDto).orElseThrow(RuntimeException::new);
-            seriesMap.put(interval.toString(), series);
-
-        });
-
-        symbolsList.forEach(symbol -> {
-            EInterval interval = EInterval.M30;
-            queryDto.setSymbol(symbol);
-            queryDto.setInterval(interval.toString());
-            BarSeries series = stockMarketService.getBarSeries(queryDto).orElseThrow(RuntimeException::new);
-            seriesMap.put(interval.toString(), series);
-
-        });
-
-        symbolsList.forEach(symbol -> {
-            EInterval interval = EInterval.H1;
-            queryDto.setSymbol(symbol);
-            queryDto.setInterval(interval.toString());
-            BarSeries series = stockMarketService.getBarSeries(queryDto).orElseThrow(RuntimeException::new);
-            seriesMap.put(interval.toString(), series);
-
-        });
-
-        stragegyMap.values().stream().forEach(
+        stragegyMap.values().forEach(
                 mainStrategy -> {
+
                     symbolsList.forEach(
                             symbol -> {
                                 if (blackList.contains(symbol)) return;
+
                                 queryDto.setSymbol(symbol);
                                 queryDto.setInterval(mainStrategy.getInterval().toString());
 
@@ -126,37 +102,32 @@ public class TestBinanceTraderBotImpl implements ITraderBot {
 
                                 if (mainStrategy.getEnterRule(series).isSatisfied(series.getEndIndex())) {
 
-                                    if(Objects.nonNull(mainStrategy.getAdditionalStrategy())){
+                                    if (Objects.nonNull(mainStrategy.getAdditionalStrategy())) {
 
                                         IStrategy additionalStrategy = mainStrategy.getAdditionalStrategy();
                                         EInterval intervalForAdditionalStrategy = additionalStrategy.getAdditionalStrategy().getInterval();
                                         BarSeries additionalSeries = series;
 
-                                        if(!queryDto.getInterval().toString().equals(intervalForAdditionalStrategy.toString())) {
+                                        if (!queryDto.getInterval().toString().equals(intervalForAdditionalStrategy.toString())) {
                                             queryDto.setInterval(intervalForAdditionalStrategy.toString());
                                             additionalSeries = stockMarketService.getBarSeries(queryDto).orElseThrow(RuntimeException::new);
                                         }
 
                                         Rule additionalRule = additionalStrategy.getEnterRule(additionalSeries);
-                                        if(!additionalRule.isSatisfied(additionalSeries.getEndIndex())) return;
+                                        if (!additionalRule.isSatisfied(additionalSeries.getEndIndex())) return;
                                     }
-
-                                    synchronized (TestBinanceTraderBotImpl.class) {
-                                        FakeBargainEntity createdFakeBargain = createFakeBargain(symbol, mainStrategy.getName());
-                                        notifyToTelegram(createdFakeBargain, EEventType.ASSET_WAS_BOUGHT);
-                                    }
-
+                                    IndicatorValuesDto indicatorValues = indicatorReader.getValues(series);
+                                    FakeBargainEntity createdFakeBargain = createFakeBargain(symbol, mainStrategy.getName(), indicatorValues);
+                                    notifyToTelegram(createdFakeBargain, EEventType.ASSET_WAS_BOUGHT);
                                 }
                             }
                     );
                 }
         );
-
     }
 
 
-
-    private FakeBargainEntity createFakeBargain(String symbol, String ruleName) {
+    private FakeBargainEntity createFakeBargain(String symbol, String ruleName, IndicatorValuesDto indicatorValues) {
         BigDecimal assetPrice = getSymbolPrice(symbol);
         BigDecimal deposit = balanceManager.allocateFundsForTransaction();
 
@@ -185,6 +156,7 @@ public class TestBinanceTraderBotImpl implements ITraderBot {
         fakeOrderEntity.setMakerFee(makerFee);
         fakeOrderEntity.setTotalSpent(totalCosts);
         fakeOrderEntity.setStrategyName(ruleName);
+        fakeOrderEntity.setIndicatorValue(indicatorValues.toString());
 
         blackList.add(symbol);
 

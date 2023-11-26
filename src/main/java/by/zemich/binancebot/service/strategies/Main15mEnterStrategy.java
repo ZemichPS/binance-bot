@@ -1,4 +1,4 @@
-package by.zemich.binancebot.service.rules;
+package by.zemich.binancebot.service.strategies;
 
 import by.zemich.binancebot.core.enums.EInterval;
 import by.zemich.binancebot.service.api.IStrategy;
@@ -7,29 +7,31 @@ import org.ta4j.core.BarSeries;
 import org.ta4j.core.Rule;
 import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.RSIIndicator;
-import org.ta4j.core.indicators.adx.ADXIndicator;
 import org.ta4j.core.indicators.bollinger.*;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.indicators.helpers.HighPriceIndicator;
 import org.ta4j.core.indicators.helpers.LowPriceIndicator;
 import org.ta4j.core.indicators.helpers.OpenPriceIndicator;
 import org.ta4j.core.indicators.statistics.StandardDeviationIndicator;
+import org.ta4j.core.indicators.volume.ChaikinMoneyFlowIndicator;
+import org.ta4j.core.indicators.volume.OnBalanceVolumeIndicator;
 import org.ta4j.core.rules.*;
 
 import java.math.BigDecimal;
 
-//@Component
-public class BullishEnterStrategy extends TradeStrategy {
-    private final String name = "BULLISH_RULE";
+@Component
+public class Main15mEnterStrategy extends TradeStrategy {
+
+    private final String name = "MAIN_15M_ENTER_RULE";
 
     @Override
     public String getName() {
-        return name;
+        return this.name;
     }
 
     @Override
     public BigDecimal getGoalPercentage() {
-        return new BigDecimal("0.8");
+        return new BigDecimal("1.0");
     }
 
     @Override
@@ -58,16 +60,26 @@ public class BullishEnterStrategy extends TradeStrategy {
         BollingerBandsLowerIndicator bbl = new BollingerBandsLowerIndicator(bbm, sd);
         BollingerBandsUpperIndicator bbu = new BollingerBandsUpperIndicator(bbm, sd);
         BollingerBandWidthIndicator bbw = new BollingerBandWidthIndicator(bbu, bbm, bbl);
-        ADXIndicator adxIndicator = new ADXIndicator(series, 7);
 
-        return new UnderIndicatorRule(lowPriceIndicator, bbm)
+        OnBalanceVolumeIndicator obv = new OnBalanceVolumeIndicator(series);
+        ChaikinMoneyFlowIndicator chaikinMoneyFlowIndicator  = new ChaikinMoneyFlowIndicator(series, 20);
+
+//        return new UnderIndicatorRule(openPriceIndicator, bbm)
+//                .and(new OverIndicatorRule(closePrice, bbm))
+//                .and(new IsRisingRule(bbm, 14, 0.6))
+//                //   .and(new IsRisingRule(obv, 14, 0.1))
+//                .and(new InPipeRule(rsiIndicator, 60, 45))
+//                .and(new InPipeRule(bbw, 3.1, 5))
+//                .and(new NotRule(new OverIndicatorRule(highPriceIndicator, bbu)));
+
+
+        return new UnderIndicatorRule(openPriceIndicator, bbm)
                 .and(new OverIndicatorRule(closePrice, bbm))
-                .and(new OverIndicatorRule(closePrice, openPriceIndicator))
-                .and(new OverIndicatorRule(bbw, 3.5))
-                .and(new IsRisingRule(bbm, 14, 0.7))
+                .and(new IsRisingRule(bbm, 14, 0.4))
                 .and(new InPipeRule(rsiIndicator, 60, 45))
+                .and(new InPipeRule(bbw, 3.1, 6))
+                .and(new OverIndicatorRule(chaikinMoneyFlowIndicator, 0))
                 .and(new NotRule(new OverIndicatorRule(highPriceIndicator, bbu)));
-
 
     }
 }

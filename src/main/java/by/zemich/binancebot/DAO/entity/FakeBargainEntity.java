@@ -66,6 +66,9 @@ public class FakeBargainEntity {
     @Column(name = "strategy_name")
     private String strategyName;
 
+    @Column(name = "indicator_values")
+    private String indicatorValue;
+
 
 
     public FakeBargainEntity(UUID uuid,
@@ -85,7 +88,7 @@ public class FakeBargainEntity {
                              BigDecimal financeResult,
                              BigDecimal currentFinanceResult,
                              BigDecimal pricePercentDifference,
-                             String strategyName) {
+                             String strategyName, String indicatorValue) {
         this.uuid = uuid;
         this.dtUpdate = dtUpdate;
         this.dtCreate = dtCreate;
@@ -104,6 +107,7 @@ public class FakeBargainEntity {
         this.currentFinanceResult = currentFinanceResult;
         this.pricePercentDifference = pricePercentDifference;
         this.strategyName = strategyName;
+        this.indicatorValue = indicatorValue;
     }
 
     public FakeBargainEntity() {
@@ -251,5 +255,13 @@ public class FakeBargainEntity {
 
     public void setStrategyName(String strategyName) {
         this.strategyName = strategyName;
+    }
+
+    public String getIndicatorValue() {
+        return indicatorValue;
+    }
+
+    public void setIndicatorValue(String indicatorValue) {
+        this.indicatorValue = indicatorValue;
     }
 }
