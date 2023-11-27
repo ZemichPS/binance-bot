@@ -7,6 +7,9 @@ import org.ta4j.core.BarSeries;
 import org.ta4j.core.Rule;
 import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.RSIIndicator;
+import org.ta4j.core.indicators.adx.ADXIndicator;
+import org.ta4j.core.indicators.adx.MinusDIIndicator;
+import org.ta4j.core.indicators.adx.PlusDIIndicator;
 import org.ta4j.core.indicators.bollinger.*;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.indicators.helpers.HighPriceIndicator;
@@ -30,8 +33,8 @@ public class Main15mEnterStrategy extends TradeStrategy {
     }
 
     @Override
-    public BigDecimal getGoalPercentage() {
-        return new BigDecimal("1.0");
+    public BigDecimal getInterest() {
+        return new BigDecimal("0.8");
     }
 
     @Override
@@ -61,25 +64,20 @@ public class Main15mEnterStrategy extends TradeStrategy {
         BollingerBandsUpperIndicator bbu = new BollingerBandsUpperIndicator(bbm, sd);
         BollingerBandWidthIndicator bbw = new BollingerBandWidthIndicator(bbu, bbm, bbl);
 
+        ADXIndicator adxIndicator = new ADXIndicator(series, 20);
+        MinusDIIndicator minusDIIndicator = new MinusDIIndicator(series, 20);
+        PlusDIIndicator plusDIIndicator = new PlusDIIndicator(series, 20);
+
         OnBalanceVolumeIndicator obv = new OnBalanceVolumeIndicator(series);
-        ChaikinMoneyFlowIndicator chaikinMoneyFlowIndicator  = new ChaikinMoneyFlowIndicator(series, 20);
-
-//        return new UnderIndicatorRule(openPriceIndicator, bbm)
-//                .and(new OverIndicatorRule(closePrice, bbm))
-//                .and(new IsRisingRule(bbm, 14, 0.6))
-//                //   .and(new IsRisingRule(obv, 14, 0.1))
-//                .and(new InPipeRule(rsiIndicator, 60, 45))
-//                .and(new InPipeRule(bbw, 3.1, 5))
-//                .and(new NotRule(new OverIndicatorRule(highPriceIndicator, bbu)));
-
+        ChaikinMoneyFlowIndicator chaikinMoneyFlowIndicator = new ChaikinMoneyFlowIndicator(series, 20);
 
         return new UnderIndicatorRule(openPriceIndicator, bbm)
                 .and(new OverIndicatorRule(closePrice, bbm))
-                .and(new IsRisingRule(bbm, 14, 0.4))
+                .and(new IsRisingRule(bbm, 14, 0.7))
                 .and(new InPipeRule(rsiIndicator, 60, 45))
-                .and(new InPipeRule(bbw, 3.1, 6))
-                .and(new OverIndicatorRule(chaikinMoneyFlowIndicator, 0))
+                .and(new InPipeRule(bbw, 3.2, 9))
                 .and(new NotRule(new OverIndicatorRule(highPriceIndicator, bbu)));
+
 
     }
 }

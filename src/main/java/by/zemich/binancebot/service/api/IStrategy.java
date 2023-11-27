@@ -11,7 +11,7 @@ public interface IStrategy {
     Rule getEnterRule(BarSeries series);
     String getName();
 
-    BigDecimal getGoalPercentage();
+    BigDecimal getInterest();
 
     EInterval getInterval();
 

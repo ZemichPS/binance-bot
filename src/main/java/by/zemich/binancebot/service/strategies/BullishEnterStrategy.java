@@ -14,13 +14,14 @@ import org.ta4j.core.indicators.helpers.HighPriceIndicator;
 import org.ta4j.core.indicators.helpers.LowPriceIndicator;
 import org.ta4j.core.indicators.helpers.OpenPriceIndicator;
 import org.ta4j.core.indicators.statistics.StandardDeviationIndicator;
+import org.ta4j.core.indicators.volume.ChaikinMoneyFlowIndicator;
 import org.ta4j.core.rules.*;
 
 import java.math.BigDecimal;
 
-//@Component
+@Component
 public class BullishEnterStrategy extends TradeStrategy {
-    private final String name = "BULLISH_RULE";
+    private final String name = "BULLISH_15M_RULE";
 
     @Override
     public String getName() {
@@ -28,7 +29,7 @@ public class BullishEnterStrategy extends TradeStrategy {
     }
 
     @Override
-    public BigDecimal getGoalPercentage() {
+    public BigDecimal getInterest() {
         return new BigDecimal("0.8");
     }
 
@@ -60,12 +61,15 @@ public class BullishEnterStrategy extends TradeStrategy {
         BollingerBandWidthIndicator bbw = new BollingerBandWidthIndicator(bbu, bbm, bbl);
         ADXIndicator adxIndicator = new ADXIndicator(series, 7);
 
+        ChaikinMoneyFlowIndicator chaikinMoneyFlowIndicator = new ChaikinMoneyFlowIndicator(series, 20);
+
         return new UnderIndicatorRule(lowPriceIndicator, bbm)
                 .and(new OverIndicatorRule(openPriceIndicator, bbm))
-                .and(new OverIndicatorRule(closePrice, openPriceIndicator))
-                .and(new OverIndicatorRule(bbw, 3.0))
-                .and(new IsRisingRule(bbm, 14, 0.3))
-                .and(new InPipeRule(rsiIndicator, 60, 45))
+                .and(new OverIndicatorRule(closePrice, bbm))
+                .and(new OverIndicatorRule(chaikinMoneyFlowIndicator, 0.1))
+                .and(new IsRisingRule(bbm, 14, 0.65))
+                .and(new InPipeRule(rsiIndicator, 68, 45))
+                .and(new InPipeRule(bbw, 3.2, 12))
                 .and(new NotRule(new OverIndicatorRule(highPriceIndicator, bbu)));
 
 

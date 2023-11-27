@@ -14,7 +14,7 @@ public class NotOverBoughtStrategy extends TradeStrategy{
     }
 
     @Override
-    public BigDecimal getGoalPercentage() {
+    public BigDecimal getInterest() {
         return null;
     }
 

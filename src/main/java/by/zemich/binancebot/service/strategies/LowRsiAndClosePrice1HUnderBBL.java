@@ -13,22 +13,23 @@ import org.ta4j.core.indicators.helpers.HighPriceIndicator;
 import org.ta4j.core.indicators.helpers.LowPriceIndicator;
 import org.ta4j.core.indicators.helpers.OpenPriceIndicator;
 import org.ta4j.core.indicators.statistics.StandardDeviationIndicator;
+import org.ta4j.core.indicators.volume.ChaikinMoneyFlowIndicator;
 import org.ta4j.core.rules.*;
 
 import java.math.BigDecimal;
 
 
-//@Component
+@Component
 public class LowRsiAndClosePrice1HUnderBBL extends TradeStrategy {
 
     @Override
     public String getName() {
-        return  "LOW_RSI_AND_CLOSE_PRICE_UNDER_BBL_RULE";
+        return "LOW_RSI_AND_CLOSE_PRICE_UNDER_BBL_RULE";
     }
 
     @Override
-    public BigDecimal getGoalPercentage() {
-        return new BigDecimal("1.6");
+    public BigDecimal getInterest() {
+        return new BigDecimal("1.0");
     }
 
     @Override
@@ -55,18 +56,16 @@ public class LowRsiAndClosePrice1HUnderBBL extends TradeStrategy {
         RSIIndicator rsiIndicator = new RSIIndicator(closePrice, 14);
 
 
-
         // Standard deviation
         StandardDeviationIndicator sd = new StandardDeviationIndicator(closePrice, 20);
         BollingerBandsMiddleIndicator bbm = new BollingerBandsMiddleIndicator(emaIndicator);
         BollingerBandsLowerIndicator bbl = new BollingerBandsLowerIndicator(bbm, sd);
         BollingerBandsUpperIndicator bbu = new BollingerBandsUpperIndicator(bbm, sd);
         BollingerBandWidthIndicator bbw = new BollingerBandWidthIndicator(bbu, bbm, bbl);
+        ChaikinMoneyFlowIndicator chaikinMoneyFlowIndicator = new ChaikinMoneyFlowIndicator(series, 20);
 
         return new UnderIndicatorRule(closePrice, bbl)
-                .and(new UnderIndicatorRule(rsiIndicator, 29))
-                .and(new OverIndicatorRule(bbw, 5));
-                //.and(new IsFallingRule(bbw, 10, 0.1));
+                .and(new UnderIndicatorRule(chaikinMoneyFlowIndicator, -15));
 
 
     }

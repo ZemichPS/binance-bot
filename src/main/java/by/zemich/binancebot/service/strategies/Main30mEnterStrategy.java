@@ -21,7 +21,7 @@ import org.ta4j.core.rules.*;
 
 import java.math.BigDecimal;
 
-//@Component
+@Component
 public class Main30mEnterStrategy extends TradeStrategy {
 
     private final String name = "MAIN_30M_ENTER_RULE";
@@ -32,7 +32,7 @@ public class Main30mEnterStrategy extends TradeStrategy {
     }
 
     @Override
-    public BigDecimal getGoalPercentage() {
+    public BigDecimal getInterest() {
         return new BigDecimal("1.1");
     }
 
@@ -72,7 +72,7 @@ public class Main30mEnterStrategy extends TradeStrategy {
                 .and(new IsRisingRule(bbm, 14, 0.6))
            //     .and(new IsRisingRule(obv, 14, 0.1))
                 .and(new InPipeRule(rsiIndicator, 60, 45))
-                .and(new InPipeRule(bbw, 5, 8))
+                .and(new InPipeRule(bbw, 5.5, 8))
                 .and(new NotRule(new OverIndicatorRule(highPriceIndicator, bbu)));
 
     }
