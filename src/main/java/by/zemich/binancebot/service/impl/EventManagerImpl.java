@@ -17,12 +17,12 @@ public class EventManagerImpl implements IEventManager {
         EventDto eventDto = EventDto.builder().build();
         eventDto.setEventType(eventType);
         String eventText = MessageFormat.format("""
-                        id: {0} \n
-                        symbol: {1} \n
-                        type: {2} \n
-                        status: {3} \n
-                        price: {4} \n
-                        amount: {5} \n
+                        id: {0} 
+                        symbol: {1} 
+                        type: {2} 
+                        status: {3} 
+                        price: {4} 
+                        amount: {5} 
                         """,
                 order.getOrderId(),
                 order.getSymbol(),
@@ -53,10 +53,10 @@ public class EventManagerImpl implements IEventManager {
     @Override
     public EventDto get(EEventType eventType, BargainDto bargainDto) {
         String eventText = MessageFormat.format("""
-                        Создана новая сделка: \n
-                        Uuid: {1} \n
-                        """,
-                bargainDto.getUuid());
+                        Создана новая сделка
+                        Uuid: {0}
+                        asset: {1} 
+                        """, bargainDto.getUuid(), bargainDto.getSymbol());
 
         return EventDto.builder()
                 .eventType(eventType)

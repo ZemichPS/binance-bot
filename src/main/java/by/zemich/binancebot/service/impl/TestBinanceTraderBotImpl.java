@@ -2,7 +2,9 @@ package by.zemich.binancebot.service.impl;
 
 
 import by.zemich.binancebot.DAO.api.IFakeOrderDao;
+import by.zemich.binancebot.DAO.api.IMetricDao;
 import by.zemich.binancebot.DAO.entity.FakeBargainEntity;
+import by.zemich.binancebot.DAO.entity.MetricEntity;
 import by.zemich.binancebot.config.properties.TestTradingProperties;
 import by.zemich.binancebot.core.dto.*;
 import by.zemich.binancebot.core.dto.binance.KlineQueryDto;
@@ -12,6 +14,7 @@ import by.zemich.binancebot.core.enums.EInterval;
 import by.zemich.binancebot.core.enums.EOrderStatus;
 import by.zemich.binancebot.service.api.*;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.BeanUtils;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -26,7 +29,7 @@ import java.time.LocalDateTime;
 import java.util.*;
 
 
-@Component
+//@Component
 @EnableScheduling
 @Log4j2
 public class TestBinanceTraderBotImpl implements ITraderBot {
@@ -35,22 +38,25 @@ public class TestBinanceTraderBotImpl implements ITraderBot {
     private final TestTradingProperties testTradingProperties;
 
     private final IFakeOrderDao fakeOrderDao;
-    private final Map<String, IStrategy> stragegyMap = new HashMap<>();
 
+    private final IMetricDao metricDao;
     private final IBalanceManager balanceManager;
+    private final IIndicatorReader indicatorReader;
+    private final Map<String, IStrategy> stragegyMap = new HashMap<>();
 
     private final BigDecimal percentMakerFee = new BigDecimal("0.1");
     private final BigDecimal percentTakerFee = new BigDecimal("0.1");
 
     private final List<String> blackList = new ArrayList<>();
 
-    private final IIndicatorReader indicatorReader;
 
-    public TestBinanceTraderBotImpl(IStockMarketService stockMarketService, INotifier notifier, TestTradingProperties testTradingProperties, IFakeOrderDao fakeOrderDao, IBalanceManager balanceManager, IIndicatorReader indicatorReader) {
+
+    public TestBinanceTraderBotImpl(IStockMarketService stockMarketService, INotifier notifier, TestTradingProperties testTradingProperties, IFakeOrderDao fakeOrderDao, IMetricDao metricDao, IBalanceManager balanceManager, IIndicatorReader indicatorReader) {
         this.stockMarketService = stockMarketService;
         this.notifier = notifier;
         this.testTradingProperties = testTradingProperties;
         this.fakeOrderDao = fakeOrderDao;
+        this.metricDao = metricDao;
         this.balanceManager = balanceManager;
         this.indicatorReader = indicatorReader;
 
@@ -85,55 +91,57 @@ public class TestBinanceTraderBotImpl implements ITraderBot {
 
         List<String> symbolsList = stockMarketService.getSpotSymbols().orElseThrow();
 
+        log.info("Количество элементов в списке:"  + symbolsList.size());
+
 
         stragegyMap.values().stream()
                 .map(IStrategy::getInterval)
                 .map(EInterval::toString)
                 .distinct()
                 .forEach(
-                stringInterval -> {
-                    symbolsList.forEach(
-                            symbol -> {
-                                if (blackList.contains(symbol)) return;
+                        stringInterval -> {
+                            symbolsList.forEach(
+                                    symbol -> {
+                                        if (blackList.contains(symbol)) return;
 
-                                queryDto.setSymbol(symbol);
-                                queryDto.setInterval(stringInterval);
+                                        queryDto.setSymbol(symbol);
+                                        queryDto.setInterval(stringInterval);
 
-                                BarSeries series = stockMarketService.getBarSeries(queryDto).orElseThrow(RuntimeException::new);
+                                        BarSeries series = stockMarketService.getBarSeries(queryDto).orElseThrow(RuntimeException::new);
 
-                                if (series.getBarCount() < 500) return;
+                                        if (series.getBarCount() < 500) return;
 
-                                //   log.info(series.getName() + "\n" + indicatorReader.getValues(series).toString());
-                                log.info(series.getName());
+                                       // log.info(series.getName() + "\n" + indicatorReader.getValues(series).toString());
+                                        //log.info(series.getName());
 
-                                stragegyMap.values().stream()
-                                        .filter(iStrategy -> iStrategy.getInterval().toString().equals(stringInterval))
-                                        .forEach(iStrategy -> {
-                                            if (iStrategy.getEnterRule(series).isSatisfied(series.getEndIndex())) {
+                                        stragegyMap.values().stream()
+                                                .filter(iStrategy -> iStrategy.getInterval().toString().equals(stringInterval))
+                                                .forEach(iStrategy -> {
+                                                    if (iStrategy.getEnterRule(series).isSatisfied(series.getEndIndex())) {
 
-                                                if (Objects.nonNull(iStrategy.getAdditionalStrategy())) {
+                                                        if (Objects.nonNull(iStrategy.getAdditionalStrategy())) {
 
-                                                    IStrategy additionalStrategy = iStrategy.getAdditionalStrategy();
-                                                    EInterval intervalForAdditionalStrategy = additionalStrategy.getAdditionalStrategy().getInterval();
-                                                    BarSeries additionalSeries = series;
+                                                            IStrategy additionalStrategy = iStrategy.getAdditionalStrategy();
+                                                            EInterval intervalForAdditionalStrategy = additionalStrategy.getAdditionalStrategy().getInterval();
+                                                            BarSeries additionalSeries = series;
 
-                                                    if (!queryDto.getInterval().equals(intervalForAdditionalStrategy.toString())) {
-                                                        queryDto.setInterval(intervalForAdditionalStrategy.toString());
-                                                        additionalSeries = stockMarketService.getBarSeries(queryDto).orElseThrow(RuntimeException::new);
+                                                            if (!queryDto.getInterval().equals(intervalForAdditionalStrategy.toString())) {
+                                                                queryDto.setInterval(intervalForAdditionalStrategy.toString());
+                                                                additionalSeries = stockMarketService.getBarSeries(queryDto).orElseThrow(RuntimeException::new);
+                                                            }
+
+                                                            Rule additionalRule = additionalStrategy.getEnterRule(additionalSeries);
+                                                            if (!additionalRule.isSatisfied(additionalSeries.getEndIndex()))
+                                                                return;
+                                                        }
+
+                                                        IndicatorValuesDto indicatorValues = indicatorReader.getValues(series);
+                                                        FakeBargainEntity createdFakeBargain = createFakeBargain(symbol, iStrategy.getName(), indicatorValues);
+                                                        notifyToTelegram(createdFakeBargain, EEventType.ASSET_WAS_BOUGHT);
                                                     }
-
-                                                    Rule additionalRule = additionalStrategy.getEnterRule(additionalSeries);
-                                                    if (!additionalRule.isSatisfied(additionalSeries.getEndIndex()))
-                                                        return;
-                                                }
-
-                                                IndicatorValuesDto indicatorValues = indicatorReader.getValues(series);
-                                                FakeBargainEntity createdFakeBargain = createFakeBargain(symbol, iStrategy.getName(), indicatorValues);
-                                                notifyToTelegram(createdFakeBargain, EEventType.ASSET_WAS_BOUGHT);
-                                            }
-                                        });
-                            });
-                });
+                                                });
+                                    });
+                        });
     }
 
 
@@ -167,6 +175,14 @@ public class TestBinanceTraderBotImpl implements ITraderBot {
         fakeOrderEntity.setTotalSpent(totalCosts);
         fakeOrderEntity.setStrategyName(ruleName);
         fakeOrderEntity.setIndicatorValue(indicatorValues.toString());
+
+        FakeBargainEntity savedFakeOrderEntity =  fakeOrderDao.save(fakeOrderEntity);
+        MetricEntity metricEntity = new MetricEntity();
+        metricEntity.setUuid(UUID.randomUUID());
+        metricEntity.setBargainUuid(savedFakeOrderEntity.getUuid());
+        BeanUtils.copyProperties(indicatorValues, metricEntity);
+
+        metricDao.save(metricEntity);
 
         blackList.add(symbol);
 

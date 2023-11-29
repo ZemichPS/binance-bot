@@ -1,6 +1,6 @@
 package by.zemich.binancebot.core.dto.binance;
 
-import by.zemich.binancebot.core.dto.binance.ENewOrderRespType;
+import by.zemich.binancebot.core.enums.ENewOrderRespType;
 import by.zemich.binancebot.core.enums.EOrderType;
 import by.zemich.binancebot.core.enums.ESide;
 import by.zemich.binancebot.core.enums.ETimeInForce;

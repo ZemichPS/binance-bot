@@ -30,7 +30,7 @@ public class BullishEnterStrategy extends TradeStrategy {
 
     @Override
     public BigDecimal getInterest() {
-        return new BigDecimal("0.8");
+        return new BigDecimal("0.5");
     }
 
     @Override
@@ -66,11 +66,22 @@ public class BullishEnterStrategy extends TradeStrategy {
         return new UnderIndicatorRule(lowPriceIndicator, bbm)
                 .and(new OverIndicatorRule(openPriceIndicator, bbm))
                 .and(new OverIndicatorRule(closePrice, bbm))
-                .and(new OverIndicatorRule(chaikinMoneyFlowIndicator, 0.1))
+               //.and(new OverIndicatorRule(bbw, 3.2))
+                .and(new UnderIndicatorRule(bbw, 12))
+                //.and(new OverIndicatorRule(chaikinMoneyFlowIndicator, 0.1))
                 .and(new IsRisingRule(bbm, 14, 0.65))
-                .and(new InPipeRule(rsiIndicator, 68, 45))
-                .and(new InPipeRule(bbw, 3.2, 12))
+                //.and(new InPipeRule(rsiIndicator, 68, 45))
+
                 .and(new NotRule(new OverIndicatorRule(highPriceIndicator, bbu)));
+
+//        return new UnderIndicatorRule(lowPriceIndicator, bbm)
+//                .and(new OverIndicatorRule(openPriceIndicator, bbm))
+//                .and(new OverIndicatorRule(closePrice, bbm))
+//                .and(new OverIndicatorRule(chaikinMoneyFlowIndicator, 0.1))
+//                .and(new IsRisingRule(bbm, 14, 0.65))
+//                .and(new InPipeRule(rsiIndicator, 68, 45))
+//                .and(new InPipeRule(bbw, 3.2, 12))
+//                .and(new NotRule(new OverIndicatorRule(highPriceIndicator, bbu)));
 
 
     }

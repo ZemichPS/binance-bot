@@ -1,4 +1,4 @@
-package by.zemich.binancebot.core.dto.binance;
+package by.zemich.binancebot.core.enums;
 
 public enum ENewOrderRespType {
     ACK,

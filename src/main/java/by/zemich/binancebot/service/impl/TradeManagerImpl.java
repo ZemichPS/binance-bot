@@ -4,11 +4,9 @@ import by.zemich.binancebot.DAO.entity.OrderEntity;
 import by.zemich.binancebot.config.properties.RealTradeProperties;
 import by.zemich.binancebot.core.dto.*;
 import by.zemich.binancebot.core.dto.binance.*;
-import by.zemich.binancebot.core.enums.EEventType;
-import by.zemich.binancebot.core.enums.EOrderType;
-import by.zemich.binancebot.core.enums.ESide;
-import by.zemich.binancebot.core.enums.ETimeInForce;
+import by.zemich.binancebot.core.enums.*;
 import by.zemich.binancebot.service.api.*;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 
@@ -29,13 +27,16 @@ public class TradeManagerImpl implements ITradeManager {
     private final IBargainService bargainService;
     private final List<String> blackList = new ArrayList<>(List.of("BUSDUSDT", "USDTUSDT"));
 
+    private final ObjectMapper mapper;
+    private final List<SymbolDto> symbolsList;
+
     public TradeManagerImpl(IStockMarketService stockMarketService,
                             IConverter converter,
                             IOrderService orderService,
                             INotifier notifier,
                             IEventManager eventCreate,
                             RealTradeProperties tradeProperties,
-                            IBargainService bargainService) {
+                            IBargainService bargainService, ObjectMapper mapper, List<SymbolDto> symbolsList) {
         this.stockMarketService = stockMarketService;
         this.converter = converter;
         this.orderService = orderService;
@@ -43,16 +44,18 @@ public class TradeManagerImpl implements ITradeManager {
         this.eventCreate = eventCreate;
         this.tradeProperties = tradeProperties;
         this.bargainService = bargainService;
+        this.mapper = mapper;
+        this.symbolsList = symbolsList;
     }
 
 
     @Override
-    public OrderDto createBuyLimitOrderByAskPrice(String symbol) {
-        BigDecimal askPrice = getAskPrice(symbol);
+    public OrderDto createBuyLimitOrderByAskPrice(SymbolDto symbol) {
+        BigDecimal askPrice = getAskPrice(symbol.getSymbol());
         BigDecimal quantity = tradeProperties.getDeposit().divide(askPrice, 1, RoundingMode.HALF_DOWN);
 
         NewOrderRequestDto newOrderRequest = NewOrderRequestDto.builder()
-                .symbol(symbol)
+                .symbol(symbol.getSymbol())
                 .price(askPrice)
                 .side(ESide.BUY)
                 .type(EOrderType.LIMIT)
@@ -69,20 +72,26 @@ public class TradeManagerImpl implements ITradeManager {
         return orderDto;
     }
 
+    @Override
+    public OrderDto createBuyLimitOrderByBidPrice(SymbolDto symbol) {
+        PriceBinanceFilter priceBinanceFilter = getPriceFilter(symbol);
+        LotSizeBinanceFilter lotSizeBinanceFilter = getLotSizeFilter(symbol);
 
-    public OrderDto createBuyLimitOrderByBidPrice(String symbol) {
+        BigDecimal stepSize = lotSizeBinanceFilter.getStepSize();
+
+        BigDecimal currentPrice = getSymbolPrice(symbol.getSymbol());
+        BigDecimal quantity = tradeProperties.getDeposit().divide(currentPrice, 10, RoundingMode.HALF_DOWN);
+        BigDecimal computedQuantity = roundStepSize(quantity, stepSize);
 
         //BigDecimal bidPrice = getBidPrice(symbol).setScale(2,RoundingMode.DOWN);
 
-        BigDecimal currentPrice = getSymbolPrice(symbol);
-        BigDecimal quantity = tradeProperties.getDeposit().divide(currentPrice, 1, RoundingMode.HALF_DOWN);
 
         NewOrderRequestDto newOrderRequest = NewOrderRequestDto.builder()
-                .symbol(symbol)
+                .symbol(symbol.getSymbol())
                 .price(currentPrice)
                 .side(ESide.BUY)
                 .type(EOrderType.LIMIT)
-                .quantity(quantity)
+                .quantity(computedQuantity)
                 .timeInForce(ETimeInForce.GTC)
                 .newOrderRespType(ENewOrderRespType.FULL)
                 .build();
@@ -98,20 +107,34 @@ public class TradeManagerImpl implements ITradeManager {
     @Override
     public OrderDto createSellLimitOrder(Long orderId) {
 
-        OrderDto oldOrderDto = getOrderById(orderId);
 
-        String symbol = oldOrderDto.getSymbol();
-        BigDecimal gainIncome = percent(oldOrderDto.getPrice(), tradeProperties.getGain());
+        OrderDto buyOrder = getOrderById(orderId);
 
-        BigDecimal quantity = oldOrderDto.getOrigQty();//.setScale(2,RoundingMode.DOWN);
-        BigDecimal price = oldOrderDto.getPrice().add(gainIncome).setScale(2, RoundingMode.DOWN);
+        SymbolDto symbolDto = symbolsList.stream()
+                .filter(symbol -> symbol.getSymbol().equals(buyOrder.getSymbol()))
+                .findFirst()
+                .orElseThrow();
+
+        LotSizeBinanceFilter lotSizeBinanceFilter = getLotSizeFilter(symbolDto);
+
+
+
+        String symbol = buyOrder.getSymbol();
+        BigDecimal takerFee = tradeProperties.getTaker();
+
+        BigDecimal interest = percent(buyOrder.getPrice(), tradeProperties.getGain());
+
+        BigDecimal quantity = buyOrder.getExecutedQty();
+        BigDecimal sellQuantity = quantity.subtract(percent(quantity, takerFee));
+
+        BigDecimal sellPrice = buyOrder.getPrice().add(interest).setScale(2, RoundingMode.DOWN);
 
         NewOrderRequestDto newOrderRequest = NewOrderRequestDto.builder()
                 .symbol(symbol)
-                .price(price)
+                .price(sellPrice)
                 .side(ESide.SELL)
                 .type(EOrderType.LIMIT)
-                .quantity(quantity)
+                .quantity(sellQuantity)
                 .timeInForce(ETimeInForce.GTC)
                 .newOrderRespType(ENewOrderRespType.FULL)
                 .build();
@@ -126,8 +149,9 @@ public class TradeManagerImpl implements ITradeManager {
     public OrderDto createStopLimitOrder(Long orderId) {
 
         OrderDto buyOrderDto = getOrderById(orderId);
-
         String symbol = buyOrderDto.getSymbol();
+
+
         BigDecimal gain = percent(buyOrderDto.getPrice(), tradeProperties.getGain());
 
         NewOrderRequestDto newOrderRequest = NewOrderRequestDto.builder()
@@ -195,6 +219,35 @@ public class TradeManagerImpl implements ITradeManager {
 
         return symbolPriceTicker.getPrice();
 
+    }
+
+    private LotSizeBinanceFilter getLotSizeFilter(SymbolDto symbolDto){
+        LinkedHashMap<String, String> map = (LinkedHashMap<String, String>) symbolDto.getFilters().get(1);
+
+        return LotSizeBinanceFilter.builder()
+                .filterType(map.get("filterType"))
+                .minQty(new BigDecimal(map.get("minQty")))
+                .maxQty(new BigDecimal(map.get("maxQty")))
+                .stepSize(new BigDecimal(map.get("stepSize")))
+                .build();
+
+    }
+
+
+    private PriceBinanceFilter getPriceFilter(SymbolDto symbolDto){
+        LinkedHashMap<String, String> map = (LinkedHashMap<String, String>) symbolDto.getFilters().get(0);
+
+        return PriceBinanceFilter.builder()
+                .filterType(map.get("filterType"))
+                .minPrice(new BigDecimal(map.get("minPrice")))
+                .maxPrice(new BigDecimal(map.get("maxPrice")))
+                .tickSize(new BigDecimal(map.get("tickSize")))
+                .build();
+    }
+
+    private BigDecimal roundStepSize(BigDecimal quantity, BigDecimal stepSize){
+        BigDecimal rest = quantity.remainder(stepSize);
+        return quantity.subtract(rest);
     }
 
 }

@@ -8,10 +8,13 @@ import java.math.BigDecimal;
 public class RealTradeProperties {
     private BigDecimal gain;
     private BigDecimal deposit;
+    private BigDecimal taker;
+    private BigDecimal maker;
 
-    public RealTradeProperties(BigDecimal gain, BigDecimal deposit) {
+    public RealTradeProperties(BigDecimal gain, BigDecimal deposit, BigDecimal taker) {
         this.gain = gain;
         this.deposit = deposit;
+        this.taker = taker;
     }
 
     public RealTradeProperties() {
@@ -31,5 +34,21 @@ public class RealTradeProperties {
 
     public void setDeposit(BigDecimal deposit) {
         this.deposit = deposit;
+    }
+
+    public BigDecimal getMaker() {
+        return maker;
+    }
+
+    public void setMaker(BigDecimal maker) {
+        this.maker = maker;
+    }
+
+    public BigDecimal getTaker() {
+        return taker;
+    }
+
+    public void setTaker(BigDecimal taker) {
+        this.taker = taker;
     }
 }

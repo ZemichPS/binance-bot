@@ -3,6 +3,7 @@ package by.zemich.binancebot.core.dto.binance;
 import by.zemich.binancebot.core.enums.EOrderType;
 import lombok.Data;
 import java.util.List;
+import java.util.Optional;
 
 @Data
 public class SymbolDto {
@@ -25,5 +26,11 @@ public class SymbolDto {
     private List<String> permissions;
     private String defaultSelfTradePreventionMode;
     private List<String> allowedSelfTradePreventionModes;
+
+    //private List<BinanceFilter> filters;
+    //private List<SymbolFilter> filters;
+    private List<Object> filters;
+
+
 
 }

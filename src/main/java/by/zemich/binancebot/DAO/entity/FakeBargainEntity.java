@@ -39,22 +39,17 @@ public class FakeBargainEntity {
     private BigDecimal sellPrice;
     @Column(name = "symbol")
     private String symbol;
-
     @Column(name = "asset_amount")
     private BigDecimal assetAmount;
-
     @Column(name = "spend_on_purchase")
     private BigDecimal totalSpent;
-
     @Column(name = "duration")
     private Long duration;
     @Column(name = "status")
     @Enumerated(EnumType.STRING)
     private EOrderStatus status;
-
     @Column(name = "maker_fee")
     private BigDecimal makerFee;
-
     @Column(name = "taker_fee")
     private BigDecimal takerFee;
     @Column(name = "finance_result")

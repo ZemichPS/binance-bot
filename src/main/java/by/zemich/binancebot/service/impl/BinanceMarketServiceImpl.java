@@ -105,6 +105,20 @@ public class BinanceMarketServiceImpl implements IStockMarketService {
     }
 
     @Override
+    public Optional<List<SymbolDto>> getSymbols() {
+        ExchangeInfoQueryDto queryDto = new ExchangeInfoQueryDto();
+        queryDto.setPermissions(new ArrayList<>(List.of("SPOT")));
+        String result = spotClient.createMarket().exchangeInfo(converter.dtoToMap(queryDto));
+        ExchangeInfoResponseDto exchangeInfo;
+        try {
+            exchangeInfo = objectMapper.readValue(result, ExchangeInfoResponseDto.class);
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+        return Optional.of(exchangeInfo.getSymbols());
+    }
+
+    @Override
     public Optional<NewOrderFullResponseDto> createOrder(Map<String, Object> params) {
         String responseResult = spotClient.createTrade().newOrder(params);
 

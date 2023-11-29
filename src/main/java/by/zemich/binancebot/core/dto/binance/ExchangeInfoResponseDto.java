@@ -10,4 +10,5 @@ public class ExchangeInfoResponseDto {
     private Long serverTime;
     private List<SymbolDto> symbols;
 
+
 }

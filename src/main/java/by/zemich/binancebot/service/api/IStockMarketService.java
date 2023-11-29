@@ -16,6 +16,7 @@ public interface IStockMarketService {
     Optional<ExchangeInfoResponseDto> getExchangeInfo(ExchangeInfoQueryDto queryDto);
     Optional<List<SymbolShortDto>> getAllSymbols(TickerSymbolShortQuery query);
     Optional<List<String>> getSpotSymbols();
+    Optional<List<SymbolDto>> getSymbols();
     Optional<NewOrderFullResponseDto> createOrder(Map<String, Object> params);
     Optional<List<HistoricalOrderResponseDto>> getHistoricalOrderList(Map<String, Object> params);
     Optional<CancelOrderResponseDto> cancelOrder(Map<String, Object> params);

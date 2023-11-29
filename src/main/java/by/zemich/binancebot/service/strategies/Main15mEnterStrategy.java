@@ -34,7 +34,7 @@ public class Main15mEnterStrategy extends TradeStrategy {
 
     @Override
     public BigDecimal getInterest() {
-        return new BigDecimal("0.8");
+        return new BigDecimal("0.5");
     }
 
     @Override
@@ -73,9 +73,9 @@ public class Main15mEnterStrategy extends TradeStrategy {
 
         return new UnderIndicatorRule(openPriceIndicator, bbm)
                 .and(new OverIndicatorRule(closePrice, bbm))
+                .and(new OverIndicatorRule(bbw, 3.5))
                 .and(new IsRisingRule(bbm, 14, 0.7))
-                .and(new InPipeRule(rsiIndicator, 60, 45))
-                .and(new InPipeRule(bbw, 3.2, 9))
+               // .and(new InPipeRule(rsiIndicator, 60, 45))
                 .and(new NotRule(new OverIndicatorRule(highPriceIndicator, bbu)));
 
 

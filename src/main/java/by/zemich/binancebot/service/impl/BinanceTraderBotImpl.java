@@ -2,11 +2,12 @@ package by.zemich.binancebot.service.impl;
 
 
 import by.zemich.binancebot.DAO.entity.BargainEntity;
-import by.zemich.binancebot.DAO.entity.FakeBargainEntity;
 import by.zemich.binancebot.core.dto.BargainDto;
 import by.zemich.binancebot.core.dto.EventDto;
+import by.zemich.binancebot.core.dto.IndicatorValuesDto;
 import by.zemich.binancebot.core.dto.binance.KlineQueryDto;
 import by.zemich.binancebot.core.dto.OrderDto;
+import by.zemich.binancebot.core.dto.binance.SymbolDto;
 import by.zemich.binancebot.core.enums.*;
 import by.zemich.binancebot.service.api.*;
 import com.binance.connector.client.exceptions.BinanceClientException;
@@ -15,14 +16,16 @@ import org.springframework.core.convert.ConversionService;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
+import org.springframework.stereotype.Service;
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.Rule;
 
 
+import java.math.BigDecimal;
 import java.util.*;
 
 
-//@Component
+@Service
 @EnableScheduling
 @Log4j2
 public class BinanceTraderBotImpl implements ITraderBot {
@@ -32,22 +35,27 @@ public class BinanceTraderBotImpl implements ITraderBot {
     private final IEventManager eventManager;
     private final IBargainService bargainService;
     private final ConversionService conversionService;
+    private final IIndicatorReader indicatorReader;
     private final Map<String, IStrategy> strategyMap = new HashMap<>();
     private final List<String> blackList = new ArrayList<>();
-    private Integer counter = Integer.valueOf(1);
+    private Integer counter = 1;
+
+    private final List<SymbolDto> symbolsList;
 
     public BinanceTraderBotImpl(IStockMarketService stockMarketService,
                                 ITradeManager tradeManager,
                                 INotifier notifier,
                                 IEventManager eventManager,
                                 IBargainService bargainService,
-                                ConversionService conversionService) {
+                                ConversionService conversionService, IIndicatorReader indicatorReader, List<SymbolDto> symbolsList) {
         this.stockMarketService = stockMarketService;
         this.tradeManager = tradeManager;
         this.notifier = notifier;
         this.eventManager = eventManager;
         this.bargainService = bargainService;
         this.conversionService = conversionService;
+        this.indicatorReader = indicatorReader;
+        this.symbolsList = symbolsList;
 
         blackList.add("BUSDUSDT");
         blackList.add("TUSDUSDT");
@@ -57,7 +65,12 @@ public class BinanceTraderBotImpl implements ITraderBot {
         blackList.add("BTTCUSDT");
         blackList.add("PEPEUSDT");
         blackList.add("BNBUSDT");
+        blackList.add("BTSUSDT");
+
+
+
         blackList.add("NEOUSDT");
+        blackList.add("BURGERUSDT");
     }
 
 
@@ -66,72 +79,89 @@ public class BinanceTraderBotImpl implements ITraderBot {
         strategyMap.put(name, strategyManager);
     }
 
-    @Scheduled(fixedDelay = 40_000, initialDelay = 1_000)
+
+    @Scheduled(fixedDelay = 10_000_000, initialDelay = 1_000)
+    private void updateSymbols(){
+
+        symbolsList.clear();
+        stockMarketService.getSymbols().orElseThrow().stream()
+                .filter(symbolDto -> symbolDto.getStatus().equals("TRADING"))
+                .filter(symbolDto -> symbolDto.getQuoteAsset().equals("USDT"))
+                .forEach(symbolsList::add);
+    }
+
+    @Scheduled(fixedDelay = 40_000, initialDelay = 5_000)
     @Override
     public void lookForEnterPosition() {
-
-        if (counter <= 0) return;
 
         KlineQueryDto queryDto = new KlineQueryDto();
         queryDto.setLimit(500);
 
-        List<String> symbolsList = stockMarketService.getSpotSymbols().orElseThrow();
+        if (counter <= 0) return;
 
 
-        strategyMap.values().stream().forEach(
-                mainStrategy -> {
+        strategyMap.values().stream()
+                .map(IStrategy::getInterval)
+                .map(EInterval::toString)
+                .distinct()
+                .forEach(
+                        stringInterval -> {
+                            symbolsList.forEach(
+                                    symbol -> {
+                                        if (blackList.contains(symbol)) return;
 
-                    symbolsList.forEach(
-                            symbol -> {
-                                if (blackList.contains(symbol)) return;
+                                        queryDto.setSymbol(symbol.getSymbol());
+                                        queryDto.setInterval(stringInterval);
 
-                                queryDto.setSymbol(symbol);
-                                queryDto.setInterval(mainStrategy.getInterval().toString());
-                                BarSeries series = stockMarketService.getBarSeries(queryDto).orElseThrow(RuntimeException::new);
+                                        BarSeries series = stockMarketService.getBarSeries(queryDto).orElseThrow(RuntimeException::new);
 
-                                if (series.getBarCount() < 500) return;
+                                        if (series.getBarCount() < 500) return;
 
-                                if (mainStrategy.getEnterRule(series).isSatisfied(series.getEndIndex())) {
+                                        strategyMap.values().stream()
+                                                .filter(iStrategy -> iStrategy.getInterval().toString().equals(stringInterval))
+                                                .forEach(iStrategy -> {
+                                                    if (iStrategy.getEnterRule(series).isSatisfied(series.getEndIndex())) {
 
-                                    if (Objects.nonNull(mainStrategy.getAdditionalStrategy())) {
+                                                        if (Objects.nonNull(iStrategy.getAdditionalStrategy())) {
 
-                                        IStrategy additionalStrategy = mainStrategy.getAdditionalStrategy();
-                                        EInterval intervalForAdditionalStrategy = additionalStrategy.getAdditionalStrategy().getInterval();
-                                        BarSeries additionalSeries = series;
+                                                            IStrategy additionalStrategy = iStrategy.getAdditionalStrategy();
+                                                            EInterval intervalForAdditionalStrategy = additionalStrategy.getAdditionalStrategy().getInterval();
+                                                            BarSeries additionalSeries = series;
 
-                                        if (!queryDto.getInterval().toString().equals(intervalForAdditionalStrategy.toString())) {
-                                            queryDto.setInterval(intervalForAdditionalStrategy.toString());
-                                            additionalSeries = stockMarketService.getBarSeries(queryDto).orElseThrow(RuntimeException::new);
-                                        }
+                                                            if (!queryDto.getInterval().equals(intervalForAdditionalStrategy.toString())) {
+                                                                queryDto.setInterval(intervalForAdditionalStrategy.toString());
+                                                                additionalSeries = stockMarketService.getBarSeries(queryDto).orElseThrow(RuntimeException::new);
+                                                            }
 
-                                        Rule additionalRule = additionalStrategy.getEnterRule(additionalSeries);
-                                        if (!additionalRule.isSatisfied(additionalSeries.getEndIndex())) return;
-                                    }
+                                                            Rule additionalRule = additionalStrategy.getEnterRule(additionalSeries);
+                                                            if (!additionalRule.isSatisfied(additionalSeries.getEndIndex()))
+                                                                return;
+                                                        }
 
-                                    if (counter <= 0) return;
-                                    createBargain(symbol);
-                                }
-                            }
-                    );
-                }
-        );
+                                                        if (counter <= 0) return;
+
+                                                        IndicatorValuesDto indicatorValues = indicatorReader.getValues(series);
+                                                        createBargain(symbol);
+
+
+                                                    }
+                                                });
+                                    });
+                        });
     }
 
 
-    @Scheduled(fixedDelay = 15_000, initialDelay = 1_000)
+    @Scheduled(fixedDelay = 20_000, initialDelay = 5_000)
     @Async
     @Override
     public void checkBargain() {
-        synchronized (BinanceTraderBotImpl.class) {
+
             //проверка на исполнение ордера на покупку
-
-
-
-
             bargainService.checkOnFillBuyOrder().ifPresent(
                     entities -> {
                         entities.stream()
                                 .map(bargainEntity -> conversionService.convert(bargainEntity, BargainDto.class))
+                                .filter(Objects::nonNull)
                                 .forEach(bargainDto -> {
                                     bargainDto.getOrders().stream()
                                             .filter(orderDto -> orderDto.getSide().equals(ESide.BUY))
@@ -165,7 +195,6 @@ public class BinanceTraderBotImpl implements ITraderBot {
                 });
             });
 
-
             //проверка на истёкший ордер
             bargainService.checkOnExpired().ifPresent(bargainEntities -> {
                 bargainEntities.forEach(bargainEntity -> {
@@ -174,12 +203,12 @@ public class BinanceTraderBotImpl implements ITraderBot {
                 });
 
             });
-        }
     }
 
-    private void createBargain(String symbol) {
+    private void createBargain(SymbolDto symbol) {
         try {
 
+            counter = counter - 1;
 
             OrderDto buyOrder = tradeManager.createBuyLimitOrderByBidPrice(symbol);
 
@@ -192,20 +221,17 @@ public class BinanceTraderBotImpl implements ITraderBot {
             if (buyOrder.getStatus().equals(EOrderStatus.FILLED)) {
                 OrderDto sellOrderDto = tradeManager.createSellLimitOrder(buyOrder.getOrderId());
                 newBargain.getOrders().add(sellOrderDto);
+                log.info("ORDER STATUS: FILLED");
             }
 
-            newBargain.setSymbol(symbol);
+            newBargain.setSymbol(symbol.getSymbol());
 
             BargainEntity newBargainEntity = bargainService.create(newBargain).orElseThrow();
-
-
             BargainDto createdBargain = conversionService.convert(newBargainEntity, BargainDto.class);
 
             EventDto event = eventManager.get(EEventType.BARGAIN_WAS_CREATED, createdBargain);
             notifier.notify(event);
 
-
-            counter--;
 
         } catch (BinanceClientException binanceClientException) {
             log.error(binanceClientException.getErrMsg(), binanceClientException.getMessage());
@@ -214,6 +240,8 @@ public class BinanceTraderBotImpl implements ITraderBot {
             notifier.notify(event);
         }
     }
+
+
 
 }
 
