@@ -51,9 +51,9 @@ public class BargainServiceImpl implements IBargainService {
 
     @Override
     @Transactional
-    public Optional<BargainEntity> update(BargainDto bargainDto) {
-        BargainEntity newBargainEntity = conversionService.convert(bargainDto, BargainEntity.class);
-        BargainEntity savedBargainEntity = bargainDao.save(newBargainEntity);
+    public Optional<BargainEntity> update(BargainDto bargainDtoForUpdate) {
+        BargainEntity bargainEntity = conversionService.convert(bargainDtoForUpdate, BargainEntity.class);
+        BargainEntity savedBargainEntity = bargainDao.save(bargainEntity);
         return Optional.of(savedBargainEntity);
     }
 

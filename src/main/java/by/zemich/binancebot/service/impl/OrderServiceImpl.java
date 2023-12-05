@@ -41,6 +41,7 @@ public class OrderServiceImpl implements IOrderService {
     public Optional<OrderEntity> create(NewOrderRequestDto newOrder) {
         NewOrderFullResponseDto responseDto = stockMarketService.createOrder(converter.dtoToMap(newOrder)).orElseThrow(RuntimeException::new);
         OrderEntity entity = conversionService.convert(responseDto, OrderEntity.class);
+        entity.setUuid(UUID.randomUUID());
         orderDao.save(entity);
         return Optional.of(entity);
     }

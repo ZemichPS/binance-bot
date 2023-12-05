@@ -18,7 +18,6 @@ public class OrderEntity {
 
     @Id
     @Column(name = "uuid")
-    @GeneratedValue(strategy = GenerationType.UUID)
     private UUID uuid;
     @Version
     @UpdateTimestamp(source = SourceType.DB)

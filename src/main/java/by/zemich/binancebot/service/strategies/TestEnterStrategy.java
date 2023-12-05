@@ -17,14 +17,17 @@ import org.ta4j.core.indicators.helpers.LowPriceIndicator;
 import org.ta4j.core.indicators.helpers.OpenPriceIndicator;
 import org.ta4j.core.indicators.statistics.StandardDeviationIndicator;
 import org.ta4j.core.indicators.volume.OnBalanceVolumeIndicator;
-import org.ta4j.core.rules.*;
+import org.ta4j.core.rules.IsRisingRule;
+import org.ta4j.core.rules.NotRule;
+import org.ta4j.core.rules.OverIndicatorRule;
+import org.ta4j.core.rules.UnderIndicatorRule;
 
 import java.math.BigDecimal;
 
-//@Component
-public class Main30mEnterStrategy extends TradeStrategy {
+@Component
+public class TestEnterStrategy extends TradeStrategy {
 
-    private final String name = "MAIN_30M_ENTER_RULE";
+    private final String name = "TEST_ENTER_RULE";
 
     @Override
     public String getName() {
@@ -38,7 +41,7 @@ public class Main30mEnterStrategy extends TradeStrategy {
 
     @Override
     public EInterval getInterval() {
-        return EInterval.M30;
+        return EInterval.M15;
     }
 
     @Override
@@ -67,12 +70,11 @@ public class Main30mEnterStrategy extends TradeStrategy {
 
 
 
-        return new UnderIndicatorRule(openPriceIndicator, bbm)
-                .and(new OverIndicatorRule(closePrice, bbm))
-                .and(new OverIndicatorRule(bbw, 5.5))
-                .and(new IsRisingRule(bbm, 14, 0.6))
-             //   .and(new InPipeRule(rsiIndicator, 60, 45))
-                .and(new NotRule(new OverIndicatorRule(highPriceIndicator, bbu)));
+        return new OverIndicatorRule(closePrice, bbm)
+                .and(new OverIndicatorRule(openPriceIndicator, bbm))
+                .and(new OverIndicatorRule(bbw, 5));
+
+
 
     }
 }

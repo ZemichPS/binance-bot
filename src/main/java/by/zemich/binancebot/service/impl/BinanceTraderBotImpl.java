@@ -21,7 +21,6 @@ import org.ta4j.core.BarSeries;
 import org.ta4j.core.Rule;
 
 
-import java.math.BigDecimal;
 import java.util.*;
 
 
@@ -64,13 +63,12 @@ public class BinanceTraderBotImpl implements ITraderBot {
         blackList.add("USDCUSDT");
         blackList.add("BTTCUSDT");
         blackList.add("PEPEUSDT");
-        blackList.add("BNBUSDT");
-        blackList.add("BTSUSDT");
+
+        blackList.add("DODOUSDT");
+        blackList.add("VETUSDT");
 
 
 
-        blackList.add("NEOUSDT");
-        blackList.add("BURGERUSDT");
     }
 
 
@@ -108,6 +106,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
                         stringInterval -> {
                             symbolsList.forEach(
                                     symbol -> {
+
                                         if (blackList.contains(symbol)) return;
 
                                         queryDto.setSymbol(symbol.getSymbol());
@@ -121,6 +120,8 @@ public class BinanceTraderBotImpl implements ITraderBot {
                                                 .filter(iStrategy -> iStrategy.getInterval().toString().equals(stringInterval))
                                                 .forEach(iStrategy -> {
                                                     if (iStrategy.getEnterRule(series).isSatisfied(series.getEndIndex())) {
+
+                                                        log.info(indicatorReader.getValues(series));
 
                                                         if (Objects.nonNull(iStrategy.getAdditionalStrategy())) {
 
@@ -152,7 +153,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
 
 
     @Scheduled(fixedDelay = 20_000, initialDelay = 5_000)
-    @Async
+   // @Async
     @Override
     public void checkBargain() {
 
@@ -216,13 +217,17 @@ public class BinanceTraderBotImpl implements ITraderBot {
             BargainDto newBargain = new BargainDto();
             newBargain.setUuid(UUID.randomUUID());
             newBargain.setStatus(EBargainStatus.OPEN_BUY_ORDER_CREATED);
-            newBargain.setOrders(List.of(buyOrder));
+            List<OrderDto> orderDtoList = new ArrayList<>();
+            orderDtoList.add(buyOrder);
+
 
             if (buyOrder.getStatus().equals(EOrderStatus.FILLED)) {
                 OrderDto sellOrderDto = tradeManager.createSellLimitOrder(buyOrder.getOrderId());
-                newBargain.getOrders().add(sellOrderDto);
-                log.info("ORDER STATUS: FILLED");
+                orderDtoList.add(sellOrderDto);
+                newBargain.setStatus(EBargainStatus.OPEN_SELL_ORDER_CREATED);
             }
+
+            newBargain.setOrders(orderDtoList);
 
             newBargain.setSymbol(symbol.getSymbol());
 

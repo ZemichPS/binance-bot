@@ -7,6 +7,7 @@ import by.zemich.binancebot.core.dto.binance.*;
 import by.zemich.binancebot.core.enums.*;
 import by.zemich.binancebot.service.api.*;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Component;
 
@@ -16,6 +17,8 @@ import java.util.*;
 
 
 @Component
+@Slf4j
+
 public class TradeManagerImpl implements ITradeManager {
 
     private final IStockMarketService stockMarketService;
@@ -80,11 +83,8 @@ public class TradeManagerImpl implements ITradeManager {
         BigDecimal stepSize = lotSizeBinanceFilter.getStepSize();
 
         BigDecimal currentPrice = getSymbolPrice(symbol.getSymbol());
-        BigDecimal quantity = tradeProperties.getDeposit().divide(currentPrice, 10, RoundingMode.HALF_DOWN);
-        BigDecimal computedQuantity = roundStepSize(quantity, stepSize);
-
-        //BigDecimal bidPrice = getBidPrice(symbol).setScale(2,RoundingMode.DOWN);
-
+        BigDecimal quantity = tradeProperties.getDeposit().divide(currentPrice, 10, RoundingMode.DOWN);
+        BigDecimal computedQuantity = roundStepSize(quantity, stepSize).setScale(priceBinanceFilter.getTickSize().scale());
 
         NewOrderRequestDto newOrderRequest = NewOrderRequestDto.builder()
                 .symbol(symbol.getSymbol())
@@ -95,6 +95,8 @@ public class TradeManagerImpl implements ITradeManager {
                 .timeInForce(ETimeInForce.GTC)
                 .newOrderRespType(ENewOrderRespType.FULL)
                 .build();
+
+        log.info(newOrderRequest.toString());
 
         OrderEntity orderEntity = orderService.create(newOrderRequest).orElseThrow(RuntimeException::new);
 
@@ -115,34 +117,40 @@ public class TradeManagerImpl implements ITradeManager {
                 .findFirst()
                 .orElseThrow();
 
+        PriceBinanceFilter priceBinanceFilter = getPriceFilter(symbolDto);
         LotSizeBinanceFilter lotSizeBinanceFilter = getLotSizeFilter(symbolDto);
-
-
 
         String symbol = buyOrder.getSymbol();
         BigDecimal takerFee = tradeProperties.getTaker();
 
         BigDecimal interest = percent(buyOrder.getPrice(), tradeProperties.getGain());
 
-        BigDecimal quantity = buyOrder.getExecutedQty();
+        BigDecimal quantity = buyOrder.getOrigQty();
+        BigDecimal stepSize = lotSizeBinanceFilter.getStepSize();
         BigDecimal sellQuantity = quantity.subtract(percent(quantity, takerFee));
+        BigDecimal computedQuantity = roundStepSize(sellQuantity, stepSize).setScale(priceBinanceFilter.getTickSize().scale(), RoundingMode.UNNECESSARY);
+        BigDecimal sellPrice = buyOrder.getPrice().add(interest);//.setScale(priceBinanceFilter.getTickSize().scale(), RoundingMode.HALF_UP);
 
-        BigDecimal sellPrice = buyOrder.getPrice().add(interest).setScale(2, RoundingMode.DOWN);
+        BigDecimal computingSellPrice = roundPriceStepSize(sellPrice, priceBinanceFilter.getTickSize()).setScale(priceBinanceFilter.getTickSize().scale(), RoundingMode.UNNECESSARY);
+
 
         NewOrderRequestDto newOrderRequest = NewOrderRequestDto.builder()
                 .symbol(symbol)
-                .price(sellPrice)
+                .price(computingSellPrice)
                 .side(ESide.SELL)
                 .type(EOrderType.LIMIT)
-                .quantity(sellQuantity)
+                .quantity(computedQuantity)
                 .timeInForce(ETimeInForce.GTC)
                 .newOrderRespType(ENewOrderRespType.FULL)
                 .build();
 
         OrderEntity sellOrderEntity = orderService.create(newOrderRequest).orElseThrow(RuntimeException::new);
 
+        OrderDto orderDto = convertOrderEntityToDto(sellOrderEntity);
+        EventDto event = eventCreate.get(EEventType.BUY_LIMIT_ORDER, orderDto);
+        notifier.notify(event);
 
-        return convertOrderEntityToDto(sellOrderEntity);
+        return orderDto;
     }
 
     @Override
@@ -248,6 +256,11 @@ public class TradeManagerImpl implements ITradeManager {
     private BigDecimal roundStepSize(BigDecimal quantity, BigDecimal stepSize){
         BigDecimal rest = quantity.remainder(stepSize);
         return quantity.subtract(rest);
+    }
+
+    private BigDecimal roundPriceStepSize(BigDecimal price, BigDecimal tickSize){
+        BigDecimal rest = price.remainder(tickSize );
+        return price.subtract(rest);
     }
 
 }
