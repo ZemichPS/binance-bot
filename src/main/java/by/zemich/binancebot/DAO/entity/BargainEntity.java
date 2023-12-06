@@ -3,13 +3,11 @@ package by.zemich.binancebot.DAO.entity;
 import by.zemich.binancebot.core.enums.EBargainStatus;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.SourceType;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
-import java.util.List;
 import java.util.UUID;
 
 @Entity
@@ -49,14 +47,18 @@ public class BargainEntity {
     @Column(name = "current_percentage_result")
     private BigDecimal currentPercentageResult;
 
-    @OneToMany(fetch = FetchType.EAGER)
-    @JoinColumn(name = "uuid")
-    private List<OrderEntity> orders;
+    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.REFRESH)
+    @JoinColumn(name = "buy_order_id", referencedColumnName = "uuid")
+    private OrderEntity buyOrder;
+
+    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.REFRESH)
+    @JoinColumn(name = "sell_order_id", referencedColumnName = "uuid")
+    private OrderEntity sellOrder;
 
     public BargainEntity() {
     }
 
-    public BargainEntity(UUID uuid, Timestamp dtCreate, Timestamp dtUpdate, BigDecimal percentageResult, BigDecimal financeResult, Long timeInWork, Timestamp finishTime, EBargainStatus status, String symbol, BigDecimal currentFinanceResult, BigDecimal currentPercentageResult, List<OrderEntity> orders) {
+    public BargainEntity(UUID uuid, Timestamp dtCreate, Timestamp dtUpdate, BigDecimal percentageResult, BigDecimal financeResult, Long timeInWork, Timestamp finishTime, EBargainStatus status, String symbol, BigDecimal currentFinanceResult, BigDecimal currentPercentageResult, OrderEntity buyOrder, OrderEntity sellOrder) {
         this.uuid = uuid;
         this.dtCreate = dtCreate;
         this.dtUpdate = dtUpdate;
@@ -68,7 +70,8 @@ public class BargainEntity {
         this.symbol = symbol;
         this.currentFinanceResult = currentFinanceResult;
         this.currentPercentageResult = currentPercentageResult;
-        this.orders = orders;
+        this.buyOrder = buyOrder;
+        this.sellOrder = sellOrder;
     }
 
     public UUID getUuid() {
@@ -159,11 +162,19 @@ public class BargainEntity {
         this.currentPercentageResult = currentPercentageResult;
     }
 
-    public List<OrderEntity> getOrders() {
-        return orders;
+    public OrderEntity getBuyOrder() {
+        return buyOrder;
     }
 
-    public void setOrders(List<OrderEntity> orders) {
-        this.orders = orders;
+    public void setBuyOrder(OrderEntity buyOrder) {
+        this.buyOrder = buyOrder;
+    }
+
+    public OrderEntity getSellOrder() {
+        return sellOrder;
+    }
+
+    public void setSellOrder(OrderEntity sellOrder) {
+        this.sellOrder = sellOrder;
     }
 }

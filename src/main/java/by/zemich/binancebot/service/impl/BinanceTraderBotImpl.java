@@ -68,7 +68,6 @@ public class BinanceTraderBotImpl implements ITraderBot {
         blackList.add("VETUSDT");
 
 
-
     }
 
 
@@ -79,7 +78,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
 
 
     @Scheduled(fixedDelay = 10_000_000, initialDelay = 1_000)
-    private void updateSymbols(){
+    private void updateSymbols() {
 
         symbolsList.clear();
         stockMarketService.getSymbols().orElseThrow().stream()
@@ -120,6 +119,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
                                                 .filter(iStrategy -> iStrategy.getInterval().toString().equals(stringInterval))
                                                 .forEach(iStrategy -> {
                                                     if (iStrategy.getEnterRule(series).isSatisfied(series.getEndIndex())) {
+                                                        if (counter <= 0) return;
 
                                                         log.info(indicatorReader.getValues(series));
 
@@ -139,7 +139,6 @@ public class BinanceTraderBotImpl implements ITraderBot {
                                                                 return;
                                                         }
 
-                                                        if (counter <= 0) return;
 
                                                         IndicatorValuesDto indicatorValues = indicatorReader.getValues(series);
                                                         createBargain(symbol);
@@ -153,62 +152,69 @@ public class BinanceTraderBotImpl implements ITraderBot {
 
 
     @Scheduled(fixedDelay = 20_000, initialDelay = 5_000)
-   // @Async
+    // @Async
     @Override
     public void checkBargain() {
 
-            //проверка на исполнение ордера на покупку
-            bargainService.checkOnFillBuyOrder().ifPresent(
-                    entities -> {
-                        entities.stream()
-                                .map(bargainEntity -> conversionService.convert(bargainEntity, BargainDto.class))
-                                .filter(Objects::nonNull)
-                                .forEach(bargainDto -> {
-                                    bargainDto.getOrders().stream()
-                                            .filter(orderDto -> orderDto.getSide().equals(ESide.BUY))
-                                            .findFirst()
-                                            .ifPresent(buyOrderDto -> {
-                                                OrderDto sellOrderDto = tradeManager.createSellLimitOrder(buyOrderDto.getOrderId());
-                                                bargainDto.getOrders().add(sellOrderDto);
-                                                bargainDto.setStatus(EBargainStatus.OPEN_SELL_ORDER_CREATED);
-                                                bargainService.update(bargainDto);
+        //проверка на исполнение ордера на покупку
+        bargainService.checkOnFillBuyOrder().ifPresent(
+                entities -> {
+                    entities.stream()
+                            .map(bargainEntity -> conversionService.convert(bargainEntity, BargainDto.class))
+                            .filter(Objects::nonNull)
+                            .filter(bargainDto -> bargainDto.getBuyOrder() != null)
+                            .forEach(bargainDto -> {
 
-                                                EventDto eventDto = EventDto.builder()
-                                                        .eventType(EEventType.SELL_LIMIT_ORDER)
-                                                        .text("sell limit order was placed. Symbol: " + sellOrderDto.getSymbol())
-                                                        .build();
+                                OrderDto buyOrderDto = bargainDto.getBuyOrder();
+                                OrderDto sellOrderDto = tradeManager.createSellLimitOrder(buyOrderDto.getOrderId());
+                                bargainDto.setSellOrder(sellOrderDto);
+                                bargainDto.setStatus(EBargainStatus.OPEN_SELL_ORDER_CREATED);
+                                bargainService.update(bargainDto);
 
-                                                notifier.notify(eventDto);
+                                EventDto eventDto = EventDto.builder()
+                                        .eventType(EEventType.SELL_LIMIT_ORDER)
+                                        .text("sell limit order was placed. Symbol: " + sellOrderDto.getSymbol())
+                                        .build();
 
-                                            });
-                                });
+                                notifier.notify(eventDto);
+
+                            });
+                });
+
+
+        // установка временных результатов
+        bargainService.setTemporaryResult();
+
+        //проверка на окончание сделки
+        bargainService.checkOnFinish().
+
+                ifPresent(bargainEntities ->
+
+                {
+                    bargainEntities.forEach(bargainEntity -> {
+                        BargainDto bargainDto = conversionService.convert(bargainEntity, BargainDto.class);
+                        bargainService.end(bargainDto);
+                    });
+                });
+
+        //проверка на истёкший ордер
+        bargainService.checkOnExpired().
+
+                ifPresent(bargainEntities ->
+
+                {
+                    bargainEntities.forEach(bargainEntity -> {
+                        BargainDto bargainDto = conversionService.convert(bargainEntity, BargainDto.class);
+                        bargainService.endByReasonExpired(bargainDto);
                     });
 
-
-            // установка временных результатов
-            bargainService.setTemporaryResult();
-
-            //проверка на окончание сделки
-            bargainService.checkOnFinish().ifPresent(bargainEntities -> {
-                bargainEntities.forEach(bargainEntity -> {
-                    BargainDto bargainDto = conversionService.convert(bargainEntity, BargainDto.class);
-                    bargainService.end(bargainDto);
                 });
-            });
-
-            //проверка на истёкший ордер
-            bargainService.checkOnExpired().ifPresent(bargainEntities -> {
-                bargainEntities.forEach(bargainEntity -> {
-                    BargainDto bargainDto = conversionService.convert(bargainEntity, BargainDto.class);
-                    bargainService.endByReasonExpired(bargainDto);
-                });
-
-            });
     }
 
     private void createBargain(SymbolDto symbol) {
         try {
 
+            // TODO удалить
             counter = counter - 1;
 
             OrderDto buyOrder = tradeManager.createBuyLimitOrderByBidPrice(symbol);
@@ -217,17 +223,14 @@ public class BinanceTraderBotImpl implements ITraderBot {
             BargainDto newBargain = new BargainDto();
             newBargain.setUuid(UUID.randomUUID());
             newBargain.setStatus(EBargainStatus.OPEN_BUY_ORDER_CREATED);
-            List<OrderDto> orderDtoList = new ArrayList<>();
-            orderDtoList.add(buyOrder);
+            newBargain.setBuyOrder(buyOrder);
 
 
             if (buyOrder.getStatus().equals(EOrderStatus.FILLED)) {
                 OrderDto sellOrderDto = tradeManager.createSellLimitOrder(buyOrder.getOrderId());
-                orderDtoList.add(sellOrderDto);
+                newBargain.setSellOrder(sellOrderDto);
                 newBargain.setStatus(EBargainStatus.OPEN_SELL_ORDER_CREATED);
             }
-
-            newBargain.setOrders(orderDtoList);
 
             newBargain.setSymbol(symbol.getSymbol());
 
@@ -237,7 +240,6 @@ public class BinanceTraderBotImpl implements ITraderBot {
             EventDto event = eventManager.get(EEventType.BARGAIN_WAS_CREATED, createdBargain);
             notifier.notify(event);
 
-
         } catch (BinanceClientException binanceClientException) {
             log.error(binanceClientException.getErrMsg(), binanceClientException.getMessage());
             EventDto event = eventManager.get(EEventType.ERROR, binanceClientException);
@@ -245,7 +247,6 @@ public class BinanceTraderBotImpl implements ITraderBot {
             notifier.notify(event);
         }
     }
-
 
 
 }

@@ -27,6 +27,7 @@ public class BargainDto {
     private String symbol;
     private BigDecimal currentFinanceResult;
     private BigDecimal currentPercentageResult;
-    private List<OrderDto> orders;
+    private OrderDto buyOrder;
+    private OrderDto sellOrder;
 
 }

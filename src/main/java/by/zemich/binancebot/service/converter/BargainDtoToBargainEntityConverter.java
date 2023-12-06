@@ -9,23 +9,15 @@ import org.springframework.core.convert.converter.Converter;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.UUID;
 
 public class BargainDtoToBargainEntityConverter implements Converter<BargainDto, BargainEntity> {
     @Override
     public BargainEntity convert(BargainDto source) {
-        List<OrderEntity> OrderEntitiesList = new ArrayList<>();
-
-        for (OrderDto orderDto : source.getOrders()) {
-            OrderEntity orderEntity = new OrderEntity();
-            BeanUtils.copyProperties(orderDto, orderEntity);
-     //       orderEntity.setUuid(UUID.randomUUID());
-            OrderEntitiesList.add(orderEntity);
-        }
 
         BargainEntity bargainEntity = new BargainEntity();
         bargainEntity.setUuid(source.getUuid());
-        bargainEntity.setOrders(OrderEntitiesList);
         bargainEntity.setPercentageResult(source.getPercentageResult());
         bargainEntity.setFinanceResult(source.getFinanceResult());
         bargainEntity.setTimeInWork(source.getTimeInWork());
@@ -34,6 +26,19 @@ public class BargainDtoToBargainEntityConverter implements Converter<BargainDto,
         bargainEntity.setSymbol(source.getSymbol());
         bargainEntity.setCurrentFinanceResult(source.getCurrentFinanceResult());
         bargainEntity.setCurrentPercentageResult(source.getCurrentPercentageResult());
+
+        if(Objects.nonNull(source.getBuyOrder())){
+            OrderEntity buyOrderEntity = new OrderEntity();
+            BeanUtils.copyProperties(source.getBuyOrder() , buyOrderEntity);
+            bargainEntity.setBuyOrder(buyOrderEntity);
+        }
+
+        if(Objects.nonNull(source.getSellOrder())){
+            OrderEntity sellOrderEntity = new OrderEntity();
+            BeanUtils.copyProperties(source.getSellOrder() , sellOrderEntity);
+            bargainEntity.setSellOrder(sellOrderEntity);
+        }
+
         return bargainEntity;
     }
 }

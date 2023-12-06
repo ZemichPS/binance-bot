@@ -73,15 +73,9 @@ public class BargainServiceImpl implements IBargainService {
     public Optional<BargainEntity> end(BargainDto bargainDto) {
         // тут всякие расчёты и просчёты
 
-        OrderDto buyOrder = bargainDto.getOrders().stream()
-                .filter(orderDto -> orderDto.getSide().equals(ESide.BUY))
-                .findFirst()
-                .orElseThrow();
+        OrderDto buyOrder = bargainDto.getBuyOrder();
 
-        OrderDto sellOrder = bargainDto.getOrders().stream()
-                .filter(orderDto -> orderDto.getSide().equals(ESide.SELL))
-                .findFirst()
-                .orElseThrow();
+        OrderDto sellOrder = bargainDto.getSellOrder();
 
         Timestamp startTime = buyOrder.getDtCreate();
         Timestamp finishTime = Timestamp.from(Instant.now());
@@ -124,9 +118,9 @@ public class BargainServiceImpl implements IBargainService {
 
         bargainDao.findAllByStatus(EBargainStatus.OPEN_BUY_ORDER_CREATED).ifPresent(
                 bargainEntityList -> bargainEntityList.forEach(bargainEntity -> {
-                            if (bargainEntity.getOrders() != null)
-                                if (bargainEntity.getOrders().size() == 1) {
-                                    OrderDto orderDto = conversionService.convert(bargainEntity.getOrders().get(0), OrderDto.class);
+
+                                if (Objects.nonNull(bargainEntity.getBuyOrder())) {
+                                    OrderDto orderDto = conversionService.convert(bargainEntity.getBuyOrder(), OrderDto.class);
                                     // сравниваем статусы
                                     if (orderService.updateStatus(orderDto, EOrderStatus.FILLED).isPresent()) {
                                         bargainEntities.add(bargainEntity);
@@ -144,8 +138,8 @@ public class BargainServiceImpl implements IBargainService {
 
         bargainDao.findAllByStatus(EBargainStatus.CREATED).orElseThrow().
                 forEach(bargainEntity -> {
-                            if (bargainEntity.getOrders() != null && bargainEntity.getOrders().size() == 1) {
-                                OrderDto orderDto = conversionService.convert(bargainEntity.getOrders().get(0), OrderDto.class);
+                            if (bargainEntity.getBuyOrder() != null && bargainEntity.getSellOrder() == null) {
+                                OrderDto orderDto = conversionService.convert(bargainEntity.getBuyOrder(), OrderDto.class);
                                 // сравниваем статусы
                                 if (orderService.updateStatus(orderDto, EOrderStatus.EXPIRED).isPresent()) {
                                     bargainEntities.add(bargainEntity);
@@ -162,14 +156,12 @@ public class BargainServiceImpl implements IBargainService {
 
         bargainDao.findAllByStatus(EBargainStatus.OPEN_BUY_ORDER_FILLED).orElseThrow().forEach(bargainEntity -> {
 
-                    if (bargainEntity.getOrders() != null && bargainEntity.getOrders().size() == 2) {
-                        OrderEntity orderEntity = bargainEntity.getOrders().stream()
-                                .filter(entity -> entity.getSide().equals(ESide.SELL))
-                                .findFirst()
-                                .get();
-                        OrderDto orderDto = conversionService.convert(orderEntity, OrderDto.class);
+                    if (Objects.nonNull(bargainEntity.getBuyOrder())  && Objects.nonNull(bargainEntity.getSellOrder())) {
+                        OrderEntity sellOrderEntity = bargainEntity.getSellOrder();
+
+                        OrderDto sellOrderDto = conversionService.convert(sellOrderEntity, OrderDto.class);
                         // сравниваем статусы
-                        if (orderService.updateStatus(orderDto, EOrderStatus.FILLED).isPresent()) {
+                        if (orderService.updateStatus(sellOrderDto, EOrderStatus.FILLED).isPresent()) {
                             bargainEntities.add(bargainEntity);
                         }
                     }
@@ -216,9 +208,9 @@ public class BargainServiceImpl implements IBargainService {
 
     private void updateResult(BargainEntity bargainEntity) {
 
-        OrderEntity buyOrderEntity = bargainEntity.getOrders().stream()
-                .filter(order -> order.getSide().equals(ESide.BUY))
-                .findFirst().orElseThrow();
+        if (!Objects.nonNull(bargainEntity.getBuyOrder())) throw new RuntimeException("There is no buy order");
+
+        OrderEntity buyOrderEntity = bargainEntity.getBuyOrder();
 
 
         Timestamp startTime = buyOrderEntity.getDtCreate();
