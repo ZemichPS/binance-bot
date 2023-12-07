@@ -66,6 +66,8 @@ public class BinanceTraderBotImpl implements ITraderBot {
 
         blackList.add("DODOUSDT");
         blackList.add("VETUSDT");
+        blackList.add("XVSUSDT");
+        blackList.add("SOLUSDT");
 
 
     }
