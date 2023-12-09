@@ -21,7 +21,7 @@ import org.ta4j.core.rules.*;
 
 import java.math.BigDecimal;
 
-//@Component
+@Component
 public class Main30mEnterStrategy extends TradeStrategy {
 
     private final String name = "MAIN_30M_ENTER_RULE";

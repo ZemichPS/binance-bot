@@ -124,9 +124,9 @@ public class BargainServiceImpl implements IBargainService {
         bargainDto.setStatus(EBargainStatus.FINISHED);
 
         BargainEntity bargainEntity = conversionService.convert(bargainDto, BargainEntity.class);
-        BargainEntity savedEntity = bargainDao.save(bargainEntity);
+        return bargainDao.save(bargainEntity);
 
-        return savedEntity;
+
     }
 
     @Override
@@ -227,8 +227,7 @@ public class BargainServiceImpl implements IBargainService {
         BigDecimal difference = sellPrice.subtract(buyPrice);
 
         BigDecimal resultPercent = difference.multiply(BigDecimal.valueOf(100))
-                .setScale(2, RoundingMode.HALF_UP)
-                .divide(buyPrice, 2, RoundingMode.HALF_UP);
+                .divide(buyPrice, 3, RoundingMode.HALF_UP);
 
         return resultPercent;
     }

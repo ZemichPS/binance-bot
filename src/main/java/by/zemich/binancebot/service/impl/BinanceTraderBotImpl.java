@@ -88,6 +88,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
         KlineQueryDto queryDto = new KlineQueryDto();
         queryDto.setLimit(500);
 
+        //TODO удалить
         if (counter <= 0) return;
 
 
@@ -113,6 +114,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
                                                 .filter(strategy -> strategy.getInterval().toString().equals(stringInterval))
                                                 .forEach(strategy -> {
                                                     if (strategy.getEnterRule(series).isSatisfied(series.getEndIndex())) {
+
                                                         //TODO удалить
                                                         if (counter <= 0) return;
 
@@ -145,7 +147,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
 
                                                         if (Objects.nonNull(createdBargain)) {
                                                             EventDto eventDto = EventDto.builder()
-                                                                    .eventType(EEventType.ASSET_WAS_SOLD)
+                                                                    .eventType(EEventType.BARGAIN_WAS_CREATED)
                                                                     .text(MessageFormat.format("""
                                                                                     Bargain was created.
                                                                                     Asset: {0}
@@ -195,10 +197,15 @@ public class BinanceTraderBotImpl implements ITraderBot {
                 });
 
 
+        //проверка на исполнение ордера на продажу
         bargainService.checkOnFinish().orElseThrow()
                 .stream()
                 .map(bargainEntity -> conversionService.convert(bargainEntity, BargainDto.class))
                 .forEach(bargainDto -> {
+
+                    BargainEntity finalizedBargainEntity = bargainService.finalize(bargainDto);
+                    BargainDto finalizedBargainDto = conversionService.convert(finalizedBargainEntity, BargainDto.class);
+
 
                     EventDto eventDto = EventDto.builder()
                             .eventType(EEventType.ASSET_WAS_SOLD)
@@ -207,9 +214,9 @@ public class BinanceTraderBotImpl implements ITraderBot {
                                             Asset: {0}
                                             Finance result: {1},
                                             Percentage result: {2}
-                                            """, bargainDto.getSymbol(),
-                                    bargainDto.getFinanceResult().setScale(3, RoundingMode.UNNECESSARY),
-                                    bargainDto.getPercentageResult().setScale(3, RoundingMode.UNNECESSARY)))
+                                            """, finalizedBargainDto.getSymbol(),
+                                    finalizedBargainDto.getFinanceResult().setScale(3, RoundingMode.HALF_UP),
+                                    finalizedBargainDto.getPercentageResult().setScale(3, RoundingMode.HALF_UP)))
                             .build();
 
                     notifier.notify(eventDto);
@@ -218,7 +225,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
 
 
         // установка временных результатов
-        bargainService.setTemporaryResult();
+      //  bargainService.setTemporaryResult();
 
         //проверка на окончание сделки
 

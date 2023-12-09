@@ -24,7 +24,7 @@ import org.ta4j.core.rules.UnderIndicatorRule;
 
 import java.math.BigDecimal;
 
-@Component
+//@Component
 public class TestEnterStrategy extends TradeStrategy {
 
     private final String name = "TEST_ENTER_RULE";

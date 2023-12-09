@@ -19,7 +19,7 @@ import org.ta4j.core.rules.*;
 
 import java.math.BigDecimal;
 
-//@Component
+@Component
 public class BullishEnterStrategy extends TradeStrategy {
     private final String name = "BULLISH_15M_RULE";
 
