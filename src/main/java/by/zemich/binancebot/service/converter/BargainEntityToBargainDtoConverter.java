@@ -18,6 +18,7 @@ public class BargainEntityToBargainDtoConverter implements Converter<BargainEnti
         bargainDto.setUuid(source.getUuid());
         bargainDto.setDtCreate(source.getDtCreate());
         bargainDto.setDtUpdate(source.getDtUpdate());
+        bargainDto.setStrategy(source.getStrategy());
         bargainDto.setPercentageResult(source.getPercentageResult());
         bargainDto.setFinanceResult(source.getFinanceResult());
         bargainDto.setTimeInWork(source.getTimeInWork());

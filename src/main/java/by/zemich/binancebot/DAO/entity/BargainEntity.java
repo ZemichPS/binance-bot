@@ -16,6 +16,9 @@ public class BargainEntity {
     @Id
     private UUID uuid;
 
+    @Column(name = "strategy")
+    private String strategy;
+
     @CreationTimestamp(source = SourceType.DB)
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "dt_create")
@@ -58,8 +61,9 @@ public class BargainEntity {
     public BargainEntity() {
     }
 
-    public BargainEntity(UUID uuid, Timestamp dtCreate, Timestamp dtUpdate, BigDecimal percentageResult, BigDecimal financeResult, Long timeInWork, Timestamp finishTime, EBargainStatus status, String symbol, BigDecimal currentFinanceResult, BigDecimal currentPercentageResult, OrderEntity buyOrder, OrderEntity sellOrder) {
+    public BargainEntity(UUID uuid, String strategy, Timestamp dtCreate, Timestamp dtUpdate, BigDecimal percentageResult, BigDecimal financeResult, Long timeInWork, Timestamp finishTime, EBargainStatus status, String symbol, BigDecimal currentFinanceResult, BigDecimal currentPercentageResult, OrderEntity buyOrder, OrderEntity sellOrder) {
         this.uuid = uuid;
+        this.strategy = strategy;
         this.dtCreate = dtCreate;
         this.dtUpdate = dtUpdate;
         this.percentageResult = percentageResult;
@@ -176,5 +180,13 @@ public class BargainEntity {
 
     public void setSellOrder(OrderEntity sellOrder) {
         this.sellOrder = sellOrder;
+    }
+
+    public String getStrategy() {
+        return strategy;
+    }
+
+    public void setStrategy(String strategy) {
+        this.strategy = strategy;
     }
 }

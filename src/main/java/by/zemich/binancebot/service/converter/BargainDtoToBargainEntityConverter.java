@@ -25,6 +25,7 @@ public class BargainDtoToBargainEntityConverter implements Converter<BargainDto,
         bargainEntity.setTimeInWork(source.getTimeInWork());
         bargainEntity.setFinishTime(source.getFinishTime());
         bargainEntity.setStatus(source.getStatus());
+        bargainEntity.setStrategy(source.getStrategy());
         bargainEntity.setSymbol(source.getSymbol());
         bargainEntity.setCurrentFinanceResult(source.getCurrentFinanceResult());
         bargainEntity.setCurrentPercentageResult(source.getCurrentPercentageResult());

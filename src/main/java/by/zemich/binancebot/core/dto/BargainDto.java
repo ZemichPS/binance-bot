@@ -17,6 +17,7 @@ import java.util.UUID;
 @Data
 public class BargainDto {
     private UUID uuid;
+    private String strategy;
     private Timestamp dtCreate;
     private Timestamp dtUpdate;
     private BigDecimal percentageResult;
