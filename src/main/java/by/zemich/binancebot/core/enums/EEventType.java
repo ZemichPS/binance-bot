@@ -8,6 +8,7 @@ public enum EEventType {
     ENDPOINT_WAS_FOUNDED,
     ASSET_WAS_BOUGHT,
     BARGAIN_WAS_CREATED,
+    BARGAIN_WAS_CANCELED,
     ERROR;
 
 }

@@ -20,20 +20,17 @@ import java.util.*;
 public class TradeManagerImpl implements ITradeManager {
 
     private final IStockMarketService stockMarketService;
-    private final IConverter converter;
     private final IOrderService orderService;
     private final RealTradeProperties tradeProperties;
     private final ConversionService conversionService;
     private final IAssetService assetService;
 
     public TradeManagerImpl(IStockMarketService stockMarketService,
-                            IConverter converter,
                             IOrderService orderService,
                             RealTradeProperties tradeProperties,
                             ConversionService conversionService,
                             IAssetService assetService) {
         this.stockMarketService = stockMarketService;
-        this.converter = converter;
         this.orderService = orderService;
         this.tradeProperties = tradeProperties;
         this.conversionService = conversionService;

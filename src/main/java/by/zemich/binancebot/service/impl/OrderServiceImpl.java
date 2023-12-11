@@ -93,11 +93,7 @@ public class OrderServiceImpl implements IOrderService {
         return Optional.of(entity);
     }
 
-    @Override
-    public Optional<List<OrderEntity>> getAllOpened() {
-        List<OrderEntity> orderEntityList = orderDao.findByStatus(EOrderStatus.FILLED).orElseThrow(NoSuchEntityException::new);
-        return Optional.of(orderEntityList);
-    }
+
 
 
 

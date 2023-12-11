@@ -2,6 +2,7 @@ package by.zemich.binancebot.service.impl;
 
 
 import by.zemich.binancebot.DAO.entity.BargainEntity;
+import by.zemich.binancebot.config.properties.RealTradeProperties;
 import by.zemich.binancebot.core.dto.*;
 import by.zemich.binancebot.core.dto.binance.KlineQueryDto;
 import by.zemich.binancebot.core.enums.*;
@@ -18,6 +19,8 @@ import org.ta4j.core.Rule;
 
 
 import java.math.BigDecimal;
+import java.time.Duration;
+import java.time.LocalDateTime;
 import java.util.*;
 
 
@@ -33,13 +36,13 @@ public class BinanceTraderBotImpl implements ITraderBot {
     private final ConversionService conversionService;
     private final IIndicatorReader indicatorReader;
     private final IAssetService assetService;
+    private final RealTradeProperties tradeProperties;
     private final Map<String, IStrategy> strategyMap = new HashMap<>();
     private final List<String> blackList = new ArrayList<>();
 
     // TODO удалить (счётчик разрешённых покупок актива)
     private Integer counter = 15000;
     private boolean accountHasInsufficientBalance = true;
-
 
 
     public BinanceTraderBotImpl(IStockMarketService stockMarketService,
@@ -49,7 +52,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
                                 IBargainService bargainService,
                                 ConversionService conversionService,
                                 IIndicatorReader indicatorReader,
-                                IAssetService assetService) {
+                                IAssetService assetService, RealTradeProperties tradeProperties) {
         this.stockMarketService = stockMarketService;
         this.tradeManager = tradeManager;
         this.notifier = notifier;
@@ -58,6 +61,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
         this.conversionService = conversionService;
         this.indicatorReader = indicatorReader;
         this.assetService = assetService;
+        this.tradeProperties = tradeProperties;
 
         blackList.add("BNBUSDT");
         blackList.add("BUSDUSDT");
@@ -67,7 +71,6 @@ public class BinanceTraderBotImpl implements ITraderBot {
         blackList.add("USDCUSDT");
         blackList.add("BTTCUSDT");
         blackList.add("PEPEUSDT");
-
 
 
     }
@@ -87,7 +90,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
 
         //TODO удалить для реального трейдинга (позволяет совершить ограниченное количество сделок)
         if (counter <= 0) return;
-        if(!accountHasInsufficientBalance) return;
+        if (!accountHasInsufficientBalance) return;
 
         strategyMap.values().stream()
                 .map(IStrategy::getInterval)
@@ -138,7 +141,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
                                                                 return;
                                                         }
 
-                                               //         IndicatorValuesDto indicatorValues = indicatorReader.getValues(series);
+                                                        //         IndicatorValuesDto indicatorValues = indicatorReader.getValues(series);
 
                                                         BargainCreateDto bargainCreateDto = BargainCreateDto.builder()
                                                                 .strategy(strategy.getName())
@@ -200,13 +203,32 @@ public class BinanceTraderBotImpl implements ITraderBot {
                     EventDto eventDto = eventManager.get(EEventType.ASSET_WAS_SOLD, finalizedBargainDto);
                     notifier.notify(eventDto);
 
-                    if(!accountHasInsufficientBalance) accountHasInsufficientBalance = true;
+                    if (!accountHasInsufficientBalance) accountHasInsufficientBalance = true;
 
                 });
 
 
         // установка временных результатов
-          bargainService.setTemporaryResult();
+        bargainService.setTemporaryResult();
+
+        //проверка на слишком долгое время ожидание покупки актива
+        bargainService.getAllByStatus(EBargainStatus.OPEN_BUY_ORDER_CREATED).orElseThrow()
+                .stream().map(bargainEntity -> conversionService.convert(bargainEntity, BargainDto.class))
+                .forEach(bargainDto -> {
+                    LocalDateTime bargainCreateDateTime = bargainDto.getDtCreate().toLocalDateTime();
+
+                    long duration = Duration.between(bargainCreateDateTime, LocalDateTime.now()).toMinutes();
+                    long criticalTime = tradeProperties.getCriticalLostTimeForBuying();
+
+                    if (duration > criticalTime) {
+                        BargainEntity canceledBargainEntity = bargainService.cancelBuyOrderAndSetCancelStatusAndSave(bargainDto);
+                        BargainDto canceledBargainDto = conversionService.convert(canceledBargainEntity, BargainDto.class);
+                        EventDto eventDto = eventManager.get(EEventType.BARGAIN_WAS_CANCELED, canceledBargainDto);
+                        notifier.notify(eventDto);
+                    }
+
+                });
+
 
         //проверка на окончание сделки
 
@@ -251,7 +273,8 @@ public class BinanceTraderBotImpl implements ITraderBot {
             log.error(binanceClientException.getErrMsg(), binanceClientException.getMessage());
             EventDto event = eventManager.get(EEventType.ERROR, binanceClientException);
             notifier.notify(event);
-            if(binanceClientException.getMessage().contains("Account has insufficient balance for requested action")) accountHasInsufficientBalance = false;
+            if (binanceClientException.getMessage().contains("Account has insufficient balance for requested action"))
+                accountHasInsufficientBalance = false;
 
             throw new RuntimeException(binanceClientException.getCause());
         }
