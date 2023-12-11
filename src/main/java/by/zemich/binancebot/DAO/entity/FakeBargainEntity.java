@@ -18,12 +18,12 @@ public class FakeBargainEntity {
     private UUID uuid;
 
     @Version
-    @UpdateTimestamp(source = SourceType.DB)
+    @UpdateTimestamp(source = SourceType.VM)
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "dt_update")
     private Timestamp dtUpdate;
 
-    @CreationTimestamp(source = SourceType.DB)
+    @CreationTimestamp(source = SourceType.VM)
     @Temporal(TemporalType.TIMESTAMP)
     @Column(name = "dt_create")
     private Timestamp dtCreate;

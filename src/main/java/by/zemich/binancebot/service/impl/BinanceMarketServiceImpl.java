@@ -2,9 +2,12 @@ package by.zemich.binancebot.service.impl;
 
 import by.zemich.binancebot.core.dto.*;
 import by.zemich.binancebot.core.dto.binance.*;
+import by.zemich.binancebot.core.enums.EEventType;
 import by.zemich.binancebot.core.enums.EOrderStatus;
 import by.zemich.binancebot.core.enums.ETimeInForce;
 import by.zemich.binancebot.service.api.IConverter;
+import by.zemich.binancebot.service.api.IEventManager;
+import by.zemich.binancebot.service.api.INotifier;
 import by.zemich.binancebot.service.api.IStockMarketService;
 import by.zemich.binancebot.core.dto.binance.TickerSymbolShortQuery;
 import com.binance.connector.client.SpotClient;
@@ -27,13 +30,73 @@ public class BinanceMarketServiceImpl implements IStockMarketService {
     private final IConverter converter;
     private final ConversionService conversionService;
     private final ObjectMapper objectMapper;
+    private final INotifier notifier;
+    private final IEventManager eventManager;
 
 
-    public BinanceMarketServiceImpl(SpotClient spotClient, IConverter converter, ConversionService conversionService, ObjectMapper objectMapper) {
+    public BinanceMarketServiceImpl(SpotClient spotClient, IConverter converter, ConversionService conversionService, ObjectMapper objectMapper, INotifier notifier, IEventManager eventManager) {
         this.spotClient = spotClient;
         this.converter = converter;
         this.conversionService = conversionService;
         this.objectMapper = objectMapper;
+        this.notifier = notifier;
+        this.eventManager = eventManager;
+    }
+
+    @Override
+    public OrderDto createOrder(RequestForNewOrderDto requestForNewOrderDto) {
+        String responseResult = spotClient.createTrade().newOrder(converter.dtoToMap(requestForNewOrderDto));
+
+        try {
+            NewOrderFullResponseDto orderFullResponseDto = objectMapper.readValue(responseResult, NewOrderFullResponseDto.class);
+            OrderDto createdOrderDto = conversionService.convert(orderFullResponseDto, OrderDto.class);
+            createdOrderDto.setUuid(UUID.randomUUID());
+            return createdOrderDto;
+
+        } catch (Exception exception) {
+            EventDto eventDto = eventManager.get(EEventType.ERROR, exception);
+            notifier.notify(eventDto);
+            throw new RuntimeException(exception.getCause());
+        }
+
+
+    }
+
+    @Override
+    public BigDecimal getAskPriceForAsset(String assetSymbol) {
+        return getAskPriceForAsset(assetSymbol);
+    }
+
+    @Override
+    public BigDecimal getBidPriceForAsset(String assetSymbol) {
+        return getAskPriceForAsset(assetSymbol);
+
+    }
+
+    @Override
+    public BigDecimal getCurrentPriceForAsset(String assetSymbol) {
+
+        String responseResult = spotClient.createMarket().tickerSymbol(getParamMapFromString("symbol", assetSymbol));
+        try {
+            SymbolPriceTickerDto ticker = objectMapper.readValue(responseResult, SymbolPriceTickerDto.class);
+            return ticker.getPrice();
+        } catch (Exception exception) {
+            throw new RuntimeException(exception);
+        }
+
+    }
+
+    @Override
+    public CancelOrderResponseDto cancelOrder(CancelOrderRequestDto cancelOrderRequestDto) {
+        String responseResult = spotClient.createTrade().cancelOrder(converter.dtoToMap(cancelOrderRequestDto));
+        try {
+            CancelOrderResponseDto canceledOrder = objectMapper.readValue(responseResult, CancelOrderResponseDto.class);
+            return canceledOrder;
+        } catch (Exception exception) {
+            throw new RuntimeException(exception);
+        }
+
+
     }
 
     @Override
@@ -43,15 +106,15 @@ public class BinanceMarketServiceImpl implements IStockMarketService {
     }
 
     @Override
-    public Optional<List<EOrderStatus>> getOrderStatus(QueryOrderDto queryOrder) {
-        String result = spotClient.createTrade().getOrders(converter.dtoToMap(queryOrder));
+    public EOrderStatus getOrderStatus(QueryOrderDto queryOrder) {
         try {
+            String result = spotClient.createTrade().getOrders(converter.dtoToMap(queryOrder));
+            List<EOrderStatus> statuses = this.convertStringResponseToOrderStatuses(result);
+            if(statuses.isEmpty()) throw new RuntimeException("Failed to retrieve order status.");
 
-            List<EOrderStatus> statuses = this.getOrderStatus(result);
-
-            return Optional.of(statuses);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+            return statuses.get(0);
+        } catch (Exception exception) {
+            throw new RuntimeException(exception);
         }
     }
 
@@ -98,14 +161,14 @@ public class BinanceMarketServiceImpl implements IStockMarketService {
         List<String> symbolsList = exchangeInfo.getSymbols().stream()
                 .filter(symbolDto -> symbolDto.getStatus().equals("TRADING"))
                 .filter(symbolDto -> symbolDto.getQuoteAsset().equals("USDT"))
-                .map(SymbolDto::getSymbol)
+                .map(Asset::getSymbol)
                 .collect(Collectors.toList());
 
         return Optional.of(symbolsList);
     }
 
     @Override
-    public Optional<List<SymbolDto>> getSymbols() {
+    public Optional<List<Asset>> getSymbols() {
         ExchangeInfoQueryDto queryDto = new ExchangeInfoQueryDto();
         queryDto.setPermissions(new ArrayList<>(List.of("SPOT")));
         String result = spotClient.createMarket().exchangeInfo(converter.dtoToMap(queryDto));
@@ -119,19 +182,6 @@ public class BinanceMarketServiceImpl implements IStockMarketService {
     }
 
     @Override
-    public Optional<NewOrderFullResponseDto> createOrder(Map<String, Object> params) {
-        String responseResult = spotClient.createTrade().newOrder(params);
-
-        try {
-            NewOrderFullResponseDto orderFullResponseDto = objectMapper.readValue(responseResult, NewOrderFullResponseDto.class);
-            return Optional.of(orderFullResponseDto);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
-
-    }
-
-    @Override
     public Optional<List<HistoricalOrderResponseDto>> getHistoricalOrderList(Map<String, Object> params) {
 
         String responseResult = spotClient.createTrade().getOrders(converter.dtoToMap(params));
@@ -142,20 +192,6 @@ public class BinanceMarketServiceImpl implements IStockMarketService {
             throw new RuntimeException(e);
         }
 
-
-    }
-
-    @Override
-    public Optional<CancelOrderResponseDto> cancelOrder(Map<String, Object> params) {
-
-        String responseResult = spotClient.createTrade().cancelOrder(converter.dtoToMap(params));
-
-        try {
-            CancelOrderResponseDto canceledOrder = objectMapper.readValue(responseResult, CancelOrderResponseDto.class);
-            return Optional.of(canceledOrder);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException(e);
-        }
 
     }
 
@@ -295,7 +331,7 @@ public class BinanceMarketServiceImpl implements IStockMarketService {
         return symbols;
     }
 
-    private List<EOrderStatus> getOrderStatus(String response) {
+    private List<EOrderStatus> convertStringResponseToOrderStatuses(String response) {
         List<EOrderStatus> statuses = new ArrayList<>();
         List<Object> objectList = new JacksonJsonParser().parseList(response);
         objectList.stream().forEach(object -> {
@@ -309,7 +345,22 @@ public class BinanceMarketServiceImpl implements IStockMarketService {
         return statuses;
     }
 
+    private OrderBookTickerDto getAssetTicker(String assetSymbol) {
+        String responseResult = spotClient.createMarket().bookTicker(getParamMapFromString("symbol", assetSymbol));
+        try {
+            return objectMapper.readValue(responseResult, OrderBookTickerDto.class);
+        } catch (JsonProcessingException exception) {
+            throw new RuntimeException(exception);
+        }
+    }
+
+    private Map<String, Object> getParamMapFromString(String paramName, Object paramValue) {
+        Map<String, Object> paramMap = new HashMap<>();
+        paramMap.put(paramName, paramValue);
+        return paramMap;
+    }
+
+
 }
 
 
-// BeanUtils.copyProperties();

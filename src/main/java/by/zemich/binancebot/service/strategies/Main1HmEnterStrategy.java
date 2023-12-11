@@ -7,25 +7,27 @@ import org.ta4j.core.BarSeries;
 import org.ta4j.core.Rule;
 import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.RSIIndicator;
-import org.ta4j.core.indicators.adx.ADXIndicator;
-import org.ta4j.core.indicators.adx.MinusDIIndicator;
-import org.ta4j.core.indicators.adx.PlusDIIndicator;
-import org.ta4j.core.indicators.bollinger.*;
+import org.ta4j.core.indicators.bollinger.BollingerBandWidthIndicator;
+import org.ta4j.core.indicators.bollinger.BollingerBandsLowerIndicator;
+import org.ta4j.core.indicators.bollinger.BollingerBandsMiddleIndicator;
+import org.ta4j.core.indicators.bollinger.BollingerBandsUpperIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.indicators.helpers.HighPriceIndicator;
 import org.ta4j.core.indicators.helpers.LowPriceIndicator;
 import org.ta4j.core.indicators.helpers.OpenPriceIndicator;
 import org.ta4j.core.indicators.statistics.StandardDeviationIndicator;
-import org.ta4j.core.indicators.volume.ChaikinMoneyFlowIndicator;
 import org.ta4j.core.indicators.volume.OnBalanceVolumeIndicator;
-import org.ta4j.core.rules.*;
+import org.ta4j.core.rules.IsRisingRule;
+import org.ta4j.core.rules.NotRule;
+import org.ta4j.core.rules.OverIndicatorRule;
+import org.ta4j.core.rules.UnderIndicatorRule;
 
 import java.math.BigDecimal;
 
 @Component
-public class Main15mEnterStrategy extends TradeStrategy {
+public class Main1HmEnterStrategy extends TradeStrategy {
 
-    private final String name = "MAIN_15M_ENTER_RULE";
+    private final String name = "MAIN_1H_ENTER_RULE";
 
     @Override
     public String getName() {
@@ -34,17 +36,17 @@ public class Main15mEnterStrategy extends TradeStrategy {
 
     @Override
     public BigDecimal getInterest() {
-        return new BigDecimal("0.8");
+        return new BigDecimal("1.5");
     }
 
     @Override
     public EInterval getInterval() {
-        return EInterval.M15;
+        return EInterval.H1;
     }
 
     @Override
     public IStrategy getAdditionalStrategy() {
-        return null;
+        return new NotOverBoughtAndPriceRisingAdditional4HStrategy();
     }
 
     @Override
@@ -64,21 +66,15 @@ public class Main15mEnterStrategy extends TradeStrategy {
         BollingerBandsUpperIndicator bbu = new BollingerBandsUpperIndicator(bbm, sd);
         BollingerBandWidthIndicator bbw = new BollingerBandWidthIndicator(bbu, bbm, bbl);
 
-        ADXIndicator adxIndicator = new ADXIndicator(series, 20);
-        MinusDIIndicator minusDIIndicator = new MinusDIIndicator(series, 20);
-        PlusDIIndicator plusDIIndicator = new PlusDIIndicator(series, 20);
-
         OnBalanceVolumeIndicator obv = new OnBalanceVolumeIndicator(series);
-        ChaikinMoneyFlowIndicator chaikinMoneyFlowIndicator = new ChaikinMoneyFlowIndicator(series, 20);
 
         return new UnderIndicatorRule(openPriceIndicator, bbm)
                 .and(new OverIndicatorRule(closePrice, bbm))
-                .and(new OverIndicatorRule(bbw, 3.5))
-                .and(new IsRisingRule(bbm, 14, 0.7))
+                .and(new OverIndicatorRule(bbw, 7))
                 .and(new UnderIndicatorRule(rsiIndicator, 60))
-                .and(new OverIndicatorRule(rsiIndicator, 38))
+                .and(new OverIndicatorRule(rsiIndicator, 40))
+                .and(new IsRisingRule(bbm, 14, 0.7))
                 .and(new NotRule(new OverIndicatorRule(highPriceIndicator, bbu)));
-
 
     }
 }

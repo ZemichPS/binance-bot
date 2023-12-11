@@ -10,4 +10,5 @@ public interface IEventManager {
     EventDto get(EEventType eventType, OrderDto order);
     EventDto get(EEventType eventType, BinanceClientException binanceClientException);
     EventDto get(EEventType eventType, BargainDto bargainDto);
+    EventDto get(EEventType eventType, Exception exception);
 }

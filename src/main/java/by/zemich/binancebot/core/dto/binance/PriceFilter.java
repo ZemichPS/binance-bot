@@ -7,7 +7,7 @@ import java.math.BigDecimal;
 
 @Data
 @Builder
-public class PriceBinanceFilter extends BinanceFilter {
+public class PriceFilter extends BinanceFilter {
     private String filterType;
     private BigDecimal minPrice;
     private BigDecimal maxPrice;

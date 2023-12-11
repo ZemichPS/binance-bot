@@ -8,6 +8,7 @@ import org.springframework.data.repository.ListCrudRepository;
 import org.springframework.data.repository.PagingAndSortingRepository;
 import org.springframework.stereotype.Repository;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -17,5 +18,6 @@ public interface IBargainDao extends JpaRepository<BargainEntity, UUID>, PagingA
     List<BargainEntity> findAll();
 
     Optional<List<BargainEntity>> findAllByStatus(EBargainStatus status);
+    Optional<List<BargainEntity>> findAllByCurrentPercentageResultGreaterThan(BigDecimal percentageResult);
 
 }

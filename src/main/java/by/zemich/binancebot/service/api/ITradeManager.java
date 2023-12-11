@@ -1,19 +1,21 @@
 package by.zemich.binancebot.service.api;
 
 import by.zemich.binancebot.core.dto.*;
-import by.zemich.binancebot.core.dto.binance.SymbolDto;
+import by.zemich.binancebot.core.dto.binance.Asset;
 
-import java.util.List;
-import java.util.Optional;
+import java.math.BigDecimal;
 import java.util.UUID;
 
 public interface ITradeManager {
-    OrderDto createBuyLimitOrderByAskPrice(SymbolDto symbol);
-    OrderDto createBuyLimitOrderByBidPrice(SymbolDto symbol);
+    OrderDto createBuyLimitOrderByAskPrice(Asset symbol);
+    OrderDto createBuyLimitOrderByCurrentPrice(Asset symbol);
 
-    OrderDto createSellLimitOrder(Long orderId);
+    OrderDto createSellLimitOrder(UUID buyOrderUuid, BigDecimal percentageAim);
 
-    OrderDto createStopLimitOrder(Long orderId);
+    OrderDto createStopLimitOrder(Long buyOrderId);
+    OrderDto cancelOrder(UUID orderUuid);
+
+
 
 
 

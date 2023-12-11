@@ -8,7 +8,7 @@ import java.util.List;
 public class ExchangeInfoResponseDto {
     private String timezone;
     private Long serverTime;
-    private List<SymbolDto> symbols;
+    private List<Asset> symbols;
 
 
 }

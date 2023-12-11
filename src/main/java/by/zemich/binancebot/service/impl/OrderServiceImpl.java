@@ -23,14 +23,12 @@ import java.util.UUID;
 public class OrderServiceImpl implements IOrderService {
 
     private final IConverter converter;
-    private final ObjectMapper objectMapper;
     private final IOrderDao orderDao;
     private final ConversionService conversionService;
     private final IStockMarketService stockMarketService;
 
-    public OrderServiceImpl(IConverter converter, ObjectMapper objectMapper, IOrderDao orderDao, ConversionService conversionService, IStockMarketService stockMarketService) {
+    public OrderServiceImpl(IConverter converter, IOrderDao orderDao, ConversionService conversionService, IStockMarketService stockMarketService) {
         this.converter = converter;
-        this.objectMapper = objectMapper;
         this.orderDao = orderDao;
         this.conversionService = conversionService;
         this.stockMarketService = stockMarketService;
@@ -38,40 +36,15 @@ public class OrderServiceImpl implements IOrderService {
 
 
     @Override
-    public Optional<OrderEntity> create(NewOrderRequestDto newOrder) {
-        NewOrderFullResponseDto responseDto = stockMarketService.createOrder(converter.dtoToMap(newOrder)).orElseThrow(RuntimeException::new);
-        OrderEntity entity = conversionService.convert(responseDto, OrderEntity.class);
-        entity.setUuid(UUID.randomUUID());
-        orderDao.save(entity);
-        return Optional.of(entity);
-    }
-
     @Transactional
-    @Override
-    public Optional<OrderEntity> cancel(CancelOrderRequestDto cancelOrderRequestDto) {
-
-        CancelOrderResponseDto canceledOrder = stockMarketService.cancelOrder(converter.dtoToMap(cancelOrderRequestDto)).orElseThrow(RuntimeException::new);
-        OrderEntity orderEntity = orderDao.findByOrderId(canceledOrder.getOrderId()).orElseThrow(NoSuchEntityException::new);
-        orderEntity.setStatus(EOrderStatus.CANCELED);
-        orderDao.save(orderEntity);
-        return Optional.of(orderEntity);
+    public Optional<OrderEntity> save(OrderDto newOrder) {
+        OrderEntity newOrderEntity = conversionService.convert(newOrder, OrderEntity.class);
+        orderDao.save(newOrderEntity);
+        return Optional.of(newOrderEntity);
     }
 
     @Override
-    @Transactional
-    public Optional<OrderEntity> update(CurrentOpenOrderResponseDto orderDto) {
-
-        OrderEntity entity = orderDao
-                .findByOrderId(orderDto.getOrderId())
-                .orElse(new OrderEntity());
-        BeanUtils.copyProperties(orderDto, entity);
-
-        orderDao.save(entity);
-        return Optional.empty();
-    }
-
-    @Override
-    public Optional<OrderEntity> updateStatus(OrderDto orderDto, EOrderStatus conditionalStatus) {
+    public Optional<OrderEntity>  updateStatus(OrderDto orderDto, EOrderStatus conditionalStatus) {
 
         QueryOrderDto queryOrder = QueryOrderDto.builder()
                 .symbol(orderDto.getSymbol())
@@ -79,8 +52,7 @@ public class OrderServiceImpl implements IOrderService {
                 .build();
 
 
-
-            EOrderStatus updatedStatus = stockMarketService.getOrderStatus(queryOrder).orElseThrow(RuntimeException::new).get(0);
+            EOrderStatus updatedStatus = stockMarketService.getOrderStatus(queryOrder);
 
             if (!orderDto.getStatus().equals(updatedStatus)) {
 
@@ -97,41 +69,11 @@ public class OrderServiceImpl implements IOrderService {
     }
 
     @Override
-    public Optional<QueryOrderResponseDto> get(QueryOrderDto neededOrder) {
-        return Optional.empty();
-    }
-
-    @Override
-    public Optional<CurrentOpenOrderResponseDto> get(CurrentOpenOrderQueryDto openedOrder) {
-        return Optional.empty();
-    }
-
-    @Override
-    public Optional<List<CurrentOpenOrderResponseDto>> get(CurrentOpenOrdersQueryDto openedOrders) {
-        return Optional.empty();
-    }
-
-    @Override
-    public Optional<List<OrderEntity>> getAll() {
-
-        List<OrderEntity> historicalOrderList = orderDao.findAll();
-        return Optional.ofNullable(historicalOrderList);
-
-    }
-
-    @Override
-    public Optional<List<OrderEntity>> getBySymbol(String symbol) {
+    public Optional<List<OrderEntity>> getAllBySymbol(String symbol) {
         List<OrderEntity> orderEntityList = orderDao.findBySymbol(symbol).orElseThrow(NoSuchEntityException::new);
         return Optional.of(orderEntityList);
     }
 
-    @Override
-    public Optional<OrderEntity> updateByUuid(UUID uuid) {
-        OrderEntity orderEntity = orderDao.findByUuid(uuid).orElseThrow(NoSuchEntityException::new);
-        //stockMarketService.
-
-        return Optional.empty();
-    }
 
     @Override
     public Optional<OrderEntity> getByOrderId(Long orderId) {

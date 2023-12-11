@@ -7,7 +7,6 @@ import org.ta4j.core.BarSeries;
 import org.ta4j.core.Rule;
 import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.RSIIndicator;
-import org.ta4j.core.indicators.adx.ADXIndicator;
 import org.ta4j.core.indicators.bollinger.*;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.indicators.helpers.HighPriceIndicator;
@@ -19,23 +18,23 @@ import org.ta4j.core.rules.*;
 
 import java.math.BigDecimal;
 
+
 @Component
-public class BullishEnterStrategy extends TradeStrategy {
-    private final String name = "BULLISH_15M_RULE";
+public class LowPriceUnderBblButBmmStillIsRising30MEnterStrategy extends TradeStrategy {
 
     @Override
     public String getName() {
-        return name;
+        return "CLOSE_PRICE_UNDER_BBL_RULE_NOT_LOW_RSI";
     }
 
     @Override
     public BigDecimal getInterest() {
-        return new BigDecimal("0.5");
+        return new BigDecimal("1");
     }
 
     @Override
     public EInterval getInterval() {
-        return EInterval.M15;
+            return EInterval.M30;
     }
 
     @Override
@@ -43,15 +42,19 @@ public class BullishEnterStrategy extends TradeStrategy {
         return null;
     }
 
+
     @Override
     protected Rule build(BarSeries series) {
+
         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
         OpenPriceIndicator openPriceIndicator = new OpenPriceIndicator(series);
         LowPriceIndicator lowPriceIndicator = new LowPriceIndicator(series);
         HighPriceIndicator highPriceIndicator = new HighPriceIndicator(series);
 
+
         EMAIndicator emaIndicator = new EMAIndicator(closePrice, 20);
         RSIIndicator rsiIndicator = new RSIIndicator(closePrice, 14);
+
 
         // Standard deviation
         StandardDeviationIndicator sd = new StandardDeviationIndicator(closePrice, 20);
@@ -59,29 +62,12 @@ public class BullishEnterStrategy extends TradeStrategy {
         BollingerBandsLowerIndicator bbl = new BollingerBandsLowerIndicator(bbm, sd);
         BollingerBandsUpperIndicator bbu = new BollingerBandsUpperIndicator(bbm, sd);
         BollingerBandWidthIndicator bbw = new BollingerBandWidthIndicator(bbu, bbm, bbl);
-        ADXIndicator adxIndicator = new ADXIndicator(series, 7);
-
         ChaikinMoneyFlowIndicator chaikinMoneyFlowIndicator = new ChaikinMoneyFlowIndicator(series, 20);
 
-        return new UnderIndicatorRule(lowPriceIndicator, bbm)
-                .and(new OverIndicatorRule(openPriceIndicator, bbm))
-                .and(new OverIndicatorRule(closePrice, bbm))
-               //.and(new OverIndicatorRule(bbw, 3.2))
-                .and(new UnderIndicatorRule(bbw, 12))
-                //.and(new OverIndicatorRule(chaikinMoneyFlowIndicator, 0.1))
-                .and(new IsRisingRule(bbm, 14, 0.65))
-                //.and(new InPipeRule(rsiIndicator, 68, 45))
-
-                .and(new NotRule(new OverIndicatorRule(highPriceIndicator, bbu)));
-
-//        return new UnderIndicatorRule(lowPriceIndicator, bbm)
-//                .and(new OverIndicatorRule(openPriceIndicator, bbm))
-//                .and(new OverIndicatorRule(closePrice, bbm))
-//                .and(new OverIndicatorRule(chaikinMoneyFlowIndicator, 0.1))
-//                .and(new IsRisingRule(bbm, 14, 0.65))
-//                .and(new InPipeRule(rsiIndicator, 68, 45))
-//                .and(new InPipeRule(bbw, 3.2, 12))
-//                .and(new NotRule(new OverIndicatorRule(highPriceIndicator, bbu)));
+        return new UnderIndicatorRule(closePrice, bbl)
+                .and(new OverIndicatorRule(rsiIndicator, 40))
+                .and(new IsRisingRule(bbm, 14, 0.6))
+                .and(new OverIndicatorRule(bbw, 3));
 
 
     }

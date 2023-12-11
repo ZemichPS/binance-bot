@@ -3,11 +3,13 @@ package by.zemich.binancebot.service.impl;
 import by.zemich.binancebot.core.dto.BargainDto;
 import by.zemich.binancebot.core.dto.EventDto;
 import by.zemich.binancebot.core.dto.OrderDto;
+import by.zemich.binancebot.core.enums.EBargainStatus;
 import by.zemich.binancebot.core.enums.EEventType;
 import by.zemich.binancebot.service.api.IEventManager;
 import com.binance.connector.client.exceptions.BinanceClientException;
 import org.springframework.stereotype.Component;
 
+import java.math.RoundingMode;
 import java.text.MessageFormat;
 
 @Component
@@ -53,10 +55,39 @@ public class EventManagerImpl implements IEventManager {
     @Override
     public EventDto get(EEventType eventType, BargainDto bargainDto) {
         String eventText = MessageFormat.format("""
-                        Создана новая сделка
                         Uuid: {0}
-                        asset: {1} 
-                        """, bargainDto.getUuid(), bargainDto.getSymbol());
+                        asset: {1}
+                        strategy: {2} 
+                        """,
+                bargainDto.getUuid(),
+                bargainDto.getSymbol(),
+                bargainDto.getStrategy());
+
+        if (bargainDto.getStatus().equals(EBargainStatus.FINISHED)) {
+            String additionalText = MessageFormat.format("""
+                            ------------------------------
+                            Finance result: {0},
+                            Percentage result: {1}
+                            Duration: {2} m.
+                            """,
+                    bargainDto.getFinanceResult().setScale(3, RoundingMode.HALF_UP),
+                    bargainDto.getPercentageResult().setScale(3, RoundingMode.HALF_UP),
+                    bargainDto.getTimeInWork());
+            eventText = eventText + additionalText;
+        }
+
+        return EventDto.builder()
+                .eventType(eventType)
+                .text(eventText)
+                .build();
+    }
+
+    @Override
+    public EventDto get(EEventType eventType, Exception exception) {
+        String eventText = MessageFormat.format("""
+                Error message: {0}
+                Full cause: {1} 
+                """, exception.getMessage(), exception.getCause().toString());
 
         return EventDto.builder()
                 .eventType(eventType)

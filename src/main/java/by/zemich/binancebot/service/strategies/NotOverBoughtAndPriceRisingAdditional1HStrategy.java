@@ -2,34 +2,36 @@ package by.zemich.binancebot.service.strategies;
 
 import by.zemich.binancebot.core.enums.EInterval;
 import by.zemich.binancebot.service.api.IStrategy;
-import org.springframework.stereotype.Component;
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.Rule;
 import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.RSIIndicator;
-import org.ta4j.core.indicators.bollinger.*;
+import org.ta4j.core.indicators.bollinger.BollingerBandWidthIndicator;
+import org.ta4j.core.indicators.bollinger.BollingerBandsLowerIndicator;
+import org.ta4j.core.indicators.bollinger.BollingerBandsMiddleIndicator;
+import org.ta4j.core.indicators.bollinger.BollingerBandsUpperIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.indicators.helpers.HighPriceIndicator;
 import org.ta4j.core.indicators.helpers.LowPriceIndicator;
 import org.ta4j.core.indicators.helpers.OpenPriceIndicator;
 import org.ta4j.core.indicators.statistics.StandardDeviationIndicator;
-import org.ta4j.core.indicators.volume.ChaikinMoneyFlowIndicator;
-import org.ta4j.core.rules.*;
+import org.ta4j.core.indicators.volume.OnBalanceVolumeIndicator;
+import org.ta4j.core.rules.IsRisingRule;
+import org.ta4j.core.rules.NotRule;
+import org.ta4j.core.rules.OverIndicatorRule;
+import org.ta4j.core.rules.UnderIndicatorRule;
 
 import java.math.BigDecimal;
 
-
-//@Component
-public class LowRsiAndClosePrice1HUnderBBL extends TradeStrategy {
-
+public class NotOverBoughtAndPriceRisingAdditional1HStrategy extends TradeStrategy{
     @Override
     public String getName() {
-        return "LOW_RSI_AND_CLOSE_PRICE_UNDER_BBL_RULE";
+        return "NOT_OVER_BOUGHT_AND_RISING_PRICE_STRATEGY";
     }
 
     @Override
     public BigDecimal getInterest() {
-        return new BigDecimal("1.0");
+        return null;
     }
 
     @Override
@@ -42,7 +44,6 @@ public class LowRsiAndClosePrice1HUnderBBL extends TradeStrategy {
         return null;
     }
 
-
     @Override
     protected Rule build(BarSeries series) {
 
@@ -51,10 +52,8 @@ public class LowRsiAndClosePrice1HUnderBBL extends TradeStrategy {
         LowPriceIndicator lowPriceIndicator = new LowPriceIndicator(series);
         HighPriceIndicator highPriceIndicator = new HighPriceIndicator(series);
 
-
         EMAIndicator emaIndicator = new EMAIndicator(closePrice, 20);
         RSIIndicator rsiIndicator = new RSIIndicator(closePrice, 14);
-
 
         // Standard deviation
         StandardDeviationIndicator sd = new StandardDeviationIndicator(closePrice, 20);
@@ -62,11 +61,13 @@ public class LowRsiAndClosePrice1HUnderBBL extends TradeStrategy {
         BollingerBandsLowerIndicator bbl = new BollingerBandsLowerIndicator(bbm, sd);
         BollingerBandsUpperIndicator bbu = new BollingerBandsUpperIndicator(bbm, sd);
         BollingerBandWidthIndicator bbw = new BollingerBandWidthIndicator(bbu, bbm, bbl);
-        ChaikinMoneyFlowIndicator chaikinMoneyFlowIndicator = new ChaikinMoneyFlowIndicator(series, 20);
 
-        return new UnderIndicatorRule(closePrice, bbl)
-                .and(new UnderIndicatorRule(chaikinMoneyFlowIndicator, -15));
+        OnBalanceVolumeIndicator obv = new OnBalanceVolumeIndicator(series);
 
+        return new UnderIndicatorRule(rsiIndicator, 60)
+                .and(new OverIndicatorRule(rsiIndicator, 38))
+                .and(new OverIndicatorRule(closePrice, bbm))
+                .and(new UnderIndicatorRule(highPriceIndicator, bbu));
 
     }
 }

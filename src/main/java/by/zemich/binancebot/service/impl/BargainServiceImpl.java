@@ -3,6 +3,7 @@ package by.zemich.binancebot.service.impl;
 import by.zemich.binancebot.DAO.api.IBargainDao;
 import by.zemich.binancebot.DAO.entity.BargainEntity;
 import by.zemich.binancebot.DAO.entity.OrderEntity;
+import by.zemich.binancebot.config.properties.RealTradeProperties;
 import by.zemich.binancebot.core.dto.BargainCreateDto;
 import by.zemich.binancebot.core.dto.BargainDto;
 import by.zemich.binancebot.core.dto.OrderDto;
@@ -34,13 +35,15 @@ public class BargainServiceImpl implements IBargainService {
     private final ConversionService conversionService;
     private final IOrderService orderService;
     private final IStockMarketService stockMarketService;
+    private final RealTradeProperties tradeProperties;
 
 
-    public BargainServiceImpl(IBargainDao bargainDao, ConversionService conversionService, IOrderService orderService, IStockMarketService stockMarketService) {
+    public BargainServiceImpl(IBargainDao bargainDao, ConversionService conversionService, IOrderService orderService, IStockMarketService stockMarketService, RealTradeProperties tradeProperties) {
         this.bargainDao = bargainDao;
         this.conversionService = conversionService;
         this.orderService = orderService;
         this.stockMarketService = stockMarketService;
+        this.tradeProperties = tradeProperties;
     }
 
     @Override
@@ -65,6 +68,17 @@ public class BargainServiceImpl implements IBargainService {
         bargainDto.setSellOrder(verifiedSellOrder);
         return bargainDto;
     }
+
+
+
+
+//
+//    @Override
+//    public void cancelFreezingBargain() {
+//      bargainDao.findAllByCurrentPercentageResultGreaterThan(tradeProperties.getCriticalLostPercentage())
+//    }
+
+
 
     @Override
     public BargainDto create(BargainCreateDto bargainCreateDto) {
@@ -103,21 +117,22 @@ public class BargainServiceImpl implements IBargainService {
         // тут всякие расчёты и просчёты
 
         OrderDto buyOrder = bargainDto.getBuyOrder();
-
         OrderDto sellOrder = bargainDto.getSellOrder();
 
-        Timestamp startTime = buyOrder.getDtCreate();
-        Timestamp finishTime = Timestamp.from(Instant.now());
-        Duration timeInWork = Duration.between(LocalDateTime.ofInstant(startTime.toInstant(), TimeZone.getDefault().toZoneId()),
-                LocalDateTime.ofInstant(finishTime.toInstant(), TimeZone.getDefault().toZoneId()));
+        BigDecimal soldAssetQuantity = sellOrder.getOrigQty();
 
-        BigDecimal buyPrice = buyOrder.getCummulativeQuoteQty();
-        BigDecimal sellPrice = sellOrder.getCummulativeQuoteQty();
+
+        Timestamp startTime = buyOrder.getDtCreate();
+        Timestamp currenTime = Timestamp.from(Instant.now());
+        Duration timeInWork = Duration.between(startTime.toLocalDateTime(),LocalDateTime.now());
+
+        BigDecimal buyPrice = buyOrder.getPrice();
+        BigDecimal sellPrice = sellOrder.getPrice();
 
         BigDecimal percentageResult = getPercentDifference(buyPrice, sellPrice);
-        BigDecimal financeResult = sellPrice.subtract(buyPrice);
+        BigDecimal financeResult = sellPrice.subtract(buyPrice).multiply(soldAssetQuantity);
 
-        bargainDto.setFinishTime(finishTime);
+        bargainDto.setFinishTime(currenTime);
         bargainDto.setTimeInWork(timeInWork.toMinutes());
         bargainDto.setPercentageResult(percentageResult);
         bargainDto.setFinanceResult(financeResult);
@@ -226,13 +241,11 @@ public class BargainServiceImpl implements IBargainService {
 
         BigDecimal difference = sellPrice.subtract(buyPrice);
 
-        BigDecimal resultPercent = difference.multiply(BigDecimal.valueOf(100))
+        return difference.multiply(BigDecimal.valueOf(100))
                 .divide(buyPrice, 3, RoundingMode.HALF_UP);
-
-        return resultPercent;
     }
 
-    final BigDecimal getSymbolPrice(String symbol) {
+    final BigDecimal getCurrentPriceBySymbol(String symbol) {
         Map<String, Object> params = new HashMap<>();
         params.put("symbol", symbol);
         return stockMarketService.getSymbolPriceTicker(params).orElseThrow().getPrice();
@@ -240,20 +253,20 @@ public class BargainServiceImpl implements IBargainService {
 
     private void updateResult(BargainDto bargainDto) {
 
-        if (!Objects.nonNull(bargainDto.getBuyOrder())) throw new RuntimeException("There is no buy order");
+        if (!Objects.nonNull(bargainDto.getBuyOrder())) throw new RuntimeException("Bargain doesn't contain buy order");
 
         OrderDto buyOrderDto = bargainDto.getBuyOrder();
+        BigDecimal boughtAssetQuantity = buyOrderDto.getOrigQty();
 
 
         Timestamp startTime = buyOrderDto.getDtCreate();
-        Timestamp finishTime = Timestamp.from(Instant.now());
-        Duration timeInWork = Duration.between(LocalDateTime.ofInstant(startTime.toInstant(), TimeZone.getDefault().toZoneId()),
-                LocalDateTime.ofInstant(finishTime.toInstant(), TimeZone.getDefault().toZoneId()));
+        Duration timeInWork = Duration.between(startTime.toLocalDateTime(),LocalDateTime.now()); ;
 
-        BigDecimal buyPrice = buyOrderDto.getCummulativeQuoteQty();
-        BigDecimal currentPrice = getSymbolPrice(bargainDto.getSymbol());
 
-        BigDecimal financeResult = currentPrice.subtract(buyPrice);
+        BigDecimal buyPrice = buyOrderDto.getPrice();
+        BigDecimal currentPrice = getCurrentPriceBySymbol(bargainDto.getSymbol());
+
+        BigDecimal financeResult = currentPrice.subtract(buyPrice).multiply(boughtAssetQuantity).setScale(3, RoundingMode.HALF_UP);
         BigDecimal percentageResult = getPercentDifference(buyPrice, currentPrice);
 
         bargainDto.setFinanceResult(financeResult);
@@ -274,6 +287,11 @@ public class BargainServiceImpl implements IBargainService {
 
     }
 
+    private Duration getDurationBetweenDates(Timestamp firstTimeStamp, Timestamp secondTimeStamp){
+
+
+        return Duration.between(firstTimeStamp.toLocalDateTime(), secondTimeStamp.toLocalDateTime());
+    }
 
 
 

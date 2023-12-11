@@ -148,7 +148,7 @@
 //    @GetMapping("/create_oder")
 //    private ResponseEntity<OrderEntity> createOrder(){
 ///*
-//        NewOrderRequestDto request = new NewOrderRequestDto();
+//        RequestForNewOrderDto request = new RequestForNewOrderDto();
 //
 //        request.setSymbol("LINKUSDT");
 //        request.setSide(ESide.BUY.name());

@@ -15,6 +15,8 @@ public interface IBargainService {
     BargainDto addBuyOrder(BargainDto bargainDto, OrderDto buyOrder);
     BargainDto addSellOrder(BargainDto bargainDto, OrderDto sellOrder);
 
+    BargainEntity cancelWithFreezingBuyOrder(BargainDto troubleBargain);
+
     BargainDto create(BargainCreateDto bargainCreateDto);
     Optional<BargainEntity> update(BargainDto bargainDto);
     Optional<BargainEntity> endByReasonExpired(BargainDto bargainDto);

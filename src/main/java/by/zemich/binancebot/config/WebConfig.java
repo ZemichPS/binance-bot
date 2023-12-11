@@ -1,5 +1,6 @@
 package by.zemich.binancebot.config;
 import by.zemich.binancebot.service.converter.*;
+import by.zemich.binancebot.service.converter.NewOrderFullResponseDtoToOrderDtoConverter;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.format.FormatterRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
@@ -14,6 +15,8 @@ public class WebConfig implements WebMvcConfigurer {
         registry.addConverter(new OrderDtoToOrderEntityConverter());
         registry.addConverter(new OrderEntityToOrderDtoConverter());
         registry.addConverter(new BargainEntityToBargainDtoConverter());
+        registry.addConverter(new NewOrderFullResponseDtoToOrderDtoConverter());
+
      //   registry.addFormatter(new LocalDateTimeToMilliFormatter());
     }
 }

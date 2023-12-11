@@ -12,7 +12,7 @@ import java.math.BigDecimal;
 
 @Data
 @Builder
-public class NewOrderRequestDto {
+public class RequestForNewOrderDto {
     @NotEmpty(message = "Symbol is mandatory")
     private String symbol;
     @NotEmpty(message = "Side is mandatory")

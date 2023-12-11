@@ -4,4 +4,5 @@ import java.util.Map;
 
 public interface IConverter {
     Map<String, Object> dtoToMap(Object o);
+
 }

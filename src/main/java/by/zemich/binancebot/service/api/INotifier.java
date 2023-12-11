@@ -5,4 +5,5 @@ import by.zemich.binancebot.core.dto.EventDto;
 public interface INotifier {
 
     void notify(EventDto eventDto);
+
 }

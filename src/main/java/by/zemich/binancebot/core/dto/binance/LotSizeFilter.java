@@ -6,7 +6,7 @@ import lombok.Data;
 import java.math.BigDecimal;
 @Data
 @Builder
-public class LotSizeBinanceFilter extends BinanceFilter {
+public class LotSizeFilter extends BinanceFilter {
     private String filterType;
     private BigDecimal minQty;
     private BigDecimal maxQty;

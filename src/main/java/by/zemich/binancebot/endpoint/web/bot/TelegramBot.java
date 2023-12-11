@@ -61,4 +61,25 @@ public class TelegramBot extends TelegramLongPollingBot implements INotifier {
             throw new RuntimeException(e);      //Any error will be printed here
         }
     }
+
+    @Override
+    public void notify(Exception exception) {
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("Error message: ")
+                .append(exception.getMessage())
+                .append("\n")
+                .append("Cause: ")
+                .append(exception.getCause().toString());
+
+        SendMessage smg = SendMessage.builder()
+                .chatId(properties.getChatID())
+                .text(stringBuilder.toString())
+                .build();
+
+        try {
+            execute(smg);                        //Actually sending the message
+        } catch (TelegramApiException e) {
+            throw new RuntimeException(e);      //Any error will be printed here
+        }
+    }
 }

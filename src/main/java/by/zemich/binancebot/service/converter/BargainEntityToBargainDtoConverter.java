@@ -25,6 +25,7 @@ public class BargainEntityToBargainDtoConverter implements Converter<BargainEnti
         bargainDto.setFinishTime(source.getFinishTime());
         bargainDto.setStatus(source.getStatus());
         bargainDto.setSymbol(source.getSymbol());
+        bargainDto.setInterest(source.getInterest());
         bargainDto.setCurrentFinanceResult(source.getCurrentFinanceResult());
         bargainDto.setCurrentPercentageResult(source.getCurrentPercentageResult());
 
@@ -35,11 +36,11 @@ public class BargainEntityToBargainDtoConverter implements Converter<BargainEnti
 
         }
 
-        if(Objects.nonNull(source.getSellOrder())) {
-            OrderDto sellOrderDto = new OrderDto();
-            BeanUtils.copyProperties(source.getSellOrder(), sellOrderDto);
-            bargainDto.setBuyOrder(sellOrderDto);
 
+        if(Objects.nonNull(source.getSellOrder())){
+            OrderDto sellOrder = new OrderDto();
+            BeanUtils.copyProperties(source.getSellOrder(), sellOrder);
+            bargainDto.setSellOrder(sellOrder);
         }
 
         return bargainDto;

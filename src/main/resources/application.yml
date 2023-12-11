@@ -67,6 +67,9 @@ trading:
   taker: 0.1
   maker: 0.1
   deposit: 14
+  criticalLostTimeForBuying: 3
+  criticalLostPercentage: 3
+
 
 
 
