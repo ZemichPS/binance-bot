@@ -41,7 +41,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
     private final List<String> blackList = new ArrayList<>();
 
     // TODO удалить (счётчик разрешённых покупок актива)
-    private Integer counter = 15000;
+    private Integer counter = 1244545;
     private boolean accountHasInsufficientBalance = true;
 
 
