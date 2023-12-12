@@ -21,10 +21,10 @@ import org.ta4j.core.rules.UnderIndicatorRule;
 
 import java.math.BigDecimal;
 
-public class NotOverBoughtAndPriceRisingAdditional4HStrategy extends TradeStrategy {
+public class NotOverBoughtAndGreenCandleAdditional4HStrategy extends TradeStrategy {
     @Override
     public String getName() {
-        return "NOT_OVER_BOUGHT_AND_RISING_PRICE_STRATEGY";
+        return "NOT_OVER_BOUGHT_AND_GREEN_CANDLE_STRATEGY";
     }
 
     @Override
@@ -64,8 +64,7 @@ public class NotOverBoughtAndPriceRisingAdditional4HStrategy extends TradeStrate
 
         return new UnderIndicatorRule(rsiIndicator, 60)
                 .and(new OverIndicatorRule(rsiIndicator, 38))
-                .and(new OverIndicatorRule(closePrice, bbm))
-                .and(new UnderIndicatorRule(openPriceIndicator, bbm))
+                .and(new OverIndicatorRule(closePrice, openPriceIndicator))
                 .and(new UnderIndicatorRule(highPriceIndicator, bbu));
 
     }

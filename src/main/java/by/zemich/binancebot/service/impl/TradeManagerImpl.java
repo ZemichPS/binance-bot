@@ -99,9 +99,9 @@ public class TradeManagerImpl implements ITradeManager {
         BigDecimal takerFee = tradeProperties.getTaker();
         BigDecimal interest = getValueFromPercentage(filledBuyOrder.getPrice(), percentageAim);
 
-        BigDecimal quantity = filledBuyOrder.getOrigQty();
+        BigDecimal currentQuantity = filledBuyOrder.getOrigQty();
         BigDecimal stepSize = lotSizeFilter.getStepSize();
-        BigDecimal sellQuantity = quantity.subtract(getValueFromPercentage(quantity, takerFee));
+        BigDecimal sellQuantity = currentQuantity.subtract(getValueFromPercentage(currentQuantity, takerFee));
         BigDecimal computedQuantity = getAssetQuantityUsingStepSize(sellQuantity, stepSize).setScale(priceFilter.getTickSize().scale(), RoundingMode.UNNECESSARY);
         BigDecimal sellPrice = filledBuyOrder.getPrice().add(interest);
 
@@ -113,7 +113,7 @@ public class TradeManagerImpl implements ITradeManager {
                 .price(computingSellPrice)
                 .side(ESide.SELL)
                 .type(EOrderType.LIMIT)
-                .quantity(computedQuantity)
+                .quantity(currentQuantity)
                 .timeInForce(ETimeInForce.GTC)
                 .newOrderRespType(ENewOrderRespType.FULL)
                 .build();

@@ -66,6 +66,16 @@ public class BargainServiceImpl implements IBargainService {
     }
 
     @Override
+    public boolean existsByStatusAndSymbol(EBargainStatus status, String symbol) {
+        return bargainDao.existsByStatusAndSymbol(status, symbol);
+    }
+
+    @Override
+    public boolean existsBySymbolAndStatusNotLike(String symbol, EBargainStatus status) {
+        return bargainDao.existsBySymbolAndStatusNotLike(symbol, status);
+    }
+
+    @Override
     public BargainDto addSellOrder(BargainDto bargainDto, OrderDto sellOrder) {
         OrderDto verifiedSellOrder = verifyOrder(sellOrder);
         bargainDto.setSellOrder(verifiedSellOrder);
@@ -114,6 +124,7 @@ public class BargainServiceImpl implements IBargainService {
 
     @Override
     public BargainEntity finalize(BargainDto bargainDto) {
+
         // тут всякие расчёты и просчёты
 
         OrderDto buyOrder = bargainDto.getBuyOrder();
@@ -121,10 +132,9 @@ public class BargainServiceImpl implements IBargainService {
 
         BigDecimal soldAssetQuantity = sellOrder.getOrigQty();
 
-
-        Timestamp startTime = buyOrder.getDtCreate();
         Timestamp currenTime = Timestamp.from(Instant.now());
-        Duration timeInWork = Duration.between(startTime.toLocalDateTime(),LocalDateTime.now());
+
+        Duration timeInWork = getDurationBetweenStartBargainAndNow(bargainDto.getDtCreate()); ;
 
         BigDecimal buyPrice = buyOrder.getPrice();
         BigDecimal sellPrice = sellOrder.getPrice();
@@ -144,14 +154,7 @@ public class BargainServiceImpl implements IBargainService {
 
     }
 
-    @Override
-    public void setTemporaryResult() {
-        bargainDao.findAllByStatus(EBargainStatus.OPEN_SELL_ORDER_CREATED).ifPresent(
-                listOfBargainEntities -> listOfBargainEntities.stream()
-                        .filter(Objects::nonNull)
-                        .map(bargainEntity -> conversionService.convert(bargainEntity, BargainDto.class))
-                        .forEach(this::updateResult));
-    }
+
 
     @Override
     @Transactional(readOnly = true)
@@ -251,18 +254,13 @@ public class BargainServiceImpl implements IBargainService {
         return stockMarketService.getSymbolPriceTicker(params).orElseThrow().getPrice();
     }
 
-    private void updateResult(BargainDto bargainDto) {
+    public BargainEntity updateResult(BargainDto bargainDto) {
 
         if (!Objects.nonNull(bargainDto.getBuyOrder())) throw new RuntimeException("Bargain doesn't contain buy order");
 
         OrderDto buyOrderDto = bargainDto.getBuyOrder();
         BigDecimal boughtAssetQuantity = buyOrderDto.getOrigQty();
-
-
-        Timestamp startTime = buyOrderDto.getDtCreate();
-        Duration timeInWork = Duration.between(startTime.toLocalDateTime(),LocalDateTime.now()); ;
-
-
+        Duration timeInWork = getDurationBetweenStartBargainAndNow(bargainDto.getDtCreate());
         BigDecimal buyPrice = buyOrderDto.getPrice();
         BigDecimal currentPrice = getCurrentPriceBySymbol(bargainDto.getSymbol());
 
@@ -275,7 +273,7 @@ public class BargainServiceImpl implements IBargainService {
 
         BargainEntity bargainEntity = conversionService.convert(bargainDto, BargainEntity.class);
 
-        bargainDao.save(bargainEntity);
+        return bargainDao.save(bargainEntity);
     }
 
     private OrderDto verifyOrder(OrderDto orderDto){
@@ -287,10 +285,8 @@ public class BargainServiceImpl implements IBargainService {
 
     }
 
-    private Duration getDurationBetweenDates(Timestamp firstTimeStamp, Timestamp secondTimeStamp){
-
-
-        return Duration.between(firstTimeStamp.toLocalDateTime(), secondTimeStamp.toLocalDateTime());
+    private Duration getDurationBetweenStartBargainAndNow(Timestamp startBargain){
+        return Duration.between(startBargain.toLocalDateTime(), LocalDateTime.now());
     }
 
 

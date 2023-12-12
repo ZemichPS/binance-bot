@@ -43,7 +43,7 @@ public class Main30mEnterStrategy extends TradeStrategy {
 
     @Override
     public IStrategy getAdditionalStrategy() {
-        return new NotOverBoughtAndPriceRisingAdditional4HStrategy();
+        return new NotOverBoughtAndGreenCandleAdditional4HStrategy();
     }
 
     @Override

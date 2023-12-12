@@ -19,7 +19,7 @@ public class EventManagerImpl implements IEventManager {
         EventDto eventDto = EventDto.builder().build();
         eventDto.setEventType(eventType);
         String eventText = MessageFormat.format("""
-                        id: {0} 
+                        id: {0}
                         symbol: {1} 
                         type: {2} 
                         status: {3} 
@@ -57,21 +57,25 @@ public class EventManagerImpl implements IEventManager {
         String eventText = MessageFormat.format("""
                         Uuid: {0}
                         asset: {1}
-                        strategy: {2} 
+                        strategy: {2}
+                        buy price: {3}
                         """,
                 bargainDto.getUuid(),
                 bargainDto.getSymbol(),
-                bargainDto.getStrategy());
+                bargainDto.getStrategy(),
+                bargainDto.getBuyOrder().getPrice().setScale(8, RoundingMode.HALF_UP).toString());
 
         if (bargainDto.getStatus().equals(EBargainStatus.FINISHED)) {
             String additionalText = MessageFormat.format("""
-                            ------------------------------
+                            ------------------💸--------------------
                             Finance result: {0},
                             Percentage result: {1}
-                            Duration: {2} m.
+                            sell price: {2}
+                            Duration: {3} m.
                             """,
-                    bargainDto.getFinanceResult().setScale(3, RoundingMode.HALF_UP),
-                    bargainDto.getPercentageResult().setScale(3, RoundingMode.HALF_UP),
+                    bargainDto.getFinanceResult().setScale(5, RoundingMode.HALF_UP).toString(),
+                    bargainDto.getPercentageResult().setScale(5, RoundingMode.HALF_UP).toString(),
+                    bargainDto.getSellOrder().getPrice().setScale(8, RoundingMode.HALF_UP).toString(),
                     bargainDto.getTimeInWork());
             eventText = eventText + additionalText;
         }
@@ -86,7 +90,7 @@ public class EventManagerImpl implements IEventManager {
     public EventDto get(EEventType eventType, Exception exception) {
         String eventText = MessageFormat.format("""
                 Error message: {0}
-                Full cause: {1} 
+                Full cause: {1}
                 """, exception.getMessage(), exception.getCause().toString());
 
         return EventDto.builder()

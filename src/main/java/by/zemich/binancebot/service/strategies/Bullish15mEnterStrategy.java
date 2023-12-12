@@ -40,7 +40,7 @@ public class Bullish15mEnterStrategy extends TradeStrategy {
 
     @Override
     public IStrategy getAdditionalStrategy() {
-        return new NotOverBoughtAndPriceRisingAdditional1HStrategy();
+        return new NotOverBoughtAndGreenCandleAdditional1HStrategy();
     }
 
     @Override

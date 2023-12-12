@@ -71,8 +71,6 @@ public class BinanceTraderBotImpl implements ITraderBot {
         blackList.add("USDCUSDT");
         blackList.add("BTTCUSDT");
         blackList.add("PEPEUSDT");
-
-
     }
 
 
@@ -209,8 +207,13 @@ public class BinanceTraderBotImpl implements ITraderBot {
 
 
         // установка временных результатов
-        bargainService.setTemporaryResult();
+        bargainService.getAllByStatus(EBargainStatus.OPEN_SELL_ORDER_CREATED).ifPresent(
+                listOfBargainEntities -> listOfBargainEntities.stream()
+                        .filter(Objects::nonNull)
+                        .map(bargainEntity -> conversionService.convert(bargainEntity, BargainDto.class))
+                        .forEach(bargainService::updateResult));
 
+/*
         //проверка на слишком долгое время ожидание покупки актива
         bargainService.getAllByStatus(EBargainStatus.OPEN_BUY_ORDER_CREATED).orElseThrow()
                 .stream().map(bargainEntity -> conversionService.convert(bargainEntity, BargainDto.class))
@@ -228,26 +231,15 @@ public class BinanceTraderBotImpl implements ITraderBot {
                     }
 
                 });
+                */
 
-
-        //проверка на окончание сделки
-
-        //проверка на истёкший ордер
-//        bargainService.getAllWithExpiredBuyOrders().
-//
-//                ifPresent(bargainEntities ->
-//
-//                {
-//                    bargainEntities.forEach(bargainEntity -> {
-//                        BargainDto bargainDto = conversionService.convert(bargainEntity, BargainDto.class);
-//                        bargainService.endByReasonExpired(bargainDto);
-//                    });
-//
-//                });
     }
 
     private BargainDto createBargain(BargainCreateDto bargainCreateDto) {
         try {
+
+          if(bargainService.existsBySymbolAndStatusNotLike(bargainCreateDto.getSymbol().getSymbol(), EBargainStatus.FINISHED))
+                throw new RuntimeException("Active bargain with such asset already exists.");
 
             //TODO удалить для реального трейдинга (позволяет совершить ограниченное количество сделок)
             counter = counter - 1;
@@ -280,6 +272,8 @@ public class BinanceTraderBotImpl implements ITraderBot {
         }
 
     }
+
+
 
 
 }

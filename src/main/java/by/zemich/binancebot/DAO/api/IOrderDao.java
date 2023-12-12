@@ -18,6 +18,8 @@ public interface IOrderDao extends CrudRepository<OrderEntity, UUID> {
     Optional<List<OrderEntity>> findBySymbol(@Param("symbol") String symbol);
     Optional<OrderEntity> findBySymbolAndOrderId(String symbol,  Long orderId);
     Optional<OrderEntity> findByUuid(UUID uuid);
+
+
     Optional<List<OrderEntity>> findByStatus(@Param("status") EOrderStatus orderStatus);
 
     List<OrderEntity> findAll();

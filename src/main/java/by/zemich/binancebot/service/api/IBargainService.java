@@ -13,14 +13,16 @@ import java.util.UUID;
 public interface IBargainService {
     Optional<BargainEntity> save(BargainDto bargainDto);
     BargainDto addBuyOrder(BargainDto bargainDto, OrderDto buyOrder);
-    BargainDto addSellOrder(BargainDto bargainDto, OrderDto sellOrder);
+    boolean existsByStatusAndSymbol(EBargainStatus status, String symbol);
 
+    boolean existsBySymbolAndStatusNotLike(String symbol, EBargainStatus status);
+    BargainDto addSellOrder(BargainDto bargainDto, OrderDto sellOrder);
     BargainEntity cancelBuyOrderAndSetCancelStatusAndSave(BargainDto troubleBargain);
     BargainDto create(BargainCreateDto bargainCreateDto);
     Optional<BargainEntity> update(BargainDto bargainDto);
     Optional<BargainEntity> endByReasonExpired(BargainDto bargainDto);
     BargainEntity finalize(BargainDto bargainDto);
-    void setTemporaryResult();
+    BargainEntity updateResult(BargainDto bargainDto);
     Optional<List<BargainEntity>>  getAll();
     Optional<List<BargainEntity>> getAllWithFilledBuyOrders();
     Optional<List<BargainEntity>> getAllWithExpiredBuyOrders();

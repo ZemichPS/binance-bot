@@ -46,7 +46,7 @@ public class Bullish1HEnterStrategy extends TradeStrategy {
 
     @Override
     public IStrategy getAdditionalStrategy() {
-        return null;
+        return new NotOverBoughtAndGreenCandleAdditional4HStrategy();
     }
 
     @Override

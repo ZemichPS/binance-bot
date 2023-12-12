@@ -16,6 +16,8 @@ import java.util.UUID;
 @Repository
 public interface IBargainDao extends JpaRepository<BargainEntity, UUID>, PagingAndSortingRepository<BargainEntity, UUID> {
     List<BargainEntity> findAll();
+    boolean existsByStatusAndSymbol(EBargainStatus status, String symbol);
+    boolean existsBySymbolAndStatusNotLike(String symbol, EBargainStatus status);
 
     Optional<List<BargainEntity>> findAllByStatus(EBargainStatus status);
     Optional<List<BargainEntity>> findAllByCurrentPercentageResultGreaterThan(BigDecimal percentageResult);
