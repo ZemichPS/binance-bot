@@ -29,7 +29,7 @@ public class LowPriceUnderBblButBmmStillIsRising15MEnterStrategy extends TradeSt
 
     @Override
     public BigDecimal getInterest() {
-        return new BigDecimal("1.2");
+        return new BigDecimal("1.3");
     }
 
     @Override
