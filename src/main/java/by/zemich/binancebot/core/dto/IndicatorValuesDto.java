@@ -14,6 +14,8 @@ public class IndicatorValuesDto {
     private String adx20;
     private String adx14;
     private String cmf;
+    private String nvi;
+    private String ema;
 
     public String toString(){
         return MessageFormat.format("""
@@ -23,7 +25,9 @@ public class IndicatorValuesDto {
                 ADX(20): {3} 
                 ADX(14): {4} 
                 CMF(20): {5} 
-                """, emaSlope, bbw, rsi, adx20, adx14, cmf);
+                NVI(20): {6} 
+                EMA(20): {7} 
+                """, emaSlope, bbw, rsi, adx20, adx14, cmf, nvi, ema);
     }
 
 

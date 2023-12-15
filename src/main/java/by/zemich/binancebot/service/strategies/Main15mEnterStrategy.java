@@ -7,6 +7,7 @@ import org.ta4j.core.BarSeries;
 import org.ta4j.core.Rule;
 import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.RSIIndicator;
+import org.ta4j.core.indicators.SMAIndicator;
 import org.ta4j.core.indicators.adx.ADXIndicator;
 import org.ta4j.core.indicators.adx.MinusDIIndicator;
 import org.ta4j.core.indicators.adx.PlusDIIndicator;
@@ -17,6 +18,7 @@ import org.ta4j.core.indicators.helpers.LowPriceIndicator;
 import org.ta4j.core.indicators.helpers.OpenPriceIndicator;
 import org.ta4j.core.indicators.statistics.StandardDeviationIndicator;
 import org.ta4j.core.indicators.volume.ChaikinMoneyFlowIndicator;
+import org.ta4j.core.indicators.volume.NVIIndicator;
 import org.ta4j.core.indicators.volume.OnBalanceVolumeIndicator;
 import org.ta4j.core.rules.*;
 
@@ -34,7 +36,7 @@ public class Main15mEnterStrategy extends TradeStrategy {
 
     @Override
     public BigDecimal getInterest() {
-        return new BigDecimal("0.8");
+        return new BigDecimal("1.2");
     }
 
     @Override
@@ -44,8 +46,11 @@ public class Main15mEnterStrategy extends TradeStrategy {
 
     @Override
     public IStrategy getAdditionalStrategy() {
-        return new NotOverBoughtAndPriceRisingAdditional1HStrategy();
+        return null;
     }
+//    public IStrategy getAdditionalStrategy() {
+//        return new NotOverBoughtAndGreenCandleAdditional4HStrategy();
+//    }
 
     @Override
     protected Rule build(BarSeries series) {
@@ -55,11 +60,13 @@ public class Main15mEnterStrategy extends TradeStrategy {
         HighPriceIndicator highPriceIndicator = new HighPriceIndicator(series);
 
         EMAIndicator emaIndicator = new EMAIndicator(closePrice, 20);
+        SMAIndicator smaIndicator = new SMAIndicator(closePrice, 20);
+
         RSIIndicator rsiIndicator = new RSIIndicator(closePrice, 14);
 
         // Standard deviation
         StandardDeviationIndicator sd = new StandardDeviationIndicator(closePrice, 20);
-        BollingerBandsMiddleIndicator bbm = new BollingerBandsMiddleIndicator(emaIndicator);
+        BollingerBandsMiddleIndicator bbm = new BollingerBandsMiddleIndicator(smaIndicator);
         BollingerBandsLowerIndicator bbl = new BollingerBandsLowerIndicator(bbm, sd);
         BollingerBandsUpperIndicator bbu = new BollingerBandsUpperIndicator(bbm, sd);
         BollingerBandWidthIndicator bbw = new BollingerBandWidthIndicator(bbu, bbm, bbl);
@@ -71,13 +78,25 @@ public class Main15mEnterStrategy extends TradeStrategy {
         OnBalanceVolumeIndicator obv = new OnBalanceVolumeIndicator(series);
         ChaikinMoneyFlowIndicator chaikinMoneyFlowIndicator = new ChaikinMoneyFlowIndicator(series, 20);
 
+        NVIIndicator nviIndicator = new NVIIndicator(series);
+
         return new UnderIndicatorRule(openPriceIndicator, bbm)
                 .and(new OverIndicatorRule(closePrice, bbm))
+                // ширина канала Боллинджера
                 .and(new OverIndicatorRule(bbw, 3.5))
-                .and(new IsRisingRule(bbm, 14, 0.7))
+                // средняя (EMA) растёт
                 .and(new UnderIndicatorRule(rsiIndicator, 60))
-                .and(new OverIndicatorRule(rsiIndicator, 38))
-                .and(new NotRule(new OverIndicatorRule(highPriceIndicator, bbu)));
+                .and(new OverIndicatorRule(rsiIndicator, 45))
+                .and(new IsRisingRule(bbm, 14, 0.7))
+                //RSI rule
+                //  Negative Volume Index (NVI) indicator ниже EMA
+                // .and(new UnderIndicatorRule(emaIndicator, nviIndicator))
+                // Цена не достигала верхней границы Боллинджера
+                .and(new UnderIndicatorRule(closePrice, bbu))
+                .and(new UnderIndicatorRule(highPriceIndicator, bbu));
+
+
+        //  .and(new XorRule(new UnderIndicatorRule(highPriceIndicator, bbu), new UnderIndicatorRule(closePrice, bbu)));
 
 
     }

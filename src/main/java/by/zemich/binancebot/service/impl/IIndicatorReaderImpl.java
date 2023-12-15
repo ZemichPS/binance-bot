@@ -15,6 +15,7 @@ import org.ta4j.core.indicators.bollinger.BollingerBandsUpperIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.indicators.statistics.StandardDeviationIndicator;
 import org.ta4j.core.indicators.volume.ChaikinMoneyFlowIndicator;
+import org.ta4j.core.indicators.volume.NVIIndicator;
 import org.ta4j.core.num.Num;
 @Component
 public class IIndicatorReaderImpl implements IIndicatorReader {
@@ -38,15 +39,19 @@ public class IIndicatorReaderImpl implements IIndicatorReader {
         RSIIndicator rsiIndicator = new RSIIndicator(closePrice, 14);
 
         Double emaSlope = slopeValue(series.getEndIndex(), 14, emaIndicator);
+        NVIIndicator nviIndicator = new NVIIndicator(series);
 
+        int endSeriesIndex = series.getEndIndex();
 
         return IndicatorValuesDto.builder()
                 .emaSlope(emaSlope.toString())
-                .bbw(bbw.getValue(series.getEndIndex()).toString())
-                .rsi(rsiIndicator.getValue(series.getEndIndex()).toString())
-                .adx14(adx14Indicator.getValue(series.getEndIndex()).toString())
-                .adx20(adx20Indicator.getValue(series.getEndIndex()).toString())
-                .cmf(chaikinMoneyFlowIndicator.getValue(series.getEndIndex()).toString())
+                .bbw(bbw.getValue(endSeriesIndex).toString())
+                .rsi(rsiIndicator.getValue(endSeriesIndex).toString())
+                .adx14(adx14Indicator.getValue(endSeriesIndex).toString())
+                .adx20(adx20Indicator.getValue(endSeriesIndex).toString())
+                .cmf(chaikinMoneyFlowIndicator.getValue(endSeriesIndex).toString())
+                .nvi(nviIndicator.getValue(endSeriesIndex).toString())
+                .ema(emaIndicator.getValue(endSeriesIndex).toString())
                 .build();
     }
 

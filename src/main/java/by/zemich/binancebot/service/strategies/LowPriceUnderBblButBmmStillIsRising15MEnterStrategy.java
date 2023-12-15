@@ -20,7 +20,7 @@ import java.math.BigDecimal;
 
 
 @Component
-public class LowPriceUnderBblButBmmStillIsRising30MEnterStrategy extends TradeStrategy {
+public class LowPriceUnderBblButBmmStillIsRising15MEnterStrategy extends TradeStrategy {
 
     @Override
     public String getName() {
@@ -29,12 +29,12 @@ public class LowPriceUnderBblButBmmStillIsRising30MEnterStrategy extends TradeSt
 
     @Override
     public BigDecimal getInterest() {
-        return new BigDecimal("1");
+        return new BigDecimal("1.2");
     }
 
     @Override
     public EInterval getInterval() {
-            return EInterval.M30;
+            return EInterval.M15;
     }
 
     @Override
@@ -64,10 +64,12 @@ public class LowPriceUnderBblButBmmStillIsRising30MEnterStrategy extends TradeSt
         BollingerBandWidthIndicator bbw = new BollingerBandWidthIndicator(bbu, bbm, bbl);
         ChaikinMoneyFlowIndicator chaikinMoneyFlowIndicator = new ChaikinMoneyFlowIndicator(series, 20);
 
-        return new UnderIndicatorRule(closePrice, bbl)
+        return new UnderIndicatorRule(lowPriceIndicator, bbl)
+                .and(new OverIndicatorRule(openPriceIndicator, bbl))
+                .and(new OverIndicatorRule(closePrice, bbl))
                 .and(new OverIndicatorRule(rsiIndicator, 40))
-                .and(new IsRisingRule(bbm, 14, 0.6))
-                .and(new OverIndicatorRule(bbw, 3));
+                .and(new IsRisingRule(bbm, 14, 0.8))
+                .and(new OverIndicatorRule(bbw, 4));
 
 
     }

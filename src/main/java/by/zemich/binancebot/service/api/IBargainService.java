@@ -13,11 +13,10 @@ import java.util.UUID;
 public interface IBargainService {
     Optional<BargainEntity> save(BargainDto bargainDto);
     BargainDto addBuyOrder(BargainDto bargainDto, OrderDto buyOrder);
-    boolean existsByStatusAndSymbol(EBargainStatus status, String symbol);
-
-    boolean existsBySymbolAndStatusNotLike(String symbol, EBargainStatus status);
     BargainDto addSellOrder(BargainDto bargainDto, OrderDto sellOrder);
-    BargainEntity cancelBuyOrderAndSetCancelStatusAndSave(BargainDto troubleBargain);
+    boolean existsByStatusAndSymbol(EBargainStatus status, String symbol);
+    boolean existsBySymbolAndStatusNotLike(String symbol, EBargainStatus status);
+
     BargainDto create(BargainCreateDto bargainCreateDto);
     Optional<BargainEntity> update(BargainDto bargainDto);
     Optional<BargainEntity> endByReasonExpired(BargainDto bargainDto);

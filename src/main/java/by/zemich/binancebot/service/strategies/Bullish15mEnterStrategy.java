@@ -7,6 +7,7 @@ import org.ta4j.core.BarSeries;
 import org.ta4j.core.Rule;
 import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.RSIIndicator;
+import org.ta4j.core.indicators.SMAIndicator;
 import org.ta4j.core.indicators.adx.ADXIndicator;
 import org.ta4j.core.indicators.bollinger.*;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
@@ -19,7 +20,7 @@ import org.ta4j.core.rules.*;
 
 import java.math.BigDecimal;
 
-@Component
+//@Component
 public class Bullish15mEnterStrategy extends TradeStrategy {
     private final String name = "BULLISH_15M_RULE";
 
@@ -30,7 +31,7 @@ public class Bullish15mEnterStrategy extends TradeStrategy {
 
     @Override
     public BigDecimal getInterest() {
-        return new BigDecimal("0.9");
+        return new BigDecimal("0.5`");
     }
 
     @Override
@@ -40,7 +41,7 @@ public class Bullish15mEnterStrategy extends TradeStrategy {
 
     @Override
     public IStrategy getAdditionalStrategy() {
-        return new NotOverBoughtAndGreenCandleAdditional1HStrategy();
+        return null;
     }
 
     @Override
@@ -51,11 +52,12 @@ public class Bullish15mEnterStrategy extends TradeStrategy {
         HighPriceIndicator highPriceIndicator = new HighPriceIndicator(series);
 
         EMAIndicator emaIndicator = new EMAIndicator(closePrice, 20);
+        SMAIndicator smaIndicator = new SMAIndicator(closePrice, 20);
         RSIIndicator rsiIndicator = new RSIIndicator(closePrice, 14);
 
         // Standard deviation
         StandardDeviationIndicator sd = new StandardDeviationIndicator(closePrice, 20);
-        BollingerBandsMiddleIndicator bbm = new BollingerBandsMiddleIndicator(emaIndicator);
+        BollingerBandsMiddleIndicator bbm = new BollingerBandsMiddleIndicator(smaIndicator);
         BollingerBandsLowerIndicator bbl = new BollingerBandsLowerIndicator(bbm, sd);
         BollingerBandsUpperIndicator bbu = new BollingerBandsUpperIndicator(bbm, sd);
         BollingerBandWidthIndicator bbw = new BollingerBandWidthIndicator(bbu, bbm, bbl);
@@ -64,15 +66,14 @@ public class Bullish15mEnterStrategy extends TradeStrategy {
         ChaikinMoneyFlowIndicator chaikinMoneyFlowIndicator = new ChaikinMoneyFlowIndicator(series, 20);
 
         return new UnderIndicatorRule(lowPriceIndicator, bbm)
-                .and(new OverIndicatorRule(openPriceIndicator, bbm))
+                .and(new OverIndicatorRule(closePrice, bbm))
                 .and(new OverIndicatorRule(closePrice, openPriceIndicator))
                 .and(new OverIndicatorRule(bbw, 4.2))
-                .and(new UnderIndicatorRule(bbw, 12))
-                .and(new IsRisingRule(bbm, 14, 0.8))
-                .and(new UnderIndicatorRule(rsiIndicator, 65))
+                .and(new IsRisingRule(bbm, 14, 0.7))
+                .and(new UnderIndicatorRule(rsiIndicator, 60))
                 .and(new OverIndicatorRule(rsiIndicator, 38))
 
-                .and(new NotRule(new OverIndicatorRule(highPriceIndicator, bbu)));
+                .and(new UnderIndicatorRule(highPriceIndicator, bbu));
 
 
 

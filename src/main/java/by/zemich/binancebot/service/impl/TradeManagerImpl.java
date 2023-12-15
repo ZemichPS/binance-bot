@@ -1,5 +1,6 @@
 package by.zemich.binancebot.service.impl;
 
+import by.zemich.binancebot.DAO.entity.BargainEntity;
 import by.zemich.binancebot.DAO.entity.OrderEntity;
 import by.zemich.binancebot.config.properties.RealTradeProperties;
 import by.zemich.binancebot.core.dto.*;
@@ -24,17 +25,19 @@ public class TradeManagerImpl implements ITradeManager {
     private final RealTradeProperties tradeProperties;
     private final ConversionService conversionService;
     private final IAssetService assetService;
+    private final IBargainService bargainService;
 
     public TradeManagerImpl(IStockMarketService stockMarketService,
                             IOrderService orderService,
                             RealTradeProperties tradeProperties,
                             ConversionService conversionService,
-                            IAssetService assetService) {
+                            IAssetService assetService, IBargainService bargainService) {
         this.stockMarketService = stockMarketService;
         this.orderService = orderService;
         this.tradeProperties = tradeProperties;
         this.conversionService = conversionService;
         this.assetService = assetService;
+        this.bargainService = bargainService;
     }
 
 
@@ -123,6 +126,27 @@ public class TradeManagerImpl implements ITradeManager {
     }
 
     @Override
+    public OrderDto createSellOrderByAscPrice(OrderDto orderDtoToSell) {
+
+        String assetSymbol = orderDtoToSell.getSymbol();
+        BigDecimal ascPrice =  stockMarketService.getAskPriceForAsset(assetSymbol);
+        BigDecimal currentQuantity = orderDtoToSell.getOrigQty();
+
+        RequestForNewOrderDto requestForNewSellOrder = RequestForNewOrderDto.builder()
+                .symbol(assetSymbol)
+                .price(ascPrice)
+                .side(ESide.SELL)
+                .type(EOrderType.MARKET)
+                .quantity(currentQuantity)
+                .timeInForce(ETimeInForce.GTC)
+                .newOrderRespType(ENewOrderRespType.FULL)
+                .build();
+
+        OrderDto newCreatedOrder = stockMarketService.createOrder(requestForNewSellOrder);
+        return saveOrder(newCreatedOrder);
+    }
+
+    @Override
     public OrderDto createStopLimitOrder(Long orderId) {
 
         OrderDto buyOrderDto = getOrderById(orderId);
@@ -147,11 +171,10 @@ public class TradeManagerImpl implements ITradeManager {
     }
 
     @Override
-    public OrderDto cancelOrder(UUID orderUuid) {
-        OrderDto orderToCancel = getOrderByUuid(orderUuid);
+    public OrderDto cancelOrder(OrderDto troubleOrder) {
         CancelOrderRequestDto cancelOrderRequestDto = CancelOrderRequestDto.builder()
-                .symbol(orderToCancel.getSymbol())
-                .orderId(orderToCancel.getOrderId())
+                .symbol(troubleOrder.getSymbol())
+                .orderId(troubleOrder.getOrderId())
                 .build();
 
         CancelOrderResponseDto cancelOrderResponseDto = stockMarketService.cancelOrder(cancelOrderRequestDto);
@@ -161,6 +184,25 @@ public class TradeManagerImpl implements ITradeManager {
         OrderDto canceledAndSavedOrderDto = saveOrder(canceledOrder);
 
         return canceledAndSavedOrderDto;
+    }
+
+    @Override
+    public BargainDto completeBargainInTheRed(BargainDto bargainToCancel) {
+        cancelOrder(bargainToCancel.getSellOrder());
+        OrderDto createdSellOrder = createSellOrderByAscPrice(bargainToCancel.getSellOrder());
+        bargainToCancel.setSellOrder(createdSellOrder);
+        bargainToCancel.setStatus(EBargainStatus.CANCELED_IN_THE_RED);
+        return conversionService.convert(bargainService.update(bargainToCancel).orElseThrow(), BargainDto.class);
+    }
+
+    @Override
+    public BargainDto completeBargainByReasonTimeoutBuyOrder(BargainDto troubleBargain) {
+
+        OrderDto canceledOrder = cancelOrder(troubleBargain.getBuyOrder());
+        troubleBargain.setBuyOrder(canceledOrder);
+        troubleBargain.setStatus(EBargainStatus.CANCELED);
+        BargainEntity completedBargain = bargainService.update(troubleBargain).orElseThrow();
+        return conversionService.convert(completedBargain, BargainDto.class);
     }
 
     private OrderDto getOrderById(Long orderId) {

@@ -3,7 +3,6 @@ package by.zemich.binancebot.service.impl;
 import by.zemich.binancebot.DAO.api.IBargainDao;
 import by.zemich.binancebot.DAO.entity.BargainEntity;
 import by.zemich.binancebot.DAO.entity.OrderEntity;
-import by.zemich.binancebot.config.properties.RealTradeProperties;
 import by.zemich.binancebot.core.dto.BargainCreateDto;
 import by.zemich.binancebot.core.dto.BargainDto;
 import by.zemich.binancebot.core.dto.OrderDto;
@@ -13,7 +12,6 @@ import by.zemich.binancebot.core.exeption.BadOrderStatusException;
 import by.zemich.binancebot.service.api.IBargainService;
 import by.zemich.binancebot.service.api.IOrderService;
 import by.zemich.binancebot.service.api.IStockMarketService;
-import by.zemich.binancebot.service.api.ITradeManager;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Service;
@@ -36,17 +34,13 @@ public class BargainServiceImpl implements IBargainService {
     private final ConversionService conversionService;
     private final IOrderService orderService;
     private final IStockMarketService stockMarketService;
-    private final RealTradeProperties tradeProperties;
-    private final ITradeManager tradeManager;
 
 
-    public BargainServiceImpl(IBargainDao bargainDao, ConversionService conversionService, IOrderService orderService, IStockMarketService stockMarketService, RealTradeProperties tradeProperties, ITradeManager tradeManager) {
+    public BargainServiceImpl(IBargainDao bargainDao, ConversionService conversionService, IOrderService orderService, IStockMarketService stockMarketService) {
         this.bargainDao = bargainDao;
         this.conversionService = conversionService;
         this.orderService = orderService;
         this.stockMarketService = stockMarketService;
-        this.tradeProperties = tradeProperties;
-        this.tradeManager = tradeManager;
     }
 
     @Override
@@ -82,13 +76,7 @@ public class BargainServiceImpl implements IBargainService {
         return bargainDto;
     }
 
-    @Override
-    public BargainEntity cancelBuyOrderAndSetCancelStatusAndSave(BargainDto troubleBargain) {
-        tradeManager.cancelOrder(troubleBargain.getBuyOrder().getUuid());
-        troubleBargain.setStatus(EBargainStatus.CANCELED);
-        BargainEntity bargainToCancel = conversionService.convert(troubleBargain, BargainEntity.class);
-        return bargainDao.save(bargainToCancel);
-    }
+
 
     @Override
     public BargainDto create(BargainCreateDto bargainCreateDto) {

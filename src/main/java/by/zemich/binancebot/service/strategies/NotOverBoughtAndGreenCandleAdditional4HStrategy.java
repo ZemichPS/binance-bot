@@ -24,7 +24,7 @@ import java.math.BigDecimal;
 public class NotOverBoughtAndGreenCandleAdditional4HStrategy extends TradeStrategy {
     @Override
     public String getName() {
-        return "NOT_OVER_BOUGHT_AND_GREEN_CANDLE_STRATEGY";
+        return "GREEN_CANDLE_ADDITIONAL_STRATEGY";
     }
 
     @Override
@@ -63,9 +63,8 @@ public class NotOverBoughtAndGreenCandleAdditional4HStrategy extends TradeStrate
         OnBalanceVolumeIndicator obv = new OnBalanceVolumeIndicator(series);
 
         return new UnderIndicatorRule(rsiIndicator, 60)
-                .and(new OverIndicatorRule(rsiIndicator, 38))
-                .and(new OverIndicatorRule(closePrice, openPriceIndicator))
-                .and(new UnderIndicatorRule(highPriceIndicator, bbu));
+                .and(new OverIndicatorRule(rsiIndicator, 38));
+            //    .and(new OverIndicatorRule(closePrice, openPriceIndicator));
 
     }
 }

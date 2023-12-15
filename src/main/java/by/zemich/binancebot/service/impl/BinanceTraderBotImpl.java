@@ -41,7 +41,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
     private final List<String> blackList = new ArrayList<>();
 
     // TODO удалить (счётчик разрешённых покупок актива)
-    private Integer counter = 1244545;
+    private Integer counter = 321_456_465;
     private boolean accountHasInsufficientBalance = true;
 
 
@@ -88,6 +88,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
 
         //TODO удалить для реального трейдинга (позволяет совершить ограниченное количество сделок)
         if (counter <= 0) return;
+
         if (!accountHasInsufficientBalance) return;
 
         strategyMap.values().stream()
@@ -113,13 +114,13 @@ public class BinanceTraderBotImpl implements ITraderBot {
                                                 .filter(strategy -> strategy.getInterval().toString().equals(stringInterval))
                                                 .forEach(strategy -> {
                                                     if (strategy.getEnterRule(series).isSatisfied(series.getEndIndex())) {
+                                                        log.info(indicatorReader.getValues(series));
 
                                                         //TODO удалить для реального трейдинга (позволяет совершить ограниченное количество сделок)
                                                         if (counter <= 0) return;
 
-                                                        log.info(indicatorReader.getValues(series));
 
-                                                        if (Objects.nonNull(strategy.getAdditionalStrategy())) {
+                                                      if (Objects.nonNull(strategy.getAdditionalStrategy())) {
 
                                                             IStrategy additionalStrategy = strategy.getAdditionalStrategy();
                                                             EInterval intervalForAdditionalStrategy = additionalStrategy.getInterval();
@@ -137,7 +138,8 @@ public class BinanceTraderBotImpl implements ITraderBot {
                                                             Rule additionalRule = additionalStrategy.getEnterRule(additionalSeries);
                                                             if (!additionalRule.isSatisfied(additionalSeries.getEndIndex()))
                                                                 return;
-                                                        }
+
+                                                            }
 
                                                         //         IndicatorValuesDto indicatorValues = indicatorReader.getValues(series);
 
@@ -146,8 +148,15 @@ public class BinanceTraderBotImpl implements ITraderBot {
                                                                 .symbol(symbol)
                                                                 .percentageAim(strategy.getInterest())
                                                                 .build();
+                                                        BargainDto createdBargain = null;
 
-                                                        BargainDto createdBargain = createBargain(bargainCreateDto);
+                                                        try {
+
+                                                            createdBargain = createBargain(bargainCreateDto);
+                                                        } catch (Exception exception) {
+                                                            log.error(exception);
+                                                            log.info(strategy.getName());
+                                                        }
 
                                                         if (Objects.nonNull(createdBargain)) {
                                                             EventDto eventDto = eventManager.get(EEventType.BARGAIN_WAS_CREATED, createdBargain);
@@ -213,7 +222,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
                         .map(bargainEntity -> conversionService.convert(bargainEntity, BargainDto.class))
                         .forEach(bargainService::updateResult));
 
-/*
+
         //проверка на слишком долгое время ожидание покупки актива
         bargainService.getAllByStatus(EBargainStatus.OPEN_BUY_ORDER_CREATED).orElseThrow()
                 .stream().map(bargainEntity -> conversionService.convert(bargainEntity, BargainDto.class))
@@ -224,14 +233,14 @@ public class BinanceTraderBotImpl implements ITraderBot {
                     long criticalTime = tradeProperties.getCriticalLostTimeForBuying();
 
                     if (duration > criticalTime) {
-                        BargainEntity canceledBargainEntity = bargainService.cancelBuyOrderAndSetCancelStatusAndSave(bargainDto);
-                        BargainDto canceledBargainDto = conversionService.convert(canceledBargainEntity, BargainDto.class);
+                        BargainDto canceledBargainDto = tradeManager.completeBargainByReasonTimeoutBuyOrder(bargainDto);
                         EventDto eventDto = eventManager.get(EEventType.BARGAIN_WAS_CANCELED, canceledBargainDto);
                         notifier.notify(eventDto);
+                        accountHasInsufficientBalance = true;
                     }
 
                 });
-                */
+
 
     }
 
@@ -239,7 +248,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
         try {
 
           if(bargainService.existsBySymbolAndStatusNotLike(bargainCreateDto.getSymbol().getSymbol(), EBargainStatus.FINISHED))
-                throw new RuntimeException("Active bargain with such asset already exists.");
+                throw new RuntimeException("Bargain with such asset already exists and active.");
 
             //TODO удалить для реального трейдинга (позволяет совершить ограниченное количество сделок)
             counter = counter - 1;

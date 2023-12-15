@@ -8,6 +8,7 @@ public enum EBargainStatus {
     OPEN_SELL_ORDER_FILLED,
     BUY_ORDER_WAS_EXPIRED,
     CANCELED,
+    CANCELED_IN_THE_RED,
     FINISHED;
 
 }
