@@ -31,7 +31,7 @@ public class Bullish15mEnterStrategy extends TradeStrategy {
 
     @Override
     public BigDecimal getInterest() {
-        return new BigDecimal("0.5`");
+        return new BigDecimal("1");
     }
 
     @Override
@@ -70,6 +70,7 @@ public class Bullish15mEnterStrategy extends TradeStrategy {
                 .and(new OverIndicatorRule(closePrice, openPriceIndicator))
                 .and(new OverIndicatorRule(bbw, 4.2))
                 .and(new IsRisingRule(bbm, 14, 0.7))
+                .and(new IsRisingRule(bbu, 4, 0.6))
                 .and(new UnderIndicatorRule(rsiIndicator, 60))
                 .and(new OverIndicatorRule(rsiIndicator, 38))
 

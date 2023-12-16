@@ -7,24 +7,29 @@ import org.ta4j.core.BarSeries;
 import org.ta4j.core.Rule;
 import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.RSIIndicator;
-import org.ta4j.core.indicators.bollinger.*;
+import org.ta4j.core.indicators.bollinger.BollingerBandWidthIndicator;
+import org.ta4j.core.indicators.bollinger.BollingerBandsLowerIndicator;
+import org.ta4j.core.indicators.bollinger.BollingerBandsMiddleIndicator;
+import org.ta4j.core.indicators.bollinger.BollingerBandsUpperIndicator;
 import org.ta4j.core.indicators.helpers.ClosePriceIndicator;
 import org.ta4j.core.indicators.helpers.HighPriceIndicator;
 import org.ta4j.core.indicators.helpers.LowPriceIndicator;
 import org.ta4j.core.indicators.helpers.OpenPriceIndicator;
 import org.ta4j.core.indicators.statistics.StandardDeviationIndicator;
 import org.ta4j.core.indicators.volume.ChaikinMoneyFlowIndicator;
-import org.ta4j.core.rules.*;
+import org.ta4j.core.rules.IsRisingRule;
+import org.ta4j.core.rules.OverIndicatorRule;
+import org.ta4j.core.rules.UnderIndicatorRule;
 
 import java.math.BigDecimal;
 
 
 //@Component
-public class LowPriceUnderBblButBmmStillIsRising15MEnterStrategy extends TradeStrategy {
+public class GreenCandleUnderBblButBmmStillIsRising15MEnterStrategy extends TradeStrategy {
 
     @Override
     public String getName() {
-        return "CLOSE_PRICE_UNDER_BBL_RULE_NOT_LOW_RSI";
+        return "GREEN_CANDLE_UNDER_BBL_5M_RULE_NOT_LOW_RSI";
     }
 
     @Override
@@ -64,11 +69,11 @@ public class LowPriceUnderBblButBmmStillIsRising15MEnterStrategy extends TradeSt
         BollingerBandWidthIndicator bbw = new BollingerBandWidthIndicator(bbu, bbm, bbl);
         ChaikinMoneyFlowIndicator chaikinMoneyFlowIndicator = new ChaikinMoneyFlowIndicator(series, 20);
 
-        return new UnderIndicatorRule(lowPriceIndicator, bbl)
-                .and(new OverIndicatorRule(openPriceIndicator, bbl))
+        return new UnderIndicatorRule(openPriceIndicator, bbm)
+                .and(new UnderIndicatorRule(closePrice, bbm))
                 .and(new OverIndicatorRule(closePrice, openPriceIndicator))
                 .and(new OverIndicatorRule(rsiIndicator, 40))
-                .and(new IsRisingRule(bbm, 14, 0.5))
+                .and(new IsRisingRule(bbm, 14, 0.7))
                 .and(new OverIndicatorRule(bbw, 4));
 
 
