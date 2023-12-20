@@ -118,7 +118,7 @@ public class TestBinanceTraderBotImpl implements ITraderBot {
                                                 .filter(iStrategy -> iStrategy.getInterval().toString().equals(stringInterval))
                                                 .forEach(iStrategy -> {
                                                     if (iStrategy.getEnterRule(series).isSatisfied(series.getEndIndex())) {
-
+/*
                                                         if (Objects.nonNull(iStrategy.getAdditionalStrategy())) {
 
                                                             IStrategy additionalStrategy = iStrategy.getAdditionalStrategy();
@@ -134,7 +134,7 @@ public class TestBinanceTraderBotImpl implements ITraderBot {
                                                             if (!additionalRule.isSatisfied(additionalSeries.getEndIndex()))
                                                                 return;
                                                         }
-
+*/
                                                         IndicatorValuesDto indicatorValues = indicatorReader.getValues(series);
                                                         FakeBargainEntity createdFakeBargain = createFakeBargain(symbol, iStrategy.getName(), indicatorValues);
                                                         notifyToTelegram(createdFakeBargain, EEventType.ASSET_WAS_BOUGHT);

@@ -1,4 +1,4 @@
-package by.zemich.binancebot.service.strategies;
+package by.zemich.binancebot.strategies;
 
 import by.zemich.binancebot.service.api.IStrategy;
 import org.ta4j.core.BarSeries;

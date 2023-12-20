@@ -16,6 +16,10 @@ public class EventDto {
         return MessageFormat.format("""
                 Event: {0},
                 Message: {1}
-                """, eventType.toString(), text).toString();
+                """, prepareEventTypeToText(eventType), text).toString();
+    }
+
+    private String prepareEventTypeToText(EEventType eventType){
+        return eventType.toString().replace("_"," ");
     }
 }

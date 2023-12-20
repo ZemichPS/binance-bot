@@ -57,7 +57,7 @@ public class TradeManagerImpl implements ITradeManager {
                 .build();
 
         OrderDto newCreatedOrder = stockMarketService.createOrder(newOrderRequest);
-        saveOrder(newCreatedOrder);
+        saveAndConvertOrderToDto(newCreatedOrder);
 
         return newCreatedOrder;
     }
@@ -86,7 +86,7 @@ public class TradeManagerImpl implements ITradeManager {
         OrderDto newCreatedOrder = stockMarketService.createOrder(requestForNewOrderDto);
 
 
-        return saveOrder(newCreatedOrder);
+        return saveAndConvertOrderToDto(newCreatedOrder);
     }
 
     @Override
@@ -95,7 +95,7 @@ public class TradeManagerImpl implements ITradeManager {
         OrderDto filledBuyOrder = getOrderByUuid(buyOrderUuid);
         String assetSymbol = filledBuyOrder.getSymbol();
 
-        Asset assetForTrading =  assetService.getBySymbol(assetSymbol);
+        Asset assetForTrading = assetService.getBySymbol(assetSymbol);
 
         PriceFilter priceFilter = assetForTrading.getPriceFilter();
         LotSizeFilter lotSizeFilter = assetForTrading.getLotSizeFilter();
@@ -122,19 +122,37 @@ public class TradeManagerImpl implements ITradeManager {
                 .build();
 
         OrderDto newCreatedOrder = stockMarketService.createOrder(requestForNewSellOrder);
-        return saveOrder(newCreatedOrder);
+        return saveAndConvertOrderToDto(newCreatedOrder);
     }
 
     @Override
     public OrderDto createSellOrderByAscPrice(OrderDto orderDtoToSell) {
 
         String assetSymbol = orderDtoToSell.getSymbol();
-        BigDecimal ascPrice =  stockMarketService.getAskPriceForAsset(assetSymbol);
+        BigDecimal ascPrice = stockMarketService.getAskPriceForAsset(assetSymbol);
         BigDecimal currentQuantity = orderDtoToSell.getOrigQty();
 
         RequestForNewOrderDto requestForNewSellOrder = RequestForNewOrderDto.builder()
                 .symbol(assetSymbol)
                 .price(ascPrice)
+                .side(ESide.SELL)
+                .type(EOrderType.LIMIT)
+                .quantity(currentQuantity)
+                .timeInForce(ETimeInForce.GTC)
+                .newOrderRespType(ENewOrderRespType.FULL)
+                .build();
+
+        OrderDto newCreatedOrder = stockMarketService.createOrder(requestForNewSellOrder);
+        return saveAndConvertOrderToDto(newCreatedOrder);
+    }
+
+    @Override
+    public OrderDto createSellOrderByMarketPrice(OrderDto orderDtoToSell) {
+        String assetSymbol = orderDtoToSell.getSymbol();
+        BigDecimal currentQuantity = orderDtoToSell.getOrigQty();
+
+        RequestForNewOrderDto requestForNewSellOrder = RequestForNewOrderDto.builder()
+                .symbol(assetSymbol)
                 .side(ESide.SELL)
                 .type(EOrderType.MARKET)
                 .quantity(currentQuantity)
@@ -143,7 +161,7 @@ public class TradeManagerImpl implements ITradeManager {
                 .build();
 
         OrderDto newCreatedOrder = stockMarketService.createOrder(requestForNewSellOrder);
-        return saveOrder(newCreatedOrder);
+        return saveAndConvertOrderToDto(newCreatedOrder);
     }
 
     @Override
@@ -167,7 +185,7 @@ public class TradeManagerImpl implements ITradeManager {
 
         OrderDto newCreatedOrder = stockMarketService.createOrder(requestForCreateStopLimitOrder);
 
-        return saveOrder(newCreatedOrder);
+        return saveAndConvertOrderToDto(newCreatedOrder);
     }
 
     @Override
@@ -181,18 +199,19 @@ public class TradeManagerImpl implements ITradeManager {
         OrderDto canceledOrder = getOrderById(cancelOrderResponseDto.getOrderId());
         canceledOrder.setStatus(EOrderStatus.CANCELED);
 
-        OrderDto canceledAndSavedOrderDto = saveOrder(canceledOrder);
+        OrderDto canceledAndSavedOrderDto = saveAndConvertOrderToDto(canceledOrder);
 
         return canceledAndSavedOrderDto;
     }
 
     @Override
     public BargainDto completeBargainInTheRed(BargainDto bargainToCancel) {
-        cancelOrder(bargainToCancel.getSellOrder());
-        OrderDto createdSellOrder = createSellOrderByAscPrice(bargainToCancel.getSellOrder());
+        OrderDto canceledOrder = cancelOrder(bargainToCancel.getSellOrder());
+        OrderDto createdSellOrder = createSellOrderByAscPrice(canceledOrder);
         bargainToCancel.setSellOrder(createdSellOrder);
         bargainToCancel.setStatus(EBargainStatus.CANCELED_IN_THE_RED);
-        return conversionService.convert(bargainService.update(bargainToCancel).orElseThrow(), BargainDto.class);
+        BargainEntity updatedBargain = bargainService.update(bargainToCancel).orElseThrow();
+        return conversionService.convert(updatedBargain, BargainDto.class);
     }
 
     @Override
@@ -219,7 +238,7 @@ public class TradeManagerImpl implements ITradeManager {
         return value.multiply(percent).divide(new BigDecimal(100), RoundingMode.DOWN);
     }
 
-      private BigDecimal getAssetQuantityUsingStepSize(BigDecimal quantity, BigDecimal stepSize) {
+    private BigDecimal getAssetQuantityUsingStepSize(BigDecimal quantity, BigDecimal stepSize) {
         BigDecimal rest = quantity.remainder(stepSize);
         return quantity.subtract(rest);
     }
@@ -229,7 +248,7 @@ public class TradeManagerImpl implements ITradeManager {
         return price.subtract(rest);
     }
 
-    private OrderDto saveOrder(OrderDto newOrder) {
+    private OrderDto saveAndConvertOrderToDto(OrderDto newOrder) {
         OrderEntity savedNewOrderEntity = orderService.save(newOrder).orElseThrow(RuntimeException::new);
         return conversionService.convert(savedNewOrderEntity, OrderDto.class);
     }

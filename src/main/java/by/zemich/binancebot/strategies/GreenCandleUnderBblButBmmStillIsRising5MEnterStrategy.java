@@ -1,4 +1,4 @@
-package by.zemich.binancebot.service.strategies;
+package by.zemich.binancebot.strategies;
 
 import by.zemich.binancebot.core.enums.EInterval;
 import by.zemich.binancebot.service.api.IStrategy;
@@ -22,9 +22,10 @@ import org.ta4j.core.rules.OverIndicatorRule;
 import org.ta4j.core.rules.UnderIndicatorRule;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 
-@Component
+//@Component
 public class GreenCandleUnderBblButBmmStillIsRising5MEnterStrategy extends TradeStrategy {
 
     @Override
@@ -43,7 +44,7 @@ public class GreenCandleUnderBblButBmmStillIsRising5MEnterStrategy extends Trade
     }
 
     @Override
-    public IStrategy getAdditionalStrategy() {
+    public List<IStrategy> getAdditionalStrategy() {
         return null;
     }
 

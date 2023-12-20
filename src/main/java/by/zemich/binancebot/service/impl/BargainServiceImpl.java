@@ -111,7 +111,7 @@ public class BargainServiceImpl implements IBargainService {
     }
 
     @Override
-    public BargainEntity finalize(BargainDto bargainDto) {
+    public BargainEntity finalize(BargainDto bargainDto, EBargainStatus status) {
 
         // тут всякие расчёты и просчёты
 
@@ -134,7 +134,7 @@ public class BargainServiceImpl implements IBargainService {
         bargainDto.setTimeInWork(timeInWork.toMinutes());
         bargainDto.setPercentageResult(percentageResult);
         bargainDto.setFinanceResult(financeResult);
-        bargainDto.setStatus(EBargainStatus.FINISHED);
+        bargainDto.setStatus(status);
 
         BargainEntity bargainEntity = conversionService.convert(bargainDto, BargainEntity.class);
         return bargainDao.save(bargainEntity);
@@ -256,7 +256,7 @@ public class BargainServiceImpl implements IBargainService {
         BigDecimal percentageResult = getPercentDifference(buyPrice, currentPrice);
 
         bargainDto.setFinanceResult(financeResult);
-        bargainDto.setCurrentPercentageResult(percentageResult);
+        bargainDto.setPercentageResult(percentageResult);
         bargainDto.setTimeInWork(timeInWork.toMinutes());
 
         BargainEntity bargainEntity = conversionService.convert(bargainDto, BargainEntity.class);

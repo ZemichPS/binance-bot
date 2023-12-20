@@ -12,7 +12,7 @@ public interface ITradeManager {
     OrderDto createBuyLimitOrderByCurrentPrice(Asset symbol);
     OrderDto createSellLimitOrder(UUID buyOrderUuid, BigDecimal percentageAim);
     OrderDto createSellOrderByAscPrice(OrderDto orderDtoToSell);
-
+    OrderDto createSellOrderByMarketPrice(OrderDto orderDtoToSell);
     OrderDto createStopLimitOrder(Long buyOrderId);
     OrderDto cancelOrder(OrderDto troubleOrder);
     BargainDto completeBargainInTheRed(BargainDto bargainToCancel);

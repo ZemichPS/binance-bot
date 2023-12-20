@@ -26,8 +26,6 @@ public class BargainDto {
     private Timestamp finishTime;
     private EBargainStatus status;
     private String symbol;
-    private BigDecimal currentFinanceResult;
-    private BigDecimal currentPercentageResult;
     private BigDecimal interest;
     private OrderDto buyOrder;
     private OrderDto sellOrder;

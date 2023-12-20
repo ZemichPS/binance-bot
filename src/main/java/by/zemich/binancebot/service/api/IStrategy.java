@@ -6,6 +6,7 @@ import org.ta4j.core.BarSeries;
 import org.ta4j.core.Rule;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 public interface IStrategy {
     Rule getEnterRule(BarSeries series);
@@ -15,7 +16,7 @@ public interface IStrategy {
 
     EInterval getInterval();
 
-    IStrategy getAdditionalStrategy();
+    List<IStrategy> getAdditionalStrategy();
 
     @Autowired
     default void regMe(ITraderBot traderBot){

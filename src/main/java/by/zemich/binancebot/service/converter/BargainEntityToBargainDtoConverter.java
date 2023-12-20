@@ -26,8 +26,7 @@ public class BargainEntityToBargainDtoConverter implements Converter<BargainEnti
         bargainDto.setStatus(source.getStatus());
         bargainDto.setSymbol(source.getSymbol());
         bargainDto.setInterest(source.getInterest());
-        bargainDto.setCurrentFinanceResult(source.getCurrentFinanceResult());
-        bargainDto.setCurrentPercentageResult(source.getCurrentPercentageResult());
+
 
         if(Objects.nonNull(source.getBuyOrder())) {
             OrderDto buyOrderDto = new OrderDto();

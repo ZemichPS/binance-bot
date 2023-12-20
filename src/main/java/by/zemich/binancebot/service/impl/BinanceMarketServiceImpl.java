@@ -64,12 +64,12 @@ public class BinanceMarketServiceImpl implements IStockMarketService {
 
     @Override
     public BigDecimal getAskPriceForAsset(String assetSymbol) {
-        return getAskPriceForAsset(assetSymbol);
+        return getAssetTicker(assetSymbol).getAskPrice();
     }
 
     @Override
     public BigDecimal getBidPriceForAsset(String assetSymbol) {
-        return getAskPriceForAsset(assetSymbol);
+        return getAssetTicker(assetSymbol).getBidPrice();
 
     }
 
@@ -263,8 +263,8 @@ public class BinanceMarketServiceImpl implements IStockMarketService {
 
             List<Object> rawCandleList = (List<Object>) object;
 
-            Long openTime = Long.valueOf(rawCandleList.get(0).toString());
-            Long closeTime = Long.valueOf(rawCandleList.get(6).toString());
+            long openTime = Long.parseLong(rawCandleList.get(0).toString());
+            long closeTime = Long.parseLong(rawCandleList.get(6).toString());
 
             BarDto barDto = new BarDto();
 

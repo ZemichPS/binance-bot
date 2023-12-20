@@ -1,4 +1,4 @@
-package by.zemich.binancebot.service.strategies;
+package by.zemich.binancebot.strategies;
 
 import by.zemich.binancebot.core.enums.EInterval;
 import by.zemich.binancebot.service.api.IStrategy;
@@ -23,8 +23,10 @@ import org.ta4j.core.indicators.volume.OnBalanceVolumeIndicator;
 import org.ta4j.core.rules.*;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.List;
 
-//@Component
+@Component
 public class Main15mEnterStrategy extends TradeStrategy {
 
     private final String name = "MAIN_15M_ENTER_RULE";
@@ -36,7 +38,7 @@ public class Main15mEnterStrategy extends TradeStrategy {
 
     @Override
     public BigDecimal getInterest() {
-        return new BigDecimal("1.2");
+        return new BigDecimal("1");
     }
 
     @Override
@@ -45,12 +47,15 @@ public class Main15mEnterStrategy extends TradeStrategy {
     }
 
     @Override
-    public IStrategy getAdditionalStrategy() {
-        return null;
+    public List<IStrategy> getAdditionalStrategy() {
+        List<IStrategy> strategyList = new ArrayList<>();
+        //  strategyList.add(new NotOverBoughtAndGreenDailyStrategy());
+        strategyList.add(new NotOverBoughtAndGreen4HStrategy());
+
+
+
+        return strategyList;
     }
-//    public IStrategy getAdditionalStrategy() {
-//        return new NotOverBoughtAndGreenCandleAdditional4HStrategy();
-//    }
 
     @Override
     protected Rule build(BarSeries series) {
@@ -80,24 +85,34 @@ public class Main15mEnterStrategy extends TradeStrategy {
 
         NVIIndicator nviIndicator = new NVIIndicator(series);
 
-        return new UnderIndicatorRule(openPriceIndicator, bbm)
-                .and(new OverIndicatorRule(closePrice, bbm))
+        return new OverIndicatorRule(closePrice, bbm)
+                // красная свеча
+                // зелёная свеча
+                //  .and(new OverIndicatorRule(openPriceIndicator, closePrice))
                 // ширина канала Боллинджера
-                .and(new OverIndicatorRule(bbw, 3.5))
-                // средняя (EMA) растёт
-                .and(new UnderIndicatorRule(rsiIndicator, 60))
+                .and(new OverIndicatorRule(bbw, 5))
+                .and(new UnderIndicatorRule(rsiIndicator, 70))
                 .and(new OverIndicatorRule(rsiIndicator, 45))
+                // средняя (SMA) растёт
                 .and(new IsRisingRule(bbm, 14, 0.7))
-                //RSI rule
-                //  Negative Volume Index (NVI) indicator ниже EMA
-                // .and(new UnderIndicatorRule(emaIndicator, nviIndicator))
+                .and(new IsRisingRule(obv, 3, 0.6))
                 // Цена не достигала верхней границы Боллинджера
-                .and(new UnderIndicatorRule(closePrice, bbu))
                 .and(new UnderIndicatorRule(highPriceIndicator, bbu));
 
 
-        //  .and(new XorRule(new UnderIndicatorRule(highPriceIndicator, bbu), new UnderIndicatorRule(closePrice, bbu)));
-
+//        return
+//                // зелёная свеча
+//                new OverIndicatorRule(closePrice, openPriceIndicator)
+//                .and(new IsEqualRule(openPriceIndicator, lowPriceIndicator))
+//                // ширина канала Боллинджера
+//                .and(new OverIndicatorRule(bbw, 3.5))
+//                // средняя (SMA) растёт
+//                .and(new UnderIndicatorRule(rsiIndicator, 65))
+//                .and(new OverIndicatorRule(rsiIndicator, 45))
+//                .and(new IsRisingRule(bbm, 14, 0.7))
+//                .and(new IsRisingRule(obv, 3, 0.7))
+//                // Цена не достигала верхней границы Боллинджера
+//                .and(new UnderIndicatorRule(highPriceIndicator, bbu));
 
     }
 }

@@ -1,4 +1,4 @@
-package by.zemich.binancebot.service.strategies;
+package by.zemich.binancebot.strategies;
 
 import by.zemich.binancebot.core.enums.EInterval;
 import by.zemich.binancebot.service.api.IStrategy;
@@ -7,6 +7,8 @@ import org.ta4j.core.BarSeries;
 import org.ta4j.core.Rule;
 import org.ta4j.core.indicators.EMAIndicator;
 import org.ta4j.core.indicators.RSIIndicator;
+import org.ta4j.core.indicators.SMAIndicator;
+import org.ta4j.core.indicators.adx.ADXIndicator;
 import org.ta4j.core.indicators.bollinger.BollingerBandWidthIndicator;
 import org.ta4j.core.indicators.bollinger.BollingerBandsLowerIndicator;
 import org.ta4j.core.indicators.bollinger.BollingerBandsMiddleIndicator;
@@ -17,64 +19,71 @@ import org.ta4j.core.indicators.helpers.LowPriceIndicator;
 import org.ta4j.core.indicators.helpers.OpenPriceIndicator;
 import org.ta4j.core.indicators.statistics.StandardDeviationIndicator;
 import org.ta4j.core.indicators.volume.ChaikinMoneyFlowIndicator;
+import org.ta4j.core.indicators.volume.OnBalanceVolumeIndicator;
 import org.ta4j.core.rules.IsRisingRule;
 import org.ta4j.core.rules.OverIndicatorRule;
 import org.ta4j.core.rules.UnderIndicatorRule;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 
 //@Component
-public class GreenCandleUnderBblButBmmStillIsRising15MEnterStrategy extends TradeStrategy {
+public class SupeHeightBullish15mEnterStrategy extends TradeStrategy {
+    private final String name = "SUPER_HEIGHT_BULLISH_5M_RULE";
 
     @Override
     public String getName() {
-        return "GREEN_CANDLE_UNDER_BBL_5M_RULE_NOT_LOW_RSI";
+        return name;
     }
 
     @Override
     public BigDecimal getInterest() {
-        return new BigDecimal("1.2");
+        return new BigDecimal("1.5");
     }
 
     @Override
     public EInterval getInterval() {
-            return EInterval.M15;
+        return EInterval.M15;
     }
 
     @Override
-    public IStrategy getAdditionalStrategy() {
+    public List<IStrategy> getAdditionalStrategy() {
         return null;
     }
 
-
     @Override
     protected Rule build(BarSeries series) {
-
         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
         OpenPriceIndicator openPriceIndicator = new OpenPriceIndicator(series);
         LowPriceIndicator lowPriceIndicator = new LowPriceIndicator(series);
         HighPriceIndicator highPriceIndicator = new HighPriceIndicator(series);
 
-
         EMAIndicator emaIndicator = new EMAIndicator(closePrice, 20);
+        SMAIndicator smaIndicator = new SMAIndicator(closePrice, 20);
         RSIIndicator rsiIndicator = new RSIIndicator(closePrice, 14);
-
 
         // Standard deviation
         StandardDeviationIndicator sd = new StandardDeviationIndicator(closePrice, 20);
-        BollingerBandsMiddleIndicator bbm = new BollingerBandsMiddleIndicator(emaIndicator);
+        BollingerBandsMiddleIndicator bbm = new BollingerBandsMiddleIndicator(smaIndicator);
         BollingerBandsLowerIndicator bbl = new BollingerBandsLowerIndicator(bbm, sd);
         BollingerBandsUpperIndicator bbu = new BollingerBandsUpperIndicator(bbm, sd);
         BollingerBandWidthIndicator bbw = new BollingerBandWidthIndicator(bbu, bbm, bbl);
-        ChaikinMoneyFlowIndicator chaikinMoneyFlowIndicator = new ChaikinMoneyFlowIndicator(series, 20);
+        ADXIndicator adxIndicator = new ADXIndicator(series, 7);
 
-        return new UnderIndicatorRule(openPriceIndicator, bbm)
-                .and(new UnderIndicatorRule(closePrice, bbm))
+        ChaikinMoneyFlowIndicator chaikinMoneyFlowIndicator = new ChaikinMoneyFlowIndicator(series, 20);
+        OnBalanceVolumeIndicator obv = new OnBalanceVolumeIndicator(series);
+
+        return new UnderIndicatorRule(openPriceIndicator, bbu)
+               // .and(new OverIndicatorRule(closePrice, bbu))
                 .and(new OverIndicatorRule(closePrice, openPriceIndicator))
-                .and(new OverIndicatorRule(rsiIndicator, 40))
-                .and(new IsRisingRule(bbm, 14, 0.7))
-                .and(new OverIndicatorRule(bbw, 4));
+                .and(new OverIndicatorRule(bbw, 3.5))
+                //.and(new IsRisingRule(bbm, 14, 0.5))
+                .and(new IsRisingRule(bbu, 14, 0.7))
+                .and(new IsRisingRule(obv, 3, 0.7))
+                .and(new OverIndicatorRule(rsiIndicator, 68));
+
+
 
 
     }

@@ -1,4 +1,4 @@
-package by.zemich.binancebot.service.strategies;
+package by.zemich.binancebot.strategies;
 
 import by.zemich.binancebot.core.enums.EInterval;
 import by.zemich.binancebot.service.api.IStrategy;
@@ -19,6 +19,7 @@ import org.ta4j.core.indicators.volume.ChaikinMoneyFlowIndicator;
 import org.ta4j.core.rules.*;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 //@Component
 public class Bullish15mEnterStrategy extends TradeStrategy {
@@ -40,7 +41,7 @@ public class Bullish15mEnterStrategy extends TradeStrategy {
     }
 
     @Override
-    public IStrategy getAdditionalStrategy() {
+    public List<IStrategy> getAdditionalStrategy() {
         return null;
     }
 

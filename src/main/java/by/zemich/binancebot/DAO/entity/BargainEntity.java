@@ -45,10 +45,6 @@ public class BargainEntity {
 
     @Column(name = "symbol")
     private String symbol;
-    @Column(name = "current_finance_result")
-    private BigDecimal currentFinanceResult;
-    @Column(name = "current_percentage_result")
-    private BigDecimal currentPercentageResult;
 
     @Column(name = "interest")
     private BigDecimal interest;
@@ -66,7 +62,7 @@ public class BargainEntity {
     public BargainEntity() {
     }
 
-    public BargainEntity(UUID uuid, String strategy, Timestamp dtCreate, Timestamp dtUpdate, BigDecimal percentageResult, BigDecimal financeResult, Long timeInWork, Timestamp finishTime, EBargainStatus status, String symbol, BigDecimal currentFinanceResult, BigDecimal currentPercentageResult, BigDecimal interest, OrderEntity buyOrder, OrderEntity sellOrder) {
+    public BargainEntity(UUID uuid, String strategy, Timestamp dtCreate, Timestamp dtUpdate, BigDecimal percentageResult, BigDecimal financeResult, Long timeInWork, Timestamp finishTime, EBargainStatus status, String symbol, BigDecimal currentPercentageResult, BigDecimal interest, OrderEntity buyOrder, OrderEntity sellOrder) {
         this.uuid = uuid;
         this.strategy = strategy;
         this.dtCreate = dtCreate;
@@ -77,8 +73,6 @@ public class BargainEntity {
         this.finishTime = finishTime;
         this.status = status;
         this.symbol = symbol;
-        this.currentFinanceResult = currentFinanceResult;
-        this.currentPercentageResult = currentPercentageResult;
         this.interest = interest;
         this.buyOrder = buyOrder;
         this.sellOrder = sellOrder;
@@ -154,22 +148,6 @@ public class BargainEntity {
 
     public void setSymbol(String symbol) {
         this.symbol = symbol;
-    }
-
-    public BigDecimal getCurrentFinanceResult() {
-        return currentFinanceResult;
-    }
-
-    public void setCurrentFinanceResult(BigDecimal currentFinanceResult) {
-        this.currentFinanceResult = currentFinanceResult;
-    }
-
-    public BigDecimal getCurrentPercentageResult() {
-        return currentPercentageResult;
-    }
-
-    public void setCurrentPercentageResult(BigDecimal currentPercentageResult) {
-        this.currentPercentageResult = currentPercentageResult;
     }
 
     public OrderEntity getBuyOrder() {

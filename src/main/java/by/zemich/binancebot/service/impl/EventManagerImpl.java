@@ -20,15 +20,15 @@ public class EventManagerImpl implements IEventManager {
         eventDto.setEventType(eventType);
         String eventText = MessageFormat.format("""
                         id: {0}
-                        symbol: {1} 
-                        type: {2} 
+                        type: {1} 
+                        symbol: {2} 
                         status: {3} 
                         price: {4} 
                         amount: {5} 
                         """,
                 order.getOrderId(),
-                order.getSymbol(),
                 order.getType(),
+                order.getSymbol(),
                 order.getStatus(),
                 order.getPrice(),
                 order.getOrigQty());
@@ -54,28 +54,32 @@ public class EventManagerImpl implements IEventManager {
 
     @Override
     public EventDto get(EEventType eventType, BargainDto bargainDto) {
+        EBargainStatus status = bargainDto.getStatus();
+
         String eventText = MessageFormat.format("""
                         Uuid: {0}
                         asset: {1}
                         strategy: {2}
-                        buy price: {3}
                         """,
                 bargainDto.getUuid(),
                 bargainDto.getSymbol(),
-                bargainDto.getStrategy(),
-                bargainDto.getBuyOrder().getPrice().setScale(8, RoundingMode.HALF_UP).toString());
+                bargainDto.getStrategy());
 
-        if (bargainDto.getStatus().equals(EBargainStatus.FINISHED)) {
+
+        if (status.equals(EBargainStatus.FINISHED) || status.equals(EBargainStatus.CANCELED_IN_THE_RED)) {
+
             String additionalText = MessageFormat.format("""
                             ------------------💸--------------------
                             Finance result: {0},
                             Percentage result: {1}
                             sell price: {2}
-                            Duration: {3} m.
+                            buy price: {3}
+                            Duration: {4} m.
                             """,
                     bargainDto.getFinanceResult().setScale(5, RoundingMode.HALF_UP).toString(),
                     bargainDto.getPercentageResult().setScale(5, RoundingMode.HALF_UP).toString(),
                     bargainDto.getSellOrder().getPrice().setScale(8, RoundingMode.HALF_UP).toString(),
+                    bargainDto.getBuyOrder().getPrice().setScale(8, RoundingMode.HALF_UP).toString(),
                     bargainDto.getTimeInWork());
             eventText = eventText + additionalText;
         }

@@ -20,7 +20,7 @@ public interface IBargainService {
     BargainDto create(BargainCreateDto bargainCreateDto);
     Optional<BargainEntity> update(BargainDto bargainDto);
     Optional<BargainEntity> endByReasonExpired(BargainDto bargainDto);
-    BargainEntity finalize(BargainDto bargainDto);
+    BargainEntity finalize(BargainDto bargainDto, EBargainStatus status);
     BargainEntity updateResult(BargainDto bargainDto);
     Optional<List<BargainEntity>>  getAll();
     Optional<List<BargainEntity>> getAllWithFilledBuyOrders();
