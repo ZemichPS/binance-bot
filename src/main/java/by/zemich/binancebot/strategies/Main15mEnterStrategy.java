@@ -49,7 +49,7 @@ public class Main15mEnterStrategy extends TradeStrategy {
     @Override
     public List<IStrategy> getAdditionalStrategy() {
         List<IStrategy> strategyList = new ArrayList<>();
-        //  strategyList.add(new NotOverBoughtAndGreenDailyStrategy());
+
         strategyList.add(new NotOverBoughtAndGreen4HStrategy());
 
 
@@ -94,25 +94,27 @@ public class Main15mEnterStrategy extends TradeStrategy {
                 .and(new UnderIndicatorRule(rsiIndicator, 70))
                 .and(new OverIndicatorRule(rsiIndicator, 45))
                 // средняя (SMA) растёт
-                .and(new IsRisingRule(bbm, 14, 0.7))
+                .and(new IsRisingRule(bbm, 14, 0.75))
                 .and(new IsRisingRule(obv, 3, 0.6))
                 // Цена не достигала верхней границы Боллинджера
                 .and(new UnderIndicatorRule(highPriceIndicator, bbu));
 
-
-//        return
+//
+//        return new OverIndicatorRule(closePrice, bbm)
+//                // красная свеча
 //                // зелёная свеча
-//                new OverIndicatorRule(closePrice, openPriceIndicator)
-//                .and(new IsEqualRule(openPriceIndicator, lowPriceIndicator))
+//                //  .and(new OverIndicatorRule(openPriceIndicator, closePrice))
 //                // ширина канала Боллинджера
-//                .and(new OverIndicatorRule(bbw, 3.5))
-//                // средняя (SMA) растёт
-//                .and(new UnderIndicatorRule(rsiIndicator, 65))
+//                .and(new OverIndicatorRule(bbw, 5))
+//                .and(new UnderIndicatorRule(rsiIndicator, 70))
 //                .and(new OverIndicatorRule(rsiIndicator, 45))
-//                .and(new IsRisingRule(bbm, 14, 0.7))
-//                .and(new IsRisingRule(obv, 3, 0.7))
+//                // средняя (SMA) растёт
+//                .and(new IsRisingRule(bbm, 14, 0.75))
+//                .and(new IsRisingRule(obv, 3, 0.6))
 //                // Цена не достигала верхней границы Боллинджера
 //                .and(new UnderIndicatorRule(highPriceIndicator, bbu));
+
+
 
     }
 }

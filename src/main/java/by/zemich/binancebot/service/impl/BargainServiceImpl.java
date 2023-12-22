@@ -65,8 +65,19 @@ public class BargainServiceImpl implements IBargainService {
     }
 
     @Override
+    public boolean existsIncompleteBySymbol(String symbol) {
+        return bargainDao.existsBySymbolAndStatusStartsWith(symbol, "OPEN");
+    }
+
+    @Override
     public boolean existsBySymbolAndStatusNotLike(String symbol, EBargainStatus status) {
         return bargainDao.existsBySymbolAndStatusNotLike(symbol, status);
+    }
+
+
+    @Override
+    public boolean existsBySymbolAndStatusLike(String symbol, EBargainStatus bargainStatus) {
+        return bargainDao.existsBySymbolAndStatusLike(symbol, bargainStatus);
     }
 
     @Override

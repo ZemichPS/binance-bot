@@ -16,6 +16,7 @@ import org.ta4j.core.indicators.helpers.LowPriceIndicator;
 import org.ta4j.core.indicators.helpers.OpenPriceIndicator;
 import org.ta4j.core.indicators.statistics.StandardDeviationIndicator;
 import org.ta4j.core.indicators.volume.ChaikinMoneyFlowIndicator;
+import org.ta4j.core.indicators.volume.OnBalanceVolumeIndicator;
 import org.ta4j.core.rules.*;
 
 import java.math.BigDecimal;
@@ -63,18 +64,21 @@ public class Bullish15mEnterStrategy extends TradeStrategy {
         BollingerBandsUpperIndicator bbu = new BollingerBandsUpperIndicator(bbm, sd);
         BollingerBandWidthIndicator bbw = new BollingerBandWidthIndicator(bbu, bbm, bbl);
         ADXIndicator adxIndicator = new ADXIndicator(series, 7);
-
+        OnBalanceVolumeIndicator obv = new OnBalanceVolumeIndicator(series);
         ChaikinMoneyFlowIndicator chaikinMoneyFlowIndicator = new ChaikinMoneyFlowIndicator(series, 20);
 
-        return new UnderIndicatorRule(lowPriceIndicator, bbm)
-                .and(new OverIndicatorRule(closePrice, bbm))
-                .and(new OverIndicatorRule(closePrice, openPriceIndicator))
-                .and(new OverIndicatorRule(bbw, 4.2))
-                .and(new IsRisingRule(bbm, 14, 0.7))
-                .and(new IsRisingRule(bbu, 4, 0.6))
-                .and(new UnderIndicatorRule(rsiIndicator, 60))
-                .and(new OverIndicatorRule(rsiIndicator, 38))
-
+        return new OverIndicatorRule(closePrice, bbm)
+                // красная свеча
+                // зелёная свеча
+                //  .and(new OverIndicatorRule(openPriceIndicator, closePrice))
+                // ширина канала Боллинджера
+                .and(new OverIndicatorRule(bbw, 5))
+                .and(new UnderIndicatorRule(rsiIndicator, 70))
+                .and(new OverIndicatorRule(rsiIndicator, 45))
+                // средняя (SMA) растёт
+                .and(new IsRisingRule(bbm, 14, 0.75))
+                .and(new IsRisingRule(obv, 3, 0.6))
+                // Цена не достигала верхней границы Боллинджера
                 .and(new UnderIndicatorRule(highPriceIndicator, bbu));
 
 

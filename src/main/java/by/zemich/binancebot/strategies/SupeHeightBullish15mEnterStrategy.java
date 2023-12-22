@@ -39,7 +39,7 @@ public class SupeHeightBullish15mEnterStrategy extends TradeStrategy {
 
     @Override
     public BigDecimal getInterest() {
-        return new BigDecimal("1.5");
+        return new BigDecimal("0.6");
     }
 
     @Override
@@ -75,11 +75,11 @@ public class SupeHeightBullish15mEnterStrategy extends TradeStrategy {
         OnBalanceVolumeIndicator obv = new OnBalanceVolumeIndicator(series);
 
         return new UnderIndicatorRule(openPriceIndicator, bbu)
-               // .and(new OverIndicatorRule(closePrice, bbu))
+                .and(new OverIndicatorRule(closePrice, bbu))
                 .and(new OverIndicatorRule(closePrice, openPriceIndicator))
                 .and(new OverIndicatorRule(bbw, 3.5))
                 //.and(new IsRisingRule(bbm, 14, 0.5))
-                .and(new IsRisingRule(bbu, 14, 0.7))
+                .and(new IsRisingRule(bbu, 14, 0.8))
                 .and(new IsRisingRule(obv, 3, 0.7))
                 .and(new OverIndicatorRule(rsiIndicator, 68));
 

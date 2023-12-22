@@ -55,6 +55,11 @@ public class EventManagerImpl implements IEventManager {
     @Override
     public EventDto get(EEventType eventType, BargainDto bargainDto) {
         EBargainStatus status = bargainDto.getStatus();
+        String icon = switch (eventType) {
+            case BARGAIN_WAS_COMPLETED_IN_THE_BLACK -> "\uD83D\uDCB8";
+            case BARGAIN_WAS_COMPLETED_IN_THE_RED -> "\uD83E\uDEE7";
+            default -> "z";
+        };
 
         String eventText = MessageFormat.format("""
                         Uuid: {0}
@@ -69,13 +74,14 @@ public class EventManagerImpl implements IEventManager {
         if (status.equals(EBargainStatus.FINISHED) || status.equals(EBargainStatus.CANCELED_IN_THE_RED)) {
 
             String additionalText = MessageFormat.format("""
-                            ------------------💸--------------------
-                            Finance result: {0},
-                            Percentage result: {1}
-                            sell price: {2}
-                            buy price: {3}
-                            Duration: {4} m.
+                            ------------------{0}--------------------
+                            Finance result: {1},
+                            Percentage result: {2}
+                            sell price: {3}
+                            buy price: {4}
+                            Duration: {5} m.
                             """,
+                    icon,
                     bargainDto.getFinanceResult().setScale(5, RoundingMode.HALF_UP).toString(),
                     bargainDto.getPercentageResult().setScale(5, RoundingMode.HALF_UP).toString(),
                     bargainDto.getSellOrder().getPrice().setScale(8, RoundingMode.HALF_UP).toString(),

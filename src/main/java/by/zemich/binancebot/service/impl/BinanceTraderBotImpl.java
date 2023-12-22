@@ -41,7 +41,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
     private final List<String> blackList = new ArrayList<>();
 
     // TODO удалить (счётчик разрешённых покупок актива)
-    private Integer counter = 321_456_465;
+    private Integer counter = 0;
     private boolean accountHasInsufficientBalance = true;
 
 
@@ -80,7 +80,6 @@ public class BinanceTraderBotImpl implements ITraderBot {
     }
 
     @Scheduled(fixedDelay = 40_000, initialDelay = 10_000)
-
     @Override
     public void lookForEnterPosition() {
 
@@ -105,7 +104,6 @@ public class BinanceTraderBotImpl implements ITraderBot {
 
                                         klinequeryDto.setSymbol(symbol.getSymbol());
                                         klinequeryDto.setInterval(stringInterval);
-
                                         BarSeries series = stockMarketService.getBarSeries(klinequeryDto).orElseThrow(RuntimeException::new);
 
                                         if (series.getBarCount() < 500) return;
@@ -118,9 +116,32 @@ public class BinanceTraderBotImpl implements ITraderBot {
                                                     if (counter <= 0) return;
                                                     if (!accountHasInsufficientBalance) return;
 
-
                                                     if (strategy.getEnterRule(series).isSatisfied(series.getEndIndex())) {
                                                         log.info(indicatorReader.getValues(series));
+
+//                                                        if (bargainService.existsIncompleteBySymbol(symbol.getSymbol())) {
+//                                                            log.warn("Bargain with such asset already exists");
+//                                                            return;
+//                                                        }
+
+
+                                                        if (bargainService.existsBySymbolAndStatusLike(symbol.getSymbol(), EBargainStatus.OPEN_BUY_ORDER_CREATED)) {
+                                                            log.warn("Bargain with such asset already exists");
+                                                            return;
+                                                        }
+
+                                                        if (bargainService.existsBySymbolAndStatusLike(symbol.getSymbol(), EBargainStatus.OPEN_BUY_ORDER_FILLED)) {
+                                                            log.warn("Bargain with such asset already exists");
+                                                            return;
+                                                        }
+
+
+                                                        if (bargainService.existsBySymbolAndStatusLike(symbol.getSymbol(), EBargainStatus.OPEN_SELL_ORDER_CREATED)) {
+                                                            log.warn("Bargain with such asset already exists");
+                                                            return;
+                                                        }
+
+
 
                                                         if (Objects.nonNull(strategy.getAdditionalStrategy())) {
                                                             List<IStrategy> strategyList = strategy.getAdditionalStrategy();
@@ -181,7 +202,6 @@ public class BinanceTraderBotImpl implements ITraderBot {
                             .forEach(bargainDto -> {
 
                                 OrderDto buyOrderDto = bargainDto.getBuyOrder();
-
                                 BigDecimal percentageAim = strategyMap.get(bargainDto.getStrategy()).getInterest();
 
                                 OrderDto sellOrderDto = tradeManager.createSellLimitOrder(buyOrderDto.getUuid(), percentageAim);
@@ -245,7 +265,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
         // продать актив если актив провалился в цене
         bargainService.getAllByStatus(EBargainStatus.OPEN_SELL_ORDER_CREATED).orElseThrow()
                 .stream().map(this::convertBargainEntityToDto)
-                .filter(bargainDto -> bargainDto.getPercentageResult().doubleValue() <= -3.7)
+                .filter(bargainDto -> bargainDto.getPercentageResult().doubleValue() <= -2.5)
                 .forEach(bargainToCancel -> {
 
                     OrderDto canceledOrder = tradeManager.cancelOrder(bargainToCancel.getSellOrder());
@@ -255,9 +275,9 @@ public class BinanceTraderBotImpl implements ITraderBot {
 
                     BargainEntity finalizedBargainEntity = bargainService.finalize(bargainToCancel, EBargainStatus.CANCELED_IN_THE_RED);
                     BargainDto finalizedBargainDto = convertBargainEntityToDto(finalizedBargainEntity);
+
                     notifyAboutEvent(EEventType.BARGAIN_WAS_COMPLETED_IN_THE_RED, finalizedBargainDto);
                     accountHasInsufficientBalance = true;
-
 
                 });
 
@@ -267,8 +287,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
     private BargainDto createBargain(BargainCreateDto bargainCreateDto) {
         try {
 
-            if (bargainService.existsBySymbolAndStatusNotLike(bargainCreateDto.getSymbol().getSymbol(), EBargainStatus.FINISHED))
-                throw new RuntimeException("Bargain with such asset already exists and active.");
+
 
             //TODO удалить для реального трейдинга (позволяет совершить ограниченное количество сделок)
             counter = counter - 1;

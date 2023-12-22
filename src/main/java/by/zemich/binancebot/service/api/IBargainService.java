@@ -6,6 +6,7 @@ import by.zemich.binancebot.core.dto.BargainDto;
 import by.zemich.binancebot.core.dto.OrderDto;
 import by.zemich.binancebot.core.enums.EBargainStatus;
 
+import javax.sql.rowset.Predicate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -14,8 +15,11 @@ public interface IBargainService {
     Optional<BargainEntity> save(BargainDto bargainDto);
     BargainDto addBuyOrder(BargainDto bargainDto, OrderDto buyOrder);
     BargainDto addSellOrder(BargainDto bargainDto, OrderDto sellOrder);
+
     boolean existsByStatusAndSymbol(EBargainStatus status, String symbol);
+    boolean existsIncompleteBySymbol(String symbol);
     boolean existsBySymbolAndStatusNotLike(String symbol, EBargainStatus status);
+    boolean existsBySymbolAndStatusLike(String symbol, EBargainStatus bargainStatus);
 
     BargainDto create(BargainCreateDto bargainCreateDto);
     Optional<BargainEntity> update(BargainDto bargainDto);
