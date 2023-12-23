@@ -29,6 +29,7 @@ public class BargainDto {
     private BigDecimal interest;
     private OrderDto buyOrder;
     private OrderDto sellOrder;
+    private BigDecimal fee;
 
 
 }

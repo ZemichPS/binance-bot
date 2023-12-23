@@ -1,6 +1,7 @@
 package by.zemich.binancebot.strategies;
 
 import by.zemich.binancebot.core.enums.EInterval;
+import by.zemich.binancebot.core.enums.EStrategyType;
 import by.zemich.binancebot.service.api.IStrategy;
 import org.springframework.stereotype.Component;
 import org.ta4j.core.BarSeries;
@@ -47,13 +48,14 @@ public class Main15mEnterStrategy extends TradeStrategy {
     }
 
     @Override
+    public EStrategyType getStrategyType() {
+        return EStrategyType.BASIC;
+    }
+
+    @Override
     public List<IStrategy> getAdditionalStrategy() {
         List<IStrategy> strategyList = new ArrayList<>();
-
         strategyList.add(new NotOverBoughtAndGreen4HStrategy());
-
-
-
         return strategyList;
     }
 
@@ -86,10 +88,7 @@ public class Main15mEnterStrategy extends TradeStrategy {
         NVIIndicator nviIndicator = new NVIIndicator(series);
 
         return new OverIndicatorRule(closePrice, bbm)
-                // красная свеча
-                // зелёная свеча
-                //  .and(new OverIndicatorRule(openPriceIndicator, closePrice))
-                // ширина канала Боллинджера
+
                 .and(new OverIndicatorRule(bbw, 5))
                 .and(new UnderIndicatorRule(rsiIndicator, 70))
                 .and(new OverIndicatorRule(rsiIndicator, 45))
@@ -98,21 +97,6 @@ public class Main15mEnterStrategy extends TradeStrategy {
                 .and(new IsRisingRule(obv, 3, 0.6))
                 // Цена не достигала верхней границы Боллинджера
                 .and(new UnderIndicatorRule(highPriceIndicator, bbu));
-
-//
-//        return new OverIndicatorRule(closePrice, bbm)
-//                // красная свеча
-//                // зелёная свеча
-//                //  .and(new OverIndicatorRule(openPriceIndicator, closePrice))
-//                // ширина канала Боллинджера
-//                .and(new OverIndicatorRule(bbw, 5))
-//                .and(new UnderIndicatorRule(rsiIndicator, 70))
-//                .and(new OverIndicatorRule(rsiIndicator, 45))
-//                // средняя (SMA) растёт
-//                .and(new IsRisingRule(bbm, 14, 0.75))
-//                .and(new IsRisingRule(obv, 3, 0.6))
-//                // Цена не достигала верхней границы Боллинджера
-//                .and(new UnderIndicatorRule(highPriceIndicator, bbu));
 
 
 

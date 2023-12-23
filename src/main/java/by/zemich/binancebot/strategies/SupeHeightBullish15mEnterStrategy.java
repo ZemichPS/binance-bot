@@ -1,6 +1,7 @@
 package by.zemich.binancebot.strategies;
 
 import by.zemich.binancebot.core.enums.EInterval;
+import by.zemich.binancebot.core.enums.EStrategyType;
 import by.zemich.binancebot.service.api.IStrategy;
 import org.springframework.stereotype.Component;
 import org.ta4j.core.BarSeries;
@@ -20,6 +21,7 @@ import org.ta4j.core.indicators.helpers.OpenPriceIndicator;
 import org.ta4j.core.indicators.statistics.StandardDeviationIndicator;
 import org.ta4j.core.indicators.volume.ChaikinMoneyFlowIndicator;
 import org.ta4j.core.indicators.volume.OnBalanceVolumeIndicator;
+import org.ta4j.core.rules.IsEqualRule;
 import org.ta4j.core.rules.IsRisingRule;
 import org.ta4j.core.rules.OverIndicatorRule;
 import org.ta4j.core.rules.UnderIndicatorRule;
@@ -39,12 +41,17 @@ public class SupeHeightBullish15mEnterStrategy extends TradeStrategy {
 
     @Override
     public BigDecimal getInterest() {
-        return new BigDecimal("0.6");
+        return new BigDecimal("0.8");
     }
 
     @Override
     public EInterval getInterval() {
         return EInterval.M15;
+    }
+
+    @Override
+    public EStrategyType getStrategyType() {
+        return EStrategyType.BASIC;
     }
 
     @Override
@@ -76,14 +83,12 @@ public class SupeHeightBullish15mEnterStrategy extends TradeStrategy {
 
         return new UnderIndicatorRule(openPriceIndicator, bbu)
                 .and(new OverIndicatorRule(closePrice, bbu))
+                .and(new IsEqualRule(openPriceIndicator, lowPriceIndicator))
                 .and(new OverIndicatorRule(closePrice, openPriceIndicator))
-                .and(new OverIndicatorRule(bbw, 3.5))
-                //.and(new IsRisingRule(bbm, 14, 0.5))
+                .and(new OverIndicatorRule(bbw, 6))
                 .and(new IsRisingRule(bbu, 14, 0.8))
                 .and(new IsRisingRule(obv, 3, 0.7))
                 .and(new OverIndicatorRule(rsiIndicator, 68));
-
-
 
 
     }

@@ -1,6 +1,7 @@
 package by.zemich.binancebot.strategies;
 
 import by.zemich.binancebot.core.enums.EInterval;
+import by.zemich.binancebot.core.enums.EStrategyType;
 import by.zemich.binancebot.service.api.IStrategy;
 import org.springframework.stereotype.Component;
 import org.ta4j.core.BarSeries;
@@ -36,6 +37,11 @@ public class LowPriceUnderBblButBmmStillIsRising15MEnterStrategy extends TradeSt
     @Override
     public EInterval getInterval() {
             return EInterval.M15;
+    }
+
+    @Override
+    public EStrategyType getStrategyType() {
+        return EStrategyType.BASIC;
     }
 
     @Override

@@ -1,6 +1,7 @@
 package by.zemich.binancebot.service.api;
 
 import by.zemich.binancebot.core.enums.EInterval;
+import by.zemich.binancebot.core.enums.EStrategyType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.Rule;
@@ -15,6 +16,8 @@ public interface IStrategy {
     BigDecimal getInterest();
 
     EInterval getInterval();
+
+    EStrategyType getStrategyType();
 
     List<IStrategy> getAdditionalStrategy();
 

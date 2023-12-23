@@ -1,6 +1,7 @@
 package by.zemich.binancebot.strategies;
 
 import by.zemich.binancebot.core.enums.EInterval;
+import by.zemich.binancebot.core.enums.EStrategyType;
 import by.zemich.binancebot.service.api.IStrategy;
 import org.springframework.stereotype.Component;
 import org.ta4j.core.BarSeries;
@@ -20,6 +21,7 @@ import org.ta4j.core.indicators.volume.OnBalanceVolumeIndicator;
 import org.ta4j.core.rules.*;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 
 //@Component
@@ -42,7 +44,13 @@ public class Bullish15mEnterStrategy extends TradeStrategy {
     }
 
     @Override
+    public EStrategyType getStrategyType() {
+        return EStrategyType.BASIC;
+    }
+
+    @Override
     public List<IStrategy> getAdditionalStrategy() {
+
         return null;
     }
 
@@ -67,17 +75,16 @@ public class Bullish15mEnterStrategy extends TradeStrategy {
         OnBalanceVolumeIndicator obv = new OnBalanceVolumeIndicator(series);
         ChaikinMoneyFlowIndicator chaikinMoneyFlowIndicator = new ChaikinMoneyFlowIndicator(series, 20);
 
-        return new OverIndicatorRule(closePrice, bbm)
-                // красная свеча
-                // зелёная свеча
-                //  .and(new OverIndicatorRule(openPriceIndicator, closePrice))
+        return new UnderIndicatorRule(lowPriceIndicator, bbm)
+                 .and(new OverIndicatorRule(closePrice, bbm))
+                 .and(new OverIndicatorRule(openPriceIndicator, closePrice))
                 // ширина канала Боллинджера
-                .and(new OverIndicatorRule(bbw, 5))
+                .and(new OverIndicatorRule(bbw, 7))
                 .and(new UnderIndicatorRule(rsiIndicator, 70))
                 .and(new OverIndicatorRule(rsiIndicator, 45))
                 // средняя (SMA) растёт
-                .and(new IsRisingRule(bbm, 14, 0.75))
-                .and(new IsRisingRule(obv, 3, 0.6))
+                .and(new IsRisingRule(bbm, 14, 0.8))
+                .and(new IsRisingRule(bbu, 3, 0.7))
                 // Цена не достигала верхней границы Боллинджера
                 .and(new UnderIndicatorRule(highPriceIndicator, bbu));
 

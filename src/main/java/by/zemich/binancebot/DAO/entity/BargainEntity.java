@@ -49,6 +49,9 @@ public class BargainEntity {
     @Column(name = "interest")
     private BigDecimal interest;
 
+    @Column(name = "fee")
+    private BigDecimal fee;
+
     @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.REFRESH)
     @JoinColumn(name = "buy_order_id", referencedColumnName = "uuid")
     private OrderEntity buyOrder;
@@ -62,7 +65,7 @@ public class BargainEntity {
     public BargainEntity() {
     }
 
-    public BargainEntity(UUID uuid, String strategy, Timestamp dtCreate, Timestamp dtUpdate, BigDecimal percentageResult, BigDecimal financeResult, Long timeInWork, Timestamp finishTime, EBargainStatus status, String symbol, BigDecimal currentPercentageResult, BigDecimal interest, OrderEntity buyOrder, OrderEntity sellOrder) {
+    public BargainEntity(UUID uuid, String strategy, Timestamp dtCreate, Timestamp dtUpdate, BigDecimal percentageResult, BigDecimal financeResult, Long timeInWork, Timestamp finishTime, EBargainStatus status, String symbol, BigDecimal currentPercentageResult, BigDecimal interest, BigDecimal fee, OrderEntity buyOrder, OrderEntity sellOrder) {
         this.uuid = uuid;
         this.strategy = strategy;
         this.dtCreate = dtCreate;
@@ -74,6 +77,7 @@ public class BargainEntity {
         this.status = status;
         this.symbol = symbol;
         this.interest = interest;
+        this.fee = fee;
         this.buyOrder = buyOrder;
         this.sellOrder = sellOrder;
     }
@@ -180,5 +184,13 @@ public class BargainEntity {
 
     public void setInterest(BigDecimal interest) {
         this.interest = interest;
+    }
+
+    public BigDecimal getFee() {
+        return fee;
+    }
+
+    public void setFee(BigDecimal fee) {
+        this.fee = fee;
     }
 }

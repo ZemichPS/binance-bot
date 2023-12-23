@@ -1,6 +1,7 @@
 package by.zemich.binancebot.strategies;
 
 import by.zemich.binancebot.core.enums.EInterval;
+import by.zemich.binancebot.core.enums.EStrategyType;
 import by.zemich.binancebot.service.api.IStrategy;
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.Rule;
@@ -36,6 +37,11 @@ public class NotOverBoughtAndGreen4HStrategy extends TradeStrategy {
     }
 
     @Override
+    public EStrategyType getStrategyType() {
+        return EStrategyType.ADDITIONAL;
+    }
+
+    @Override
     public List<IStrategy> getAdditionalStrategy() {
         return null;
     }
@@ -44,8 +50,8 @@ public class NotOverBoughtAndGreen4HStrategy extends TradeStrategy {
     protected Rule build(BarSeries series) {
 
         ClosePriceIndicator closePrice = new ClosePriceIndicator(series);
-        OpenPriceIndicator openPriceIndicator = new OpenPriceIndicator(series);
-        HighPriceIndicator highPriceIndicator = new HighPriceIndicator(series);
+        OpenPriceIndicator openPrice = new OpenPriceIndicator(series);
+        HighPriceIndicator highPrice = new HighPriceIndicator(series);
         SMAIndicator smaIndicator = new SMAIndicator(closePrice, 20);
         StandardDeviationIndicator sd = new StandardDeviationIndicator(closePrice, 20);
         BollingerBandsMiddleIndicator bbm = new BollingerBandsMiddleIndicator(smaIndicator);
@@ -53,10 +59,12 @@ public class NotOverBoughtAndGreen4HStrategy extends TradeStrategy {
         BollingerBandsUpperIndicator bbu = new BollingerBandsUpperIndicator(bbm, sd);
         RSIIndicator rsiIndicator = new RSIIndicator(closePrice, 14);
 
-//        return new UnderIndicatorRule(rsiIndicator, 75)
-//                .and(new OverIndicatorRule(closePrice, openPriceIndicator));
+        return new UnderIndicatorRule(rsiIndicator, 75)
+                .and(new OverIndicatorRule(closePrice, openPrice));
+//                .and(new UnderIndicatorRule(closePrice, bbu))
+//                .and(new UnderIndicatorRule(closePrice, highPrice));
 
-        return new OverIndicatorRule(closePrice, openPriceIndicator);
+     //   return new OverIndicatorRule(closePrice, openPriceIndicator);
 
     }
 }

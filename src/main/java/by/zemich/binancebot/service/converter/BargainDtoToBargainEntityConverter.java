@@ -28,6 +28,7 @@ public class BargainDtoToBargainEntityConverter implements Converter<BargainDto,
         bargainEntity.setStrategy(source.getStrategy());
         bargainEntity.setSymbol(source.getSymbol());
         bargainEntity.setInterest(source.getInterest());
+        bargainEntity.setFee(source.getFee());
 
 
         if(Objects.nonNull(source.getBuyOrder())){

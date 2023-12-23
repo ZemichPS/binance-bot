@@ -1,6 +1,7 @@
 package by.zemich.binancebot.strategies;
 
 import by.zemich.binancebot.core.enums.EInterval;
+import by.zemich.binancebot.core.enums.EStrategyType;
 import by.zemich.binancebot.service.api.IStrategy;
 import org.ta4j.core.BarSeries;
 import org.ta4j.core.Rule;
@@ -36,6 +37,11 @@ public class NotOverBoughtAndGreenCandleAdditional4HStrategy extends TradeStrate
     @Override
     public EInterval getInterval() {
         return EInterval.H4;
+    }
+
+    @Override
+    public EStrategyType getStrategyType() {
+        return EStrategyType.ADDITIONAL;
     }
 
     @Override

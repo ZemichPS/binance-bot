@@ -3,6 +3,7 @@ package by.zemich.binancebot.service.impl;
 import by.zemich.binancebot.DAO.api.IBargainDao;
 import by.zemich.binancebot.DAO.entity.BargainEntity;
 import by.zemich.binancebot.DAO.entity.OrderEntity;
+import by.zemich.binancebot.config.properties.RealTradeProperties;
 import by.zemich.binancebot.core.dto.BargainCreateDto;
 import by.zemich.binancebot.core.dto.BargainDto;
 import by.zemich.binancebot.core.dto.OrderDto;
@@ -35,12 +36,15 @@ public class BargainServiceImpl implements IBargainService {
     private final IOrderService orderService;
     private final IStockMarketService stockMarketService;
 
+    private final RealTradeProperties tradeProperties;
 
-    public BargainServiceImpl(IBargainDao bargainDao, ConversionService conversionService, IOrderService orderService, IStockMarketService stockMarketService) {
+
+    public BargainServiceImpl(IBargainDao bargainDao, ConversionService conversionService, IOrderService orderService, IStockMarketService stockMarketService, RealTradeProperties tradeProperties) {
         this.bargainDao = bargainDao;
         this.conversionService = conversionService;
         this.orderService = orderService;
         this.stockMarketService = stockMarketService;
+        this.tradeProperties = tradeProperties;
     }
 
     @Override
@@ -126,6 +130,10 @@ public class BargainServiceImpl implements IBargainService {
 
         // тут всякие расчёты и просчёты
 
+        BigDecimal makerPercentageFee = tradeProperties.getMaker();
+        BigDecimal takerPercentageFee = tradeProperties.getTaker();
+        BigDecimal financeFee = computeMarketFee(bargainDto, makerPercentageFee, takerPercentageFee);
+
         OrderDto buyOrder = bargainDto.getBuyOrder();
         OrderDto sellOrder = bargainDto.getSellOrder();
 
@@ -138,13 +146,14 @@ public class BargainServiceImpl implements IBargainService {
         BigDecimal buyPrice = buyOrder.getPrice();
         BigDecimal sellPrice = sellOrder.getPrice();
 
-        BigDecimal percentageResult = getPercentDifference(buyPrice, sellPrice);
-        BigDecimal financeResult = sellPrice.subtract(buyPrice).multiply(soldAssetQuantity);
+        BigDecimal percentageResult = getPercentDifference(buyPrice, sellPrice).subtract(makerPercentageFee.add(takerPercentageFee));
+        BigDecimal financeResult = sellPrice.subtract(buyPrice).multiply(soldAssetQuantity).subtract(financeFee);
 
         bargainDto.setFinishTime(currenTime);
         bargainDto.setTimeInWork(timeInWork.toMinutes());
         bargainDto.setPercentageResult(percentageResult);
         bargainDto.setFinanceResult(financeResult);
+        bargainDto.setFee(financeFee);
         bargainDto.setStatus(status);
 
         BargainEntity bargainEntity = conversionService.convert(bargainDto, BargainEntity.class);
@@ -258,17 +267,23 @@ public class BargainServiceImpl implements IBargainService {
         if (!Objects.nonNull(bargainDto.getBuyOrder())) throw new RuntimeException("Bargain doesn't contain buy order");
 
         OrderDto buyOrderDto = bargainDto.getBuyOrder();
+
+        BigDecimal makerPercentageFee = tradeProperties.getMaker();
+        BigDecimal buySum = buyOrderDto.getPrice().multiply(buyOrderDto.getOrigQty());
+        BigDecimal computerFinanceMakerFee = computeFeeOnCosts(buySum, makerPercentageFee);
+
         BigDecimal boughtAssetQuantity = buyOrderDto.getOrigQty();
         Duration timeInWork = getDurationBetweenStartBargainAndNow(bargainDto.getDtCreate());
         BigDecimal buyPrice = buyOrderDto.getPrice();
         BigDecimal currentPrice = getCurrentPriceBySymbol(bargainDto.getSymbol());
 
-        BigDecimal financeResult = currentPrice.subtract(buyPrice).multiply(boughtAssetQuantity).setScale(3, RoundingMode.HALF_UP);
-        BigDecimal percentageResult = getPercentDifference(buyPrice, currentPrice);
+        BigDecimal financeResult = currentPrice.subtract(buyPrice).multiply(boughtAssetQuantity).setScale(3, RoundingMode.HALF_UP).subtract(computerFinanceMakerFee);
+        BigDecimal percentageResult = getPercentDifference(buyPrice, currentPrice).subtract(makerPercentageFee);
 
         bargainDto.setFinanceResult(financeResult);
         bargainDto.setPercentageResult(percentageResult);
         bargainDto.setTimeInWork(timeInWork.toMinutes());
+        bargainDto.setFee(computerFinanceMakerFee);
 
         BargainEntity bargainEntity = conversionService.convert(bargainDto, BargainEntity.class);
 
@@ -288,6 +303,22 @@ public class BargainServiceImpl implements IBargainService {
         return Duration.between(startBargain.toLocalDateTime(), LocalDateTime.now());
     }
 
+    private BigDecimal computeFeeOnCosts(BigDecimal sum, BigDecimal percentage){
+        return sum.divide(new BigDecimal("100"), RoundingMode.HALF_DOWN).multiply(percentage).setScale(3, RoundingMode.HALF_UP);
+    }
+
+    private  BigDecimal computeMarketFee(BargainDto bargain, BigDecimal makerFee, BigDecimal takerFee){
+        OrderDto buyOrder = bargain.getBuyOrder();
+        OrderDto sellOrder = bargain.getSellOrder();
+
+        BigDecimal buySum = buyOrder.getPrice().multiply(buyOrder.getOrigQty());
+        BigDecimal sellSum = sellOrder.getPrice().multiply(sellOrder.getOrigQty());
+
+        BigDecimal finalMakerFee = computeFeeOnCosts(buySum, makerFee);
+        BigDecimal finalTakerFee = computeFeeOnCosts(sellSum, takerFee);
+
+        return finalMakerFee.add(finalTakerFee);
+    }
 
 
 

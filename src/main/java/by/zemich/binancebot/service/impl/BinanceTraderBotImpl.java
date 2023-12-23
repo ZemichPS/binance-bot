@@ -41,7 +41,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
     private final List<String> blackList = new ArrayList<>();
 
     // TODO удалить (счётчик разрешённых покупок актива)
-    private Integer counter = 0;
+    private Integer counter = 1_542_124;
     private boolean accountHasInsufficientBalance = true;
 
 
@@ -71,6 +71,9 @@ public class BinanceTraderBotImpl implements ITraderBot {
         blackList.add("USDCUSDT");
         blackList.add("BTTCUSDT");
         blackList.add("PEPEUSDT");
+        blackList.add("MEMEUSDT");
+        blackList.add("1000SATSUSDT");
+
     }
 
 
@@ -80,6 +83,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
     }
 
     @Scheduled(fixedDelay = 40_000, initialDelay = 10_000)
+    @Async
     @Override
     public void lookForEnterPosition() {
 
@@ -91,6 +95,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
         if (!accountHasInsufficientBalance) return;
 
         strategyMap.values().stream()
+                .filter(strategy -> strategy.getStrategyType().equals(EStrategyType.BASIC))
                 .map(IStrategy::getInterval)
                 .sorted()
                 .map(EInterval::toString)
@@ -260,12 +265,15 @@ public class BinanceTraderBotImpl implements ITraderBot {
                     }
 
                 });
-
-
+    }
+    @Scheduled(cron = "@hourly")
+    @Async
+    public void cancelTroubleBargain() {
         // продать актив если актив провалился в цене
         bargainService.getAllByStatus(EBargainStatus.OPEN_SELL_ORDER_CREATED).orElseThrow()
                 .stream().map(this::convertBargainEntityToDto)
-                .filter(bargainDto -> bargainDto.getPercentageResult().doubleValue() <= -2.5)
+                .filter(bargainDto -> bargainDto.getPercentageResult().doubleValue() <= -3)
+                .filter(bargainDto -> bargainDto.getTimeInWork() > 30)
                 .forEach(bargainToCancel -> {
 
                     OrderDto canceledOrder = tradeManager.cancelOrder(bargainToCancel.getSellOrder());
@@ -277,17 +285,15 @@ public class BinanceTraderBotImpl implements ITraderBot {
                     BargainDto finalizedBargainDto = convertBargainEntityToDto(finalizedBargainEntity);
 
                     notifyAboutEvent(EEventType.BARGAIN_WAS_COMPLETED_IN_THE_RED, finalizedBargainDto);
+
                     accountHasInsufficientBalance = true;
-
                 });
-
-
     }
+
+
 
     private BargainDto createBargain(BargainCreateDto bargainCreateDto) {
         try {
-
-
 
             //TODO удалить для реального трейдинга (позволяет совершить ограниченное количество сделок)
             counter = counter - 1;
