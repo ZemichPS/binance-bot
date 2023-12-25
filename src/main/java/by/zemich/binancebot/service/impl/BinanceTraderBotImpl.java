@@ -270,14 +270,33 @@ public class BinanceTraderBotImpl implements ITraderBot {
                 });
     }
 
-    @Scheduled(cron = "* */10 * * * *")
+    @Scheduled(cron = "* */30 * * * *")
     @Async
     public void cancelTroubleBargain() {
         // продать актив если актив провалился в цене
         bargainService.getAllByStatus(EBargainStatus.OPEN_SELL_ORDER_CREATED).orElseThrow()
                 .stream().map(this::convertBargainEntityToDto)
                 .filter(bargainDto -> bargainDto.getPercentageResult().doubleValue() <= -3)
-                .filter(bargainDto -> bargainDto.getTimeInWork() > 360)
+                .filter(bargainDto -> bargainDto.getTimeInWork() > 30)
+                .min(Comparator.comparingDouble(bargain -> bargain.getPercentageResult().doubleValue()))
+                .ifPresent(
+                        bargainToCancel -> {
+                            OrderDto canceledOrder = tradeManager.cancelOrder(bargainToCancel.getSellOrder());
+                            OrderDto createdSellOrderByMarketPrice = tradeManager.createSellOrderByAscPrice(canceledOrder);
+                            bargainToCancel.setSellOrder(createdSellOrderByMarketPrice);
+                            bargainToCancel.setStatus(EBargainStatus.CANCELED_IN_THE_RED);
+
+                            BargainEntity finalizedBargainEntity = bargainService.finalize(bargainToCancel, EBargainStatus.CANCELED_IN_THE_RED);
+                            BargainDto finalizedBargainDto = convertBargainEntityToDto(finalizedBargainEntity);
+
+                            notifyAboutEvent(EEventType.BARGAIN_WAS_COMPLETED_IN_THE_RED, finalizedBargainDto);
+
+                            accountHasInsufficientBalance = true;
+                        }
+
+                );
+
+/*
                 .forEach(bargainToCancel -> {
 
                     if (bargainToCancel.getPercentageResult().doubleValue() <= -7) {
@@ -303,19 +322,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
                         notifier.notify(event);
                         return;
                     }
-
-                    OrderDto canceledOrder = tradeManager.cancelOrder(bargainToCancel.getSellOrder());
-                    OrderDto createdSellOrderByMarketPrice = tradeManager.createSellOrderByAscPrice(canceledOrder);
-                    bargainToCancel.setSellOrder(createdSellOrderByMarketPrice);
-                    bargainToCancel.setStatus(EBargainStatus.CANCELED_IN_THE_RED);
-
-                    BargainEntity finalizedBargainEntity = bargainService.finalize(bargainToCancel, EBargainStatus.CANCELED_IN_THE_RED);
-                    BargainDto finalizedBargainDto = convertBargainEntityToDto(finalizedBargainEntity);
-
-                    notifyAboutEvent(EEventType.BARGAIN_WAS_COMPLETED_IN_THE_RED, finalizedBargainDto);
-
-                    accountHasInsufficientBalance = true;
-                });
+*/
     }
 
 
