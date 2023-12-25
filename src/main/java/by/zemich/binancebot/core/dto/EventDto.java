@@ -15,8 +15,8 @@ public class EventDto {
     public String toString() {
         return MessageFormat.format("""
                 Event: {0},
-                Message: {1}
-                """, prepareEventTypeToText(eventType), text).toString();
+                {1}
+                """, prepareEventTypeToText(eventType), text);
     }
 
     private String prepareEventTypeToText(EEventType eventType){

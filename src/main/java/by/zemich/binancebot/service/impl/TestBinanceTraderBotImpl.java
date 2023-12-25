@@ -74,7 +74,7 @@ public class TestBinanceTraderBotImpl implements ITraderBot {
     }
 
     @Override
-    public void checkBargain() {
+    public void checkBargains() {
 
     }
 

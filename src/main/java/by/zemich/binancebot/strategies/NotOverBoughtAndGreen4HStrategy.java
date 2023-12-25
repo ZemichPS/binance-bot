@@ -59,12 +59,10 @@ public class NotOverBoughtAndGreen4HStrategy extends TradeStrategy {
         BollingerBandsUpperIndicator bbu = new BollingerBandsUpperIndicator(bbm, sd);
         RSIIndicator rsiIndicator = new RSIIndicator(closePrice, 14);
 
+
         return new UnderIndicatorRule(rsiIndicator, 75)
                 .and(new OverIndicatorRule(closePrice, openPrice));
-//                .and(new UnderIndicatorRule(closePrice, bbu))
-//                .and(new UnderIndicatorRule(closePrice, highPrice));
 
-     //   return new OverIndicatorRule(closePrice, openPriceIndicator);
 
     }
 }

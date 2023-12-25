@@ -19,6 +19,7 @@ import org.ta4j.core.Rule;
 
 
 import java.math.BigDecimal;
+import java.text.MessageFormat;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -43,6 +44,9 @@ public class BinanceTraderBotImpl implements ITraderBot {
     // TODO удалить (счётчик разрешённых покупок актива)
     private Integer counter = 1_542_124;
     private boolean accountHasInsufficientBalance = true;
+
+    private final String BALANCE_ERROR_MESSAGE = "Account has insufficient balance for requested action";
+    private final String BARGAIN_EXISTS = "Bargain with such asset already exists";
 
 
     public BinanceTraderBotImpl(IStockMarketService stockMarketService,
@@ -131,21 +135,20 @@ public class BinanceTraderBotImpl implements ITraderBot {
 
 
                                                         if (bargainService.existsBySymbolAndStatusLike(symbol.getSymbol(), EBargainStatus.OPEN_BUY_ORDER_CREATED)) {
-                                                            log.warn("Bargain with such asset already exists");
+                                                            log.warn(BARGAIN_EXISTS);
                                                             return;
                                                         }
 
                                                         if (bargainService.existsBySymbolAndStatusLike(symbol.getSymbol(), EBargainStatus.OPEN_BUY_ORDER_FILLED)) {
-                                                            log.warn("Bargain with such asset already exists");
+                                                            log.warn(BARGAIN_EXISTS);
                                                             return;
                                                         }
 
 
                                                         if (bargainService.existsBySymbolAndStatusLike(symbol.getSymbol(), EBargainStatus.OPEN_SELL_ORDER_CREATED)) {
-                                                            log.warn("Bargain with such asset already exists");
+                                                            log.warn(BARGAIN_EXISTS);
                                                             return;
                                                         }
-
 
 
                                                         if (Objects.nonNull(strategy.getAdditionalStrategy())) {
@@ -196,7 +199,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
 
     @Scheduled(fixedDelay = 5_000, initialDelay = 8_000)
     @Async
-    public void setSellOrder(){
+    public void setSellOrder() {
         //проверка на исполнение ордера на покупку, если исполнен то создаём ордер на продажу
         bargainService.getAllWithFilledBuyOrders().ifPresent(
                 entities -> {
@@ -224,9 +227,9 @@ public class BinanceTraderBotImpl implements ITraderBot {
     @Scheduled(fixedDelay = 30_000, initialDelay = 9_000)
     @Async
     @Override
-    public void checkBargain() {
+    public void checkBargains() {
 
-          //проверка на исполнение ордера на продажу
+        //проверка на исполнение ордера на продажу
         bargainService.checkOnFinish().orElseThrow()
                 .stream()
                 .map(this::convertBargainEntityToDto)
@@ -266,15 +269,40 @@ public class BinanceTraderBotImpl implements ITraderBot {
 
                 });
     }
+
     @Scheduled(cron = "@hourly")
     @Async
     public void cancelTroubleBargain() {
         // продать актив если актив провалился в цене
         bargainService.getAllByStatus(EBargainStatus.OPEN_SELL_ORDER_CREATED).orElseThrow()
                 .stream().map(this::convertBargainEntityToDto)
-                .filter(bargainDto -> bargainDto.getPercentageResult().doubleValue() <= -3)
-                .filter(bargainDto -> bargainDto.getTimeInWork() > 30)
+                .filter(bargainDto -> bargainDto.getPercentageResult().doubleValue() <= -5)
+                .filter(bargainDto -> bargainDto.getTimeInWork() > 1440)
                 .forEach(bargainToCancel -> {
+
+                    if (bargainToCancel.getPercentageResult().doubleValue() <= -10) {
+
+                        String messageText = MessageFormat.format("""
+                            🚩 {0}
+                            Asset: {1}
+                            Percentage result: {2},
+                            Finance result: {3},
+                            Note! bargain was not canceled until now. 
+                            """, EEventType.TROUBLE_BARGAIN_WAS_DETECTED.toString()
+                                        .replace("_", " "),
+                                bargainToCancel.getSymbol(),
+                                bargainToCancel.getPercentageResult(),
+                                bargainToCancel.getFinanceResult()
+                        );
+
+
+                        EventDto event = EventDto.builder()
+                                .text(messageText)
+                                .build();
+
+                        notifier.notify(event);
+                        return;
+                    }
 
                     OrderDto canceledOrder = tradeManager.cancelOrder(bargainToCancel.getSellOrder());
                     OrderDto createdSellOrderByMarketPrice = tradeManager.createSellOrderByAscPrice(canceledOrder);
@@ -291,10 +319,8 @@ public class BinanceTraderBotImpl implements ITraderBot {
     }
 
 
-
     private BargainDto createBargain(BargainCreateDto bargainCreateDto) {
         try {
-
             //TODO удалить для реального трейдинга (позволяет совершить ограниченное количество сделок)
             counter = counter - 1;
 
@@ -322,15 +348,13 @@ public class BinanceTraderBotImpl implements ITraderBot {
             if (Objects.nonNull(sellOrderDto)) {
                 notifyAboutEvent(EEventType.SELL_LIMIT_ORDER_WAS_PLACED, sellOrderDto);
             }
-
-
             return newBargainDto;
 
         } catch (BinanceClientException binanceClientException) {
             log.error(binanceClientException.getErrMsg(), binanceClientException.getMessage());
             EventDto event = eventManager.get(EEventType.ERROR, binanceClientException);
             notifier.notify(event);
-            if (binanceClientException.getMessage().contains("Account has insufficient balance for requested action"))
+            if (binanceClientException.getMessage().contains(BALANCE_ERROR_MESSAGE))
                 accountHasInsufficientBalance = false;
 
             throw new RuntimeException(binanceClientException.getCause());

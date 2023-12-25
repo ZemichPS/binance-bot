@@ -44,7 +44,7 @@ public class Drop15mEnterStrategy extends TradeStrategy {
 
     @Override
     public BigDecimal getInterest() {
-        return new BigDecimal("0.7");
+        return new BigDecimal("1.2");
     }
 
     @Override
