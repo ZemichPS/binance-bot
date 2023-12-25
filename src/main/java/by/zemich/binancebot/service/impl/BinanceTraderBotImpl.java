@@ -270,17 +270,17 @@ public class BinanceTraderBotImpl implements ITraderBot {
                 });
     }
 
-    @Scheduled(cron = "@hourly")
+    @Scheduled(cron = "* */10 * * * *")
     @Async
     public void cancelTroubleBargain() {
         // продать актив если актив провалился в цене
         bargainService.getAllByStatus(EBargainStatus.OPEN_SELL_ORDER_CREATED).orElseThrow()
                 .stream().map(this::convertBargainEntityToDto)
-                .filter(bargainDto -> bargainDto.getPercentageResult().doubleValue() <= -5)
-                .filter(bargainDto -> bargainDto.getTimeInWork() > 1440)
+                .filter(bargainDto -> bargainDto.getPercentageResult().doubleValue() <= -3)
+                .filter(bargainDto -> bargainDto.getTimeInWork() > 360)
                 .forEach(bargainToCancel -> {
 
-                    if (bargainToCancel.getPercentageResult().doubleValue() <= -10) {
+                    if (bargainToCancel.getPercentageResult().doubleValue() <= -7) {
 
                         String messageText = MessageFormat.format("""
                             🚩 {0}
