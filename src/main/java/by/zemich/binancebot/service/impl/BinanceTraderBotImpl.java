@@ -19,7 +19,6 @@ import org.ta4j.core.Rule;
 
 
 import java.math.BigDecimal;
-import java.text.MessageFormat;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
@@ -33,7 +32,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
     private final ITradeManager tradeManager;
     private final INotifier notifier;
     private final IEventManager eventManager;
-    private final IBargainService bargainService;
+    private final IBargainStorageService bargainService;
     private final ConversionService conversionService;
     private final IIndicatorReader indicatorReader;
     private final IAssetService assetService;
@@ -53,7 +52,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
                                 ITradeManager tradeManager,
                                 INotifier notifier,
                                 IEventManager eventManager,
-                                IBargainService bargainService,
+                                IBargainStorageService bargainService,
                                 ConversionService conversionService,
                                 IIndicatorReader indicatorReader,
                                 IAssetService assetService, RealTradeProperties tradeProperties) {

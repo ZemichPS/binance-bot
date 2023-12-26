@@ -34,6 +34,7 @@ public class IAssetDaoImpl implements IAssetDao {
 
     @Override
     public List<Asset> getListToUSDTForSpotTrading() {
+
         return assetList.stream()
                 .filter(symbolDto -> symbolDto.getStatus().equals("TRADING"))
                 .filter(symbolDto -> symbolDto.getQuoteAsset().equals("USDT"))

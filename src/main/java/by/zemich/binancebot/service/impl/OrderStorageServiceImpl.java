@@ -7,11 +7,9 @@ import by.zemich.binancebot.core.dto.binance.*;
 import by.zemich.binancebot.core.enums.EOrderStatus;
 import by.zemich.binancebot.core.exeption.NoSuchEntityException;
 import by.zemich.binancebot.service.api.IConverter;
-import by.zemich.binancebot.service.api.IOrderService;
+import by.zemich.binancebot.service.api.IOrderStorageService;
 import by.zemich.binancebot.service.api.IStockMarketService;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.transaction.Transactional;
-import org.springframework.beans.BeanUtils;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Service;
 
@@ -20,14 +18,14 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
-public class OrderServiceImpl implements IOrderService {
+public class OrderStorageServiceImpl implements IOrderStorageService {
 
     private final IConverter converter;
     private final IOrderDao orderDao;
     private final ConversionService conversionService;
     private final IStockMarketService stockMarketService;
 
-    public OrderServiceImpl(IConverter converter, IOrderDao orderDao, ConversionService conversionService, IStockMarketService stockMarketService) {
+    public OrderStorageServiceImpl(IConverter converter, IOrderDao orderDao, ConversionService conversionService, IStockMarketService stockMarketService) {
         this.converter = converter;
         this.orderDao = orderDao;
         this.conversionService = conversionService;
@@ -44,28 +42,15 @@ public class OrderServiceImpl implements IOrderService {
     }
 
     @Override
+    public Optional<OrderEntity> update(OrderDto orderDto) {
+        OrderEntity newOrderEntity = conversionService.convert(orderDto, OrderEntity.class);
+        orderDao.save(newOrderEntity);
+        return Optional.of(newOrderEntity);
+    }
+
+    @Override
     public Optional<OrderEntity>  updateStatus(OrderDto orderDto, EOrderStatus conditionalStatus) {
 
-        QueryOrderDto queryOrder = QueryOrderDto.builder()
-                .symbol(orderDto.getSymbol())
-                .orderId(orderDto.getOrderId())
-                .build();
-
-
-            EOrderStatus updatedStatus = stockMarketService.getOrderStatus(queryOrder);
-
-            if (!orderDto.getStatus().equals(updatedStatus)) {
-
-                if (updatedStatus.equals(conditionalStatus)) {
-                    orderDto.setStatus(updatedStatus);
-                    OrderEntity orderEntity = conversionService.convert(orderDto, OrderEntity.class);
-
-                    return Optional.of(orderDao.save(orderEntity));
-                }
-            }
-
-
-        return Optional.empty();
     }
 
     @Override

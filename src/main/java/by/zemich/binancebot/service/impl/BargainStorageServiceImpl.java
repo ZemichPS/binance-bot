@@ -10,8 +10,8 @@ import by.zemich.binancebot.core.dto.OrderDto;
 import by.zemich.binancebot.core.enums.EBargainStatus;
 import by.zemich.binancebot.core.enums.EOrderStatus;
 import by.zemich.binancebot.core.exeption.BadOrderStatusException;
-import by.zemich.binancebot.service.api.IBargainService;
-import by.zemich.binancebot.service.api.IOrderService;
+import by.zemich.binancebot.service.api.IBargainStorageService;
+import by.zemich.binancebot.service.api.IOrderStorageService;
 import by.zemich.binancebot.service.api.IStockMarketService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.core.convert.ConversionService;
@@ -28,18 +28,18 @@ import java.util.*;
 
 @Service
 @Log4j2
-public class BargainServiceImpl implements IBargainService {
+public class BargainStorageServiceImpl implements IBargainStorageService {
 
 
     private final IBargainDao bargainDao;
     private final ConversionService conversionService;
-    private final IOrderService orderService;
+    private final IOrderStorageService orderService;
     private final IStockMarketService stockMarketService;
 
     private final RealTradeProperties tradeProperties;
 
 
-    public BargainServiceImpl(IBargainDao bargainDao, ConversionService conversionService, IOrderService orderService, IStockMarketService stockMarketService, RealTradeProperties tradeProperties) {
+    public BargainStorageServiceImpl(IBargainDao bargainDao, ConversionService conversionService, IOrderStorageService orderService, IStockMarketService stockMarketService, RealTradeProperties tradeProperties) {
         this.bargainDao = bargainDao;
         this.conversionService = conversionService;
         this.orderService = orderService;
@@ -244,7 +244,7 @@ public class BargainServiceImpl implements IBargainService {
 
     @Override
     @Transactional
-    public void removeByUuid(UUID uuid) {
+    public void deleteByUuid(UUID uuid) {
         bargainDao.deleteById(uuid);
     }
 

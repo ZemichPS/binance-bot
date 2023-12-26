@@ -6,12 +6,11 @@ import by.zemich.binancebot.core.dto.BargainDto;
 import by.zemich.binancebot.core.dto.OrderDto;
 import by.zemich.binancebot.core.enums.EBargainStatus;
 
-import javax.sql.rowset.Predicate;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface IBargainService {
+public interface IBargainStorageService {
     Optional<BargainEntity> save(BargainDto bargainDto);
     BargainDto addBuyOrder(BargainDto bargainDto, OrderDto buyOrder);
     BargainDto addSellOrder(BargainDto bargainDto, OrderDto sellOrder);
@@ -32,7 +31,7 @@ public interface IBargainService {
     Optional<List<BargainEntity>> checkOnFinish();
     Optional<List<BargainEntity>> getAllByStatus(EBargainStatus status);
     Optional<BargainEntity> getByUuid(UUID uuid);
-    void removeByUuid(UUID uuid);
+    void deleteByUuid(UUID uuid);
 
 
 

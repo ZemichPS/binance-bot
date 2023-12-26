@@ -19,15 +19,15 @@ import java.util.*;
 public class SpotClientController {
 
     private final IStockMarketService stockMarketService;
-    private final IOrderService orderService;
+    private final IOrderStorageService orderService;
     private final IAccountService accountService;
 
     private final ITradeManager tradeManager;
-    private final IBargainService bargainService;
+    private final IBargainStorageService bargainService;
 
     private final ConversionService conversionService;
 
-    public SpotClientController(IStockMarketService stockMarketService, IOrderService orderService, IAccountService accountService, ITradeManager tradeManager, IBargainService bargainService, ConversionService conversionService) {
+    public SpotClientController(IStockMarketService stockMarketService, IOrderStorageService orderService, IAccountService accountService, ITradeManager tradeManager, IBargainStorageService bargainService, ConversionService conversionService) {
         this.stockMarketService = stockMarketService;
         this.orderService = orderService;
         this.accountService = accountService;
