@@ -11,14 +11,15 @@ import java.util.Optional;
 
 public interface BargainFacade {
     BargainDto create(BargainCreateDto bargainCreateDto);
+    BargainDto update(BargainDto bargainDtoForUpdate);
     BargainDto addBuyOrder(BargainDto bargainDto, OrderDto buyOrder);
     BargainDto addSellOrder(BargainDto bargainDto, OrderDto sellOrder);
     BargainDto endByReasonExpired(BargainDto bargainDto);
     BargainDto finalize(BargainDto bargainDto, EBargainStatus status);
     BargainDto updateResult(BargainDto bargainDto);
-    List<BargainDto> checkOnFinish();
-    List<BargainDto> getAllByStatus(EBargainStatus status);
-    List<BargainDto> getAllWithFilledBuyOrders();
+    Optional<List<BargainDto>> checkOnFinish();
+    Optional<List<BargainDto>> getAllByStatus(EBargainStatus status);
+    Optional<List<BargainDto>> getAllWithFilledBuyOrders();
     BargainDto completeBargainByReasonTimeoutBuyOrder(BargainDto troubleBargain);
 
 

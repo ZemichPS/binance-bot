@@ -1,6 +1,7 @@
 package by.zemich.binancebot.core.enums;
 
 public enum EBargainStatus {
+    NEW,
     CREATED,
     OPEN_BUY_ORDER_CREATED,
     OPEN_BUY_ORDER_FILLED,
