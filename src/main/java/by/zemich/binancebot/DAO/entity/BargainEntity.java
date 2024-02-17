@@ -3,11 +3,14 @@ package by.zemich.binancebot.DAO.entity;
 import by.zemich.binancebot.core.enums.EBargainStatus;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.SourceType;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.math.BigDecimal;
 import java.sql.Timestamp;
+import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -52,145 +55,14 @@ public class BargainEntity {
     @Column(name = "fee")
     private BigDecimal fee;
 
-    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.REFRESH)
-    @JoinColumn(name = "buy_order_id", referencedColumnName = "uuid")
-    private OrderEntity buyOrder;
+    @OneToMany(
+            fetch = FetchType.EAGER,
+            cascade = CascadeType.MERGE,
+            orphanRemoval = true,
+            mappedBy = "bargain"
+    )
+    @JoinColumn(name = "bargain_uuid")
+    private List<OrderEntity> orders;
 
-    @OneToOne(fetch = FetchType.EAGER, cascade = CascadeType.REFRESH)
-    @JoinColumn(name = "sell_order_id", referencedColumnName = "uuid")
-    private OrderEntity sellOrder;
 
-
-
-    public BargainEntity() {
-    }
-
-    public BargainEntity(UUID uuid, String strategy, Timestamp dtCreate, Timestamp dtUpdate, BigDecimal percentageResult, BigDecimal financeResult, Long timeInWork, Timestamp finishTime, EBargainStatus status, String symbol, BigDecimal currentPercentageResult, BigDecimal interest, BigDecimal fee, OrderEntity buyOrder, OrderEntity sellOrder) {
-        this.uuid = uuid;
-        this.strategy = strategy;
-        this.dtCreate = dtCreate;
-        this.dtUpdate = dtUpdate;
-        this.percentageResult = percentageResult;
-        this.financeResult = financeResult;
-        this.timeInWork = timeInWork;
-        this.finishTime = finishTime;
-        this.status = status;
-        this.symbol = symbol;
-        this.interest = interest;
-        this.fee = fee;
-        this.buyOrder = buyOrder;
-        this.sellOrder = sellOrder;
-    }
-
-    public UUID getUuid() {
-        return uuid;
-    }
-
-    public void setUuid(UUID uuid) {
-        this.uuid = uuid;
-    }
-
-    public Timestamp getDtCreate() {
-        return dtCreate;
-    }
-
-    public void setDtCreate(Timestamp dtCreate) {
-        this.dtCreate = dtCreate;
-    }
-
-    public Timestamp getDtUpdate() {
-        return dtUpdate;
-    }
-
-    public void setDtUpdate(Timestamp dtUpdate) {
-        this.dtUpdate = dtUpdate;
-    }
-
-    public BigDecimal getPercentageResult() {
-        return percentageResult;
-    }
-
-    public void setPercentageResult(BigDecimal percentageResult) {
-        this.percentageResult = percentageResult;
-    }
-
-    public BigDecimal getFinanceResult() {
-        return financeResult;
-    }
-
-    public void setFinanceResult(BigDecimal financeResult) {
-        this.financeResult = financeResult;
-    }
-
-    public Long getTimeInWork() {
-        return timeInWork;
-    }
-
-    public void setTimeInWork(Long timeInWork) {
-        this.timeInWork = timeInWork;
-    }
-
-    public Timestamp getFinishTime() {
-        return finishTime;
-    }
-
-    public void setFinishTime(Timestamp finishTime) {
-        this.finishTime = finishTime;
-    }
-
-    public EBargainStatus getStatus() {
-        return status;
-    }
-
-    public void setStatus(EBargainStatus status) {
-        this.status = status;
-    }
-
-    public String getSymbol() {
-        return symbol;
-    }
-
-    public void setSymbol(String symbol) {
-        this.symbol = symbol;
-    }
-
-    public OrderEntity getBuyOrder() {
-        return buyOrder;
-    }
-
-    public void setBuyOrder(OrderEntity buyOrder) {
-        this.buyOrder = buyOrder;
-    }
-
-    public OrderEntity getSellOrder() {
-        return sellOrder;
-    }
-
-    public void setSellOrder(OrderEntity sellOrder) {
-        this.sellOrder = sellOrder;
-    }
-
-    public String getStrategy() {
-        return strategy;
-    }
-
-    public void setStrategy(String strategy) {
-        this.strategy = strategy;
-    }
-
-    public BigDecimal getInterest() {
-        return interest;
-    }
-
-    public void setInterest(BigDecimal interest) {
-        this.interest = interest;
-    }
-
-    public BigDecimal getFee() {
-        return fee;
-    }
-
-    public void setFee(BigDecimal fee) {
-        this.fee = fee;
-    }
 }

@@ -94,7 +94,6 @@ public class Main15mEnterStrategy extends TradeStrategy {
                 .and(new OverIndicatorRule(rsiIndicator, 45))
                 // средняя (SMA) растёт
                 .and(new IsRisingRule(bbm, 14, 0.75))
-                .and(new IsRisingRule(obv, 3, 0.6))
                 // Цена не достигала верхней границы Боллинджера
                 .and(new UnderIndicatorRule(highPriceIndicator, bbu));
 
