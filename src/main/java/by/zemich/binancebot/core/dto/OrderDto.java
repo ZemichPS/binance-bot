@@ -13,7 +13,6 @@ import java.util.UUID;
 
 @Data
 public class OrderDto {
-
     private UUID uuid;
     private Timestamp dtUpdate;
     private Timestamp dtCreate;
@@ -34,4 +33,6 @@ public class OrderDto {
     private boolean isWorking;
     private Timestamp workingTime;
     private String selfTradePreventionMode;
+    private BargainDto bargain;
+
 }

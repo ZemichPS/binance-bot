@@ -13,7 +13,6 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
 @Service
@@ -21,11 +20,11 @@ public class OrderFacadeImpl implements OrderFacade {
 
     private final IOrderStockMarketService orderStockMarketService;
     private final AssetFacade assetFacade;
-    private final IOrderStorageService orderStorageService;
+    private final OrderService orderStorageService;
     private final ConversionService conversionService;
     private final RealTradeProperties tradeProperties;
 
-    public OrderFacadeImpl(IOrderStockMarketService orderStockMarketService, AssetFacade assetFacade, IOrderStorageService orderStorageService, ConversionService conversionService, RealTradeProperties tradeProperties) {
+    public OrderFacadeImpl(IOrderStockMarketService orderStockMarketService, AssetFacade assetFacade, OrderService orderStorageService, ConversionService conversionService, RealTradeProperties tradeProperties) {
         this.orderStockMarketService = orderStockMarketService;
         this.assetFacade = assetFacade;
         this.orderStorageService = orderStorageService;

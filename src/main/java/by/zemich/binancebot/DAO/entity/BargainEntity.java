@@ -64,5 +64,126 @@ public class BargainEntity {
     @JoinColumn(name = "bargain_uuid")
     private List<OrderEntity> orders;
 
+    public BargainEntity(UUID uuid, String strategy, Timestamp dtCreate, Timestamp dtUpdate, BigDecimal percentageResult, BigDecimal financeResult, Long timeInWork, Timestamp finishTime, EBargainStatus status, String symbol, BigDecimal interest, BigDecimal fee, List<OrderEntity> orders) {
+        this.uuid = uuid;
+        this.strategy = strategy;
+        this.dtCreate = dtCreate;
+        this.dtUpdate = dtUpdate;
+        this.percentageResult = percentageResult;
+        this.financeResult = financeResult;
+        this.timeInWork = timeInWork;
+        this.finishTime = finishTime;
+        this.status = status;
+        this.symbol = symbol;
+        this.interest = interest;
+        this.fee = fee;
+        this.orders = orders;
+    }
 
+    public BargainEntity() {
+    }
+
+    public UUID getUuid() {
+        return uuid;
+    }
+
+    public void setUuid(UUID uuid) {
+        this.uuid = uuid;
+    }
+
+    public String getStrategy() {
+        return strategy;
+    }
+
+    public void setStrategy(String strategy) {
+        this.strategy = strategy;
+    }
+
+    public Timestamp getDtCreate() {
+        return dtCreate;
+    }
+
+    public void setDtCreate(Timestamp dtCreate) {
+        this.dtCreate = dtCreate;
+    }
+
+    public Timestamp getDtUpdate() {
+        return dtUpdate;
+    }
+
+    public void setDtUpdate(Timestamp dtUpdate) {
+        this.dtUpdate = dtUpdate;
+    }
+
+    public BigDecimal getPercentageResult() {
+        return percentageResult;
+    }
+
+    public void setPercentageResult(BigDecimal percentageResult) {
+        this.percentageResult = percentageResult;
+    }
+
+    public BigDecimal getFinanceResult() {
+        return financeResult;
+    }
+
+    public void setFinanceResult(BigDecimal financeResult) {
+        this.financeResult = financeResult;
+    }
+
+    public Long getTimeInWork() {
+        return timeInWork;
+    }
+
+    public void setTimeInWork(Long timeInWork) {
+        this.timeInWork = timeInWork;
+    }
+
+    public Timestamp getFinishTime() {
+        return finishTime;
+    }
+
+    public void setFinishTime(Timestamp finishTime) {
+        this.finishTime = finishTime;
+    }
+
+    public EBargainStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(EBargainStatus status) {
+        this.status = status;
+    }
+
+    public String getSymbol() {
+        return symbol;
+    }
+
+    public void setSymbol(String symbol) {
+        this.symbol = symbol;
+    }
+
+    public BigDecimal getInterest() {
+        return interest;
+    }
+
+    public void setInterest(BigDecimal interest) {
+        this.interest = interest;
+    }
+
+    public BigDecimal getFee() {
+        return fee;
+    }
+
+    public void setFee(BigDecimal fee) {
+        this.fee = fee;
+    }
+
+    public List<OrderEntity> getOrders() {
+        return orders;
+    }
+
+    public void setOrders(List<OrderEntity> orders) {
+        this.orders = orders;
+    }
 }

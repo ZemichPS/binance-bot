@@ -2,6 +2,7 @@ package by.zemich.binancebot.service.impl;
 
 import by.zemich.binancebot.core.dto.*;
 import by.zemich.binancebot.core.dto.binance.*;
+import by.zemich.binancebot.core.dto.ta4j.BarDto;
 import by.zemich.binancebot.core.enums.EEventType;
 import by.zemich.binancebot.core.enums.EOrderStatus;
 import by.zemich.binancebot.core.enums.ETimeInForce;

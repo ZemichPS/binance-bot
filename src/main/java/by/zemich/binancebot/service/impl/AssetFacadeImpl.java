@@ -1,10 +1,9 @@
 package by.zemich.binancebot.service.impl;
 
 import by.zemich.binancebot.DAO.api.IAssetDao;
-import by.zemich.binancebot.core.dto.BarDto;
+import by.zemich.binancebot.core.dto.ta4j.BarDto;
 import by.zemich.binancebot.core.dto.binance.*;
 import by.zemich.binancebot.service.api.AssetFacade;
-import by.zemich.binancebot.service.api.IAssetService;
 import org.springframework.stereotype.Service;
 import org.ta4j.core.BarSeries;
 

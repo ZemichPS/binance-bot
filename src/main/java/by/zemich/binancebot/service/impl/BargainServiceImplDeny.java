@@ -1,6 +1,6 @@
 package by.zemich.binancebot.service.impl;
 
-import by.zemich.binancebot.DAO.api.IBargainDao;
+import by.zemich.binancebot.DAO.api.BargainDao;
 import by.zemich.binancebot.DAO.entity.BargainEntity;
 import by.zemich.binancebot.DAO.entity.OrderEntity;
 import by.zemich.binancebot.config.properties.RealTradeProperties;
@@ -10,8 +10,8 @@ import by.zemich.binancebot.core.dto.OrderDto;
 import by.zemich.binancebot.core.enums.EBargainStatus;
 import by.zemich.binancebot.core.enums.EOrderStatus;
 import by.zemich.binancebot.core.exeption.BadOrderStatusException;
-import by.zemich.binancebot.service.api.IBargainStorageService;
-import by.zemich.binancebot.service.api.IOrderStorageService;
+import by.zemich.binancebot.service.api.BargainService;
+import by.zemich.binancebot.service.api.OrderService;
 import by.zemich.binancebot.service.api.IStockMarketService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.core.convert.ConversionService;
@@ -28,18 +28,18 @@ import java.util.*;
 
 @Service
 @Log4j2
-public class BargainStorageServiceImpl implements IBargainStorageService {
+public class BargainServiceImplDeny implements BargainService {
 
 
-    private final IBargainDao bargainDao;
+    private final BargainDao bargainDao;
     private final ConversionService conversionService;
-    private final IOrderStorageService orderService;
+    private final OrderService orderService;
     private final IStockMarketService stockMarketService;
 
     private final RealTradeProperties tradeProperties;
 
 
-    public BargainStorageServiceImpl(IBargainDao bargainDao, ConversionService conversionService, IOrderStorageService orderService, IStockMarketService stockMarketService, RealTradeProperties tradeProperties) {
+    public BargainServiceImplDeny(BargainDao bargainDao, ConversionService conversionService, OrderService orderService, IStockMarketService stockMarketService, RealTradeProperties tradeProperties) {
         this.bargainDao = bargainDao;
         this.conversionService = conversionService;
         this.orderService = orderService;
@@ -94,7 +94,7 @@ public class BargainStorageServiceImpl implements IBargainStorageService {
 
 
     @Override
-    public BargainDto create(BargainCreateDto bargainCreateDto) {
+    public BargainDto save(BargainCreateDto bargainCreateDto) {
 
         BargainDto newBargain = new BargainDto();
         newBargain.setUuid(UUID.randomUUID());

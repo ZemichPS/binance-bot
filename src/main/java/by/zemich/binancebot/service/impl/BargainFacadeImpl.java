@@ -8,7 +8,7 @@ import by.zemich.binancebot.core.enums.EBargainStatus;
 import by.zemich.binancebot.core.enums.EOrderStatus;
 import by.zemich.binancebot.core.exeption.NoSuchEntityException;
 import by.zemich.binancebot.service.api.BargainFacade;
-import by.zemich.binancebot.service.api.IBargainStorageService;
+import by.zemich.binancebot.service.api.BargainService;
 import by.zemich.binancebot.service.api.OrderFacade;
 import org.springframework.core.convert.ConversionService;
 import org.springframework.stereotype.Service;
@@ -19,13 +19,13 @@ import java.util.stream.Collectors;
 @Service
 public class BargainFacadeImpl implements BargainFacade {
 
-    private final IBargainStorageService bargainStorageService;
+    private final BargainService bargainServiceService;
     private final ConversionService conversionService;
 
     private final OrderFacade orderFacade;
 
-    public BargainFacadeImpl(IBargainStorageService bargainStorageService, ConversionService conversionService, OrderFacade orderFacade) {
-        this.bargainStorageService = bargainStorageService;
+    public BargainFacadeImpl(BargainService bargainServiceService, ConversionService conversionService, OrderFacade orderFacade) {
+        this.bargainServiceService = bargainServiceService;
         this.conversionService = conversionService;
         this.orderFacade = orderFacade;
     }
@@ -38,13 +38,13 @@ public class BargainFacadeImpl implements BargainFacade {
         newBargainDto.setStrategy(bargainCreateDto.getStrategy());
         newBargainDto.setSymbol(bargainCreateDto.getSymbol().getSymbol());
         newBargainDto.setInterest(bargainCreateDto.getPercentageAim());
-        BargainEntity savedBargainEntity = bargainStorageService.save(newBargainDto).orElseThrow();
+        BargainEntity savedBargainEntity = bargainServiceService.save(newBargainDto).orElseThrow();
         return convertBargainEntityToBargainDto(savedBargainEntity);
     }
 
     @Override
     public BargainDto update(BargainDto bargainDtoForUpdate) {
-        BargainEntity updatedBargainEntity = bargainStorageService.update(bargainDtoForUpdate).orElseThrow();
+        BargainEntity updatedBargainEntity = bargainServiceService.update(bargainDtoForUpdate).orElseThrow();
         return convertBargainEntityToBargainDto(updatedBargainEntity);
     }
 
@@ -77,7 +77,7 @@ public class BargainFacadeImpl implements BargainFacade {
     public Optional<List<BargainDto>> checkOnFinish() {
         List<BargainDto> bargainDtoList = new ArrayList<>();
 
-        bargainStorageService.getAllByStatus(EBargainStatus.OPEN_SELL_ORDER_CREATED).orElseThrow()
+        bargainServiceService.getAllByStatus(EBargainStatus.OPEN_SELL_ORDER_CREATED).orElseThrow()
                 .stream().map(this::convertBargainEntityToBargainDto)
                 .forEach(bargainDto -> {
 
@@ -96,7 +96,7 @@ public class BargainFacadeImpl implements BargainFacade {
 
     @Override
     public Optional<List<BargainDto>> getAllByStatus(EBargainStatus status) {
-        return Optional.of(bargainStorageService.getAllByStatus(status).orElseThrow(NoSuchEntityException::new).stream()
+        return Optional.of(bargainServiceService.getAllByStatus(status).orElseThrow(NoSuchEntityException::new).stream()
                 .map(this::convertBargainEntityToBargainDto)
                 .collect(Collectors.toList()));
     }

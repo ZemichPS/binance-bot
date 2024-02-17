@@ -1,4 +1,4 @@
-package by.zemich.binancebot.core.dto;
+package by.zemich.binancebot.core.dto.ta4j;
 
 import lombok.Data;
 

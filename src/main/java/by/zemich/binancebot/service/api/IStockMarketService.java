@@ -1,13 +1,12 @@
 package by.zemich.binancebot.service.api;
 
-import by.zemich.binancebot.DAO.entity.OrderEntity;
 import by.zemich.binancebot.core.dto.*;
 import by.zemich.binancebot.core.dto.binance.*;
+import by.zemich.binancebot.core.dto.ta4j.BarDto;
 import by.zemich.binancebot.core.enums.EOrderStatus;
 import org.ta4j.core.BarSeries;
 
 import java.math.BigDecimal;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;

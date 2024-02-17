@@ -32,7 +32,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
     private final ITradeManager tradeManager;
     private final INotifier notifier;
     private final IEventManager eventManager;
-    private final IBargainStorageService bargainService;
+    private final BargainService bargainService;
     private final ConversionService conversionService;
     private final IIndicatorReader indicatorReader;
     private final IAssetService assetService;
@@ -52,7 +52,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
                                 ITradeManager tradeManager,
                                 INotifier notifier,
                                 IEventManager eventManager,
-                                IBargainStorageService bargainService,
+                                BargainService bargainService,
                                 ConversionService conversionService,
                                 IIndicatorReader indicatorReader,
                                 IAssetService assetService, RealTradeProperties tradeProperties) {
@@ -333,7 +333,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
             OrderDto buyOrder = tradeManager.createBuyLimitOrderByCurrentPrice(bargainCreateDto.getSymbol());
             OrderDto sellOrderDto = null;
 
-            BargainDto newBargain = bargainService.create(bargainCreateDto);
+            BargainDto newBargain = bargainService.save(bargainCreateDto);
             bargainService.addBuyOrder(newBargain, buyOrder);
             newBargain.setStatus(EBargainStatus.OPEN_BUY_ORDER_CREATED);
             newBargain.setInterest(bargainCreateDto.getPercentageAim());

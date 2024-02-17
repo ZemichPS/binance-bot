@@ -12,7 +12,7 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Repository
-public interface IBargainDao extends JpaRepository<BargainEntity, UUID>, PagingAndSortingRepository<BargainEntity, UUID> {
+public interface BargainDao extends JpaRepository<BargainEntity, UUID>, PagingAndSortingRepository<BargainEntity, UUID> {
 
     List<BargainEntity> findAll();
     boolean existsByStatusAndSymbol(EBargainStatus status, String symbol);
@@ -21,7 +21,7 @@ public interface IBargainDao extends JpaRepository<BargainEntity, UUID>, PagingA
 
     boolean existsBySymbolAndStatusStartsWith(String symbol, String beginningOfStatus);
 
-    Optional<List<BargainEntity>> findAllByStatus(EBargainStatus status);
-    Optional<List<BargainEntity>> findAllByPercentageResultGreaterThan(BigDecimal percentageResult);
+    List<BargainEntity> findAllByStatus(EBargainStatus status);
+    List<BargainEntity> findAllByPercentageResultGreaterThan(BigDecimal percentageResult);
 
 }
