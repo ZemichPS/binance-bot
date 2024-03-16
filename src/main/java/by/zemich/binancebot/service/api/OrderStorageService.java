@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
-public interface OrderService {
+public interface OrderStorageService {
     OrderEntity save(OrderDto newOrder);
     OrderEntity update(OrderDto order);
     List<OrderEntity> getAllBySymbol(String symbol);

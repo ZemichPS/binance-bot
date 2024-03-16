@@ -5,7 +5,7 @@ import by.zemich.binancebot.core.dto.binance.AccountInformationResponseDto;
 import by.zemich.binancebot.core.dto.binance.AccountTradeQueryDto;
 import by.zemich.binancebot.core.dto.binance.AccountTradeResponseDto;
 import by.zemich.binancebot.service.api.IAccountService;
-import by.zemich.binancebot.service.api.IConverter;
+import by.zemich.binancebot.service.api.Converter;
 import com.binance.connector.client.SpotClient;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -17,11 +17,11 @@ import java.util.Optional;
 @Service
 public class AccountServiceImpl implements IAccountService {
 
-    private final IConverter converter;
+    private final Converter converter;
     private final SpotClient spotClient;
     private final ObjectMapper objectMapper;
 
-    public AccountServiceImpl(IConverter converter, SpotClient spotClient, ObjectMapper objectMapper) {
+    public AccountServiceImpl(Converter converter, SpotClient spotClient, ObjectMapper objectMapper) {
         this.converter = converter;
         this.spotClient = spotClient;
         this.objectMapper = objectMapper;

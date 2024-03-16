@@ -20,20 +20,20 @@ import java.util.*;
 @Slf4j
 public class TradeManagerImpl implements ITradeManager {
 
-    private final IStockMarketService stockMarketService;
-    private final OrderService orderService;
+    private final OrderBrokerService brokerOrderService;
+    private final OrderStorageService orderStorageService;
     private final RealTradeProperties tradeProperties;
     private final ConversionService conversionService;
     private final IAssetService assetService;
     private final BargainService bargainService;
 
-    public TradeManagerImpl(IStockMarketService stockMarketService,
-                            OrderService orderService,
+    public TradeManagerImpl(OrderBrokerService brokerOrderService,
+                            OrderStorageService orderStorageService,
                             RealTradeProperties tradeProperties,
                             ConversionService conversionService,
                             IAssetService assetService, BargainService bargainService) {
-        this.stockMarketService = stockMarketService;
-        this.orderService = orderService;
+        this.brokerOrderService = brokerOrderService;
+        this.orderStorageService = orderStorageService;
         this.tradeProperties = tradeProperties;
         this.conversionService = conversionService;
         this.assetService = assetService;
@@ -43,7 +43,7 @@ public class TradeManagerImpl implements ITradeManager {
 
     @Override
     public OrderDto createBuyLimitOrderByAskPrice(Asset symbol) {
-        BigDecimal askPrice = stockMarketService.getAskPriceForAsset(symbol.getSymbol());
+        BigDecimal askPrice = brokerOrderService.getAskPriceForAsset(symbol.getSymbol());
         BigDecimal quantity = tradeProperties.getDeposit().divide(askPrice, 1, RoundingMode.HALF_DOWN);
 
         RequestForNewOrderDto newOrderRequest = RequestForNewOrderDto.builder()
@@ -56,7 +56,7 @@ public class TradeManagerImpl implements ITradeManager {
                 .newOrderRespType(ENewOrderRespType.FULL)
                 .build();
 
-        OrderDto newCreatedOrder = stockMarketService.createOrder(newOrderRequest);
+        OrderDto newCreatedOrder = brokerOrderService.createOrder(newOrderRequest);
         saveAndConvertOrderToDto(newCreatedOrder);
 
         return newCreatedOrder;
@@ -69,7 +69,7 @@ public class TradeManagerImpl implements ITradeManager {
 
         BigDecimal stepSize = lotSizeBinanceFilter.getStepSize();
 
-        BigDecimal currentPrice = stockMarketService.getCurrentPriceForAsset(assetForBuying.getSymbol());
+        BigDecimal currentPrice = brokerOrderService.getCurrentPriceForAsset(assetForBuying.getSymbol());
         BigDecimal quantityForBuying = tradeProperties.getDeposit().divide(currentPrice, 10, RoundingMode.DOWN);
         BigDecimal computedQuantity = getAssetQuantityUsingStepSize(quantityForBuying, stepSize).setScale(priceFilter.getTickSize().scale(), RoundingMode.HALF_UP);
 
@@ -83,7 +83,7 @@ public class TradeManagerImpl implements ITradeManager {
                 .newOrderRespType(ENewOrderRespType.FULL)
                 .build();
 
-        OrderDto newCreatedOrder = stockMarketService.createOrder(requestForNewOrderDto);
+        OrderDto newCreatedOrder = brokerOrderService.createOrder(requestForNewOrderDto);
 
 
         return saveAndConvertOrderToDto(newCreatedOrder);
@@ -121,7 +121,7 @@ public class TradeManagerImpl implements ITradeManager {
                 .newOrderRespType(ENewOrderRespType.FULL)
                 .build();
 
-        OrderDto newCreatedOrder = stockMarketService.createOrder(requestForNewSellOrder);
+        OrderDto newCreatedOrder = brokerOrderService.createOrder(requestForNewSellOrder);
         return saveAndConvertOrderToDto(newCreatedOrder);
     }
 
@@ -129,7 +129,7 @@ public class TradeManagerImpl implements ITradeManager {
     public OrderDto createSellOrderByAscPrice(OrderDto orderDtoToSell) {
 
         String assetSymbol = orderDtoToSell.getSymbol();
-        BigDecimal ascPrice = stockMarketService.getAskPriceForAsset(assetSymbol);
+        BigDecimal ascPrice = brokerOrderService.getAskPriceForAsset(assetSymbol);
         BigDecimal currentQuantity = orderDtoToSell.getOrigQty();
 
         RequestForNewOrderDto requestForNewSellOrder = RequestForNewOrderDto.builder()
@@ -142,7 +142,7 @@ public class TradeManagerImpl implements ITradeManager {
                 .newOrderRespType(ENewOrderRespType.FULL)
                 .build();
 
-        OrderDto newCreatedOrder = stockMarketService.createOrder(requestForNewSellOrder);
+        OrderDto newCreatedOrder = brokerOrderService.createOrder(requestForNewSellOrder);
         return saveAndConvertOrderToDto(newCreatedOrder);
     }
 
@@ -160,7 +160,7 @@ public class TradeManagerImpl implements ITradeManager {
                 .newOrderRespType(ENewOrderRespType.FULL)
                 .build();
 
-        OrderDto newCreatedOrder = stockMarketService.createOrder(requestForNewSellOrder);
+        OrderDto newCreatedOrder = brokerOrderService.createOrder(requestForNewSellOrder);
         return saveAndConvertOrderToDto(newCreatedOrder);
     }
 
@@ -183,7 +183,7 @@ public class TradeManagerImpl implements ITradeManager {
                 .newOrderRespType(ENewOrderRespType.FULL)
                 .build();
 
-        OrderDto newCreatedOrder = stockMarketService.createOrder(requestForCreateStopLimitOrder);
+        OrderDto newCreatedOrder = brokerOrderService.createOrder(requestForCreateStopLimitOrder);
 
         return saveAndConvertOrderToDto(newCreatedOrder);
     }
@@ -195,7 +195,7 @@ public class TradeManagerImpl implements ITradeManager {
                 .orderId(troubleOrder.getOrderId())
                 .build();
 
-        CancelOrderResponseDto cancelOrderResponseDto = stockMarketService.cancelOrder(cancelOrderRequestDto);
+        CancelOrderResponseDto cancelOrderResponseDto = brokerOrderService.cancelOrder(cancelOrderRequestDto);
         OrderDto canceledOrder = getOrderById(cancelOrderResponseDto.getOrderId());
         canceledOrder.setStatus(EOrderStatus.CANCELED);
 
@@ -225,12 +225,12 @@ public class TradeManagerImpl implements ITradeManager {
     }
 
     private OrderDto getOrderById(Long orderId) {
-        OrderEntity orderEntity = orderService.getByOrderId(orderId).orElseThrow(RuntimeException::new);
+        OrderEntity orderEntity = orderStorageService.getByOrderId(orderId).orElseThrow(RuntimeException::new);
         return conversionService.convert(orderEntity, OrderDto.class);
     }
 
     private OrderDto getOrderByUuid(UUID orderUuid) {
-        OrderEntity orderEntity = orderService.getByUuid(orderUuid).orElseThrow(RuntimeException::new);
+        OrderEntity orderEntity = orderStorageService.getByUuid(orderUuid).orElseThrow(RuntimeException::new);
         return conversionService.convert(orderEntity, OrderDto.class);
     }
 
@@ -249,7 +249,7 @@ public class TradeManagerImpl implements ITradeManager {
     }
 
     private OrderDto saveAndConvertOrderToDto(OrderDto newOrder) {
-        OrderEntity savedNewOrderEntity = orderService.save(newOrder).orElseThrow(RuntimeException::new);
+        OrderEntity savedNewOrderEntity = orderStorageService.save(newOrder).orElseThrow(RuntimeException::new);
         return conversionService.convert(savedNewOrderEntity, OrderDto.class);
     }
 

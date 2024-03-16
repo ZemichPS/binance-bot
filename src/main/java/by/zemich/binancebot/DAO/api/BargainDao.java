@@ -18,9 +18,7 @@ public interface BargainDao extends JpaRepository<BargainEntity, UUID>, PagingAn
     boolean existsByStatusAndSymbol(EBargainStatus status, String symbol);
     boolean existsBySymbolAndStatusNotLike(String symbol, EBargainStatus status);
     boolean existsBySymbolAndStatusLike(String symbol, EBargainStatus bargainStatus);
-
     boolean existsBySymbolAndStatusStartsWith(String symbol, String beginningOfStatus);
-
     List<BargainEntity> findAllByStatus(EBargainStatus status);
     List<BargainEntity> findAllByPercentageResultGreaterThan(BigDecimal percentageResult);
 

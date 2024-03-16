@@ -17,14 +17,14 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
-public class BargainFacadeImpl implements BargainFacade {
+public class BargainFacadeImplDeny implements BargainFacade {
 
     private final BargainService bargainServiceService;
     private final ConversionService conversionService;
 
     private final OrderFacade orderFacade;
 
-    public BargainFacadeImpl(BargainService bargainServiceService, ConversionService conversionService, OrderFacade orderFacade) {
+    public BargainFacadeImplDeny(BargainService bargainServiceService, ConversionService conversionService, OrderFacade orderFacade) {
         this.bargainServiceService = bargainServiceService;
         this.conversionService = conversionService;
         this.orderFacade = orderFacade;
@@ -64,7 +64,7 @@ public class BargainFacadeImpl implements BargainFacade {
     }
 
     @Override
-    public BargainDto finalize(BargainDto bargainDto, EBargainStatus status) {
+    public BargainDto complete(BargainDto bargainDto, EBargainStatus status) {
         return null;
     }
 
@@ -74,7 +74,7 @@ public class BargainFacadeImpl implements BargainFacade {
     }
 
     @Override
-    public Optional<List<BargainDto>> checkOnFinish() {
+    public List<BargainDto> checkOnFinish() {
         List<BargainDto> bargainDtoList = new ArrayList<>();
 
         bargainServiceService.getAllByStatus(EBargainStatus.OPEN_SELL_ORDER_CREATED).orElseThrow()
@@ -95,14 +95,14 @@ public class BargainFacadeImpl implements BargainFacade {
     }
 
     @Override
-    public Optional<List<BargainDto>> getAllByStatus(EBargainStatus status) {
+    public List<BargainDto> getAllByStatus(EBargainStatus status) {
         return Optional.of(bargainServiceService.getAllByStatus(status).orElseThrow(NoSuchEntityException::new).stream()
                 .map(this::convertBargainEntityToBargainDto)
                 .collect(Collectors.toList()));
     }
 
     @Override
-    public Optional<List<BargainDto>> getAllWithFilledBuyOrders() {
+    public List<BargainDto> getAllWithFilledBuyOrders() {
         return null;
     }
 

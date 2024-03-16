@@ -10,6 +10,6 @@ import java.math.BigDecimal;
 @Data
 public class BargainCreateDto {
     private String strategy;
-    private Asset symbol;
+    private Asset asset;
     private BigDecimal percentageAim;
 }

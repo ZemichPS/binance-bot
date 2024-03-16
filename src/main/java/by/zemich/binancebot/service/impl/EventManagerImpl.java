@@ -71,7 +71,7 @@ public class EventManagerImpl implements IEventManager {
                 bargainDto.getStrategy());
 
 
-        if (status.equals(EBargainStatus.FINISHED) || status.equals(EBargainStatus.CANCELED_IN_THE_RED)) {
+        if (status.equals(EBargainStatus.COMPLETED_SUCCESSFULLY) || status.equals(EBargainStatus.CANCELED_IN_THE_RED)) {
 
             String additionalText = MessageFormat.format("""
                             ------------------{0}--------------------

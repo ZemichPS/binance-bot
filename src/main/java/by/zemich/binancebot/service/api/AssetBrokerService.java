@@ -8,20 +8,18 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 
-public interface AssetFacade {
+public interface AssetBrokerService {
     Asset getBySymbol(String symbol);
-
-    List<Asset> getListToUSDTForSpotTrading();
-
-    BigDecimal getAskPrice(String assetSymbol);
+    List<Asset> getAllSpotTradingToUsdtSpotTrading();
+    List<Asset> getAllAvailableForSpotTrading();
+    List<Asset> getAllAvailable();
+    BigDecimal getAskPriceBySymbol(String assetSymbol);
     BigDecimal getBidPrice(String assetSymbol);
     BigDecimal getCurrentPrice(String assetSymbol);
     List<BarDto> getBars(KlineQueryDto klineQuery);
     BarSeries getBarSeries(KlineQueryDto klineQuery);
     ExchangeInfoResponseDto getExchangeInfo(ExchangeInfoQueryDto queryDto);
-    List<SymbolShortDto> getAllSymbols(TickerSymbolShortQuery query);
-    List<String> getSpotSymbols();
-    List<Asset> getSymbols();
     OrderBookTickerDto getOrderBookTicker(Map<String, Object> params);
-    SymbolPriceTickerDto getSymbolPriceTicker(Map<String, Object> params);
+    SymbolPriceTickerDto getSymbolPriceTicker(String symbol);
+
 }

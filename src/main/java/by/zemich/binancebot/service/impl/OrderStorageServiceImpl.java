@@ -4,7 +4,7 @@ import by.zemich.binancebot.DAO.api.OrderDao;
 import by.zemich.binancebot.DAO.entity.BargainEntity;
 import by.zemich.binancebot.DAO.entity.OrderEntity;
 import by.zemich.binancebot.core.dto.*;
-import by.zemich.binancebot.service.api.OrderService;
+import by.zemich.binancebot.service.api.OrderStorageService;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
@@ -14,11 +14,11 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
-public class OrderServiceImpl implements OrderService {
+public class OrderStorageServiceImpl implements OrderStorageService {
     private final OrderDao orderDao;
     private final ModelMapper mapper;
 
-    public OrderServiceImpl(OrderDao orderDao, ModelMapper mapper) {
+    public OrderStorageServiceImpl(OrderDao orderDao, ModelMapper mapper) {
         this.orderDao = orderDao;
         this.mapper = mapper;
     }

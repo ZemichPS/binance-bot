@@ -3,14 +3,11 @@ package by.zemich.binancebot.DAO.entity;
 import by.zemich.binancebot.core.enums.EBargainStatus;
 import jakarta.persistence.*;
 import org.hibernate.annotations.CreationTimestamp;
-import org.hibernate.annotations.Fetch;
 import org.hibernate.annotations.SourceType;
 import org.hibernate.annotations.UpdateTimestamp;
-
 import java.math.BigDecimal;
 import java.sql.Timestamp;
 import java.util.List;
-import java.util.Set;
 import java.util.UUID;
 
 @Entity
@@ -18,43 +15,23 @@ import java.util.UUID;
 public class BargainEntity {
     @Id
     private UUID uuid;
-
-    @Column(name = "strategy")
     private String strategy;
-
     @CreationTimestamp(source = SourceType.DB)
     @Temporal(TemporalType.TIMESTAMP)
-    @Column(name = "dt_create")
     private Timestamp dtCreate;
     @Version
     @UpdateTimestamp(source = SourceType.DB)
     @Temporal(TemporalType.TIMESTAMP)
-    @Column(name = "dt_update")
     private Timestamp dtUpdate;
-
-    @Column(name = "percentage_result")
     private BigDecimal percentageResult;
-    @Column(name = "finance_result")
     private BigDecimal financeResult;
-
-    @Column(name = "time_in_work")
     private Long timeInWork;
-
-    @Column(name = "finish_time")
     private Timestamp finishTime;
-    @Column(name = "status")
     @Enumerated(EnumType.STRING)
     private EBargainStatus status;
-
-    @Column(name = "symbol")
     private String symbol;
-
-    @Column(name = "interest")
     private BigDecimal interest;
-
-    @Column(name = "fee")
     private BigDecimal fee;
-
     @OneToMany(
             fetch = FetchType.EAGER,
             cascade = CascadeType.MERGE,
@@ -64,7 +41,19 @@ public class BargainEntity {
     @JoinColumn(name = "bargain_uuid")
     private List<OrderEntity> orders;
 
-    public BargainEntity(UUID uuid, String strategy, Timestamp dtCreate, Timestamp dtUpdate, BigDecimal percentageResult, BigDecimal financeResult, Long timeInWork, Timestamp finishTime, EBargainStatus status, String symbol, BigDecimal interest, BigDecimal fee, List<OrderEntity> orders) {
+    public BargainEntity(UUID uuid,
+                         String strategy,
+                         Timestamp dtCreate,
+                         Timestamp dtUpdate,
+                         BigDecimal percentageResult,
+                         BigDecimal financeResult,
+                         Long timeInWork,
+                         Timestamp finishTime,
+                         EBargainStatus status,
+                         String symbol,
+                         BigDecimal interest,
+                         BigDecimal fee,
+                         List<OrderEntity> orders) {
         this.uuid = uuid;
         this.strategy = strategy;
         this.dtCreate = dtCreate;

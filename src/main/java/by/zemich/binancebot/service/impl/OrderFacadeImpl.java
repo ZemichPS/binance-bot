@@ -1,140 +1,61 @@
 package by.zemich.binancebot.service.impl;
 
 import by.zemich.binancebot.DAO.entity.OrderEntity;
-import by.zemich.binancebot.config.properties.RealTradeProperties;
 import by.zemich.binancebot.core.dto.OrderDto;
 import by.zemich.binancebot.core.dto.binance.*;
 import by.zemich.binancebot.core.enums.*;
 import by.zemich.binancebot.core.exeption.NoSuchEntityException;
 import by.zemich.binancebot.service.api.*;
-import org.springframework.core.convert.ConversionService;
+import by.zemich.binancebot.service.api.OrderBrokerService;
+import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.util.List;
 import java.util.UUID;
 
 @Service
 public class OrderFacadeImpl implements OrderFacade {
 
-    private final IOrderStockMarketService orderStockMarketService;
-    private final AssetFacade assetFacade;
-    private final OrderService orderStorageService;
-    private final ConversionService conversionService;
-    private final RealTradeProperties tradeProperties;
+    private final OrderBrokerService orderBrokerService;
+    private final OrderStorageService orderStorageService;
+    private final ModelMapper modelMapper;
 
-    public OrderFacadeImpl(IOrderStockMarketService orderStockMarketService, AssetFacade assetFacade, OrderService orderStorageService, ConversionService conversionService, RealTradeProperties tradeProperties) {
-        this.orderStockMarketService = orderStockMarketService;
-        this.assetFacade = assetFacade;
+    public OrderFacadeImpl(OrderBrokerService orderBrokerService,
+                           OrderStorageService orderStorageService,
+                           ModelMapper modelMapper
+    ) {
+        this.orderBrokerService = orderBrokerService;
         this.orderStorageService = orderStorageService;
-        this.conversionService = conversionService;
-        this.tradeProperties = tradeProperties;
+        this.modelMapper = modelMapper;
     }
 
-
     @Override
-    public OrderDto createBuyLimitOrderByCurrentPrice(Asset assetForBuying, BigDecimal deposit) {
-
-        PriceFilter priceFilter = assetForBuying.getPriceFilter();
-        LotSizeFilter lotSizeBinanceFilter = assetForBuying.getLotSizeFilter();
-
-        BigDecimal stepSize = lotSizeBinanceFilter.getStepSize();
-
-        BigDecimal currentPrice = assetFacade.getCurrentPrice(assetForBuying.getSymbol());
-        BigDecimal quantityForBuying = deposit.divide(currentPrice, 10, RoundingMode.DOWN);
-        BigDecimal computedQuantity = getAssetQuantityUsingStepSize(quantityForBuying, stepSize).setScale(priceFilter.getTickSize().scale(), RoundingMode.HALF_UP);
-
-        RequestForNewOrderDto requestForNewOrderDto = RequestForNewOrderDto.builder()
-                .symbol(assetForBuying.getSymbol())
-                .price(currentPrice)
-                .side(ESide.BUY)
-                .type(EOrderType.LIMIT)
-                .quantity(computedQuantity)
-                .timeInForce(ETimeInForce.GTC)
-                .newOrderRespType(ENewOrderRespType.FULL)
-                .build();
-
-        OrderDto newCreatedOrder = orderStockMarketService.createOrder(requestForNewOrderDto);
-        OrderEntity savedOrderEntity = orderStorageService.save(newCreatedOrder).orElseThrow();
-
+    public OrderDto createBuyLimitOrderByCurrentPrice(RequestForNewOrderDto requestForNewOrderDto) {
+        OrderDto newCreatedOrder = orderBrokerService.createOrder(requestForNewOrderDto);
+        OrderEntity savedOrderEntity = orderStorageService.save(newCreatedOrder);
         return convertOrderEntityToOrderDto(savedOrderEntity);
     }
 
     @Override
-    public OrderDto createSellLimitOrder(OrderDto buyOrder, BigDecimal percentageAim) {
+    public OrderDto createSellLimitOrder(RequestForNewOrderDto requestForNewOrderDto) {
 
-        String assetSymbol = buyOrder.getSymbol();
-
-        Asset assetForTrading = assetFacade.getBySymbol(assetSymbol);
-
-        PriceFilter priceFilter = assetForTrading.getPriceFilter();
-        LotSizeFilter lotSizeFilter = assetForTrading.getLotSizeFilter();
-        BigDecimal takerFee = tradeProperties.getTaker();
-        BigDecimal interest = getValueFromPercentage(buyOrder.getPrice(), percentageAim);
-
-        BigDecimal currentQuantity = buyOrder.getOrigQty();
-        BigDecimal stepSize = lotSizeFilter.getStepSize();
-        BigDecimal sellQuantity = currentQuantity.subtract(getValueFromPercentage(currentQuantity, takerFee));
-
-        // ПАРАМЕТР НУЖЕН ЕСЛИ НЕТ BMB ДЛЯ ОПЛАТЫ КОММИССИИ
-        BigDecimal computedQuantity = getAssetQuantityUsingStepSize(sellQuantity, stepSize).setScale(priceFilter.getTickSize().scale(), RoundingMode.UNNECESSARY);
-
-        BigDecimal sellPrice = buyOrder.getPrice().add(interest);
-
-        BigDecimal computingSellPrice = getAssetPriceUsingStepSize(sellPrice, priceFilter.getTickSize()).setScale(priceFilter.getTickSize().scale(), RoundingMode.UNNECESSARY);
-
-
-        RequestForNewOrderDto requestForNewSellOrder = RequestForNewOrderDto.builder()
-                .symbol(assetSymbol)
-                .price(computingSellPrice)
-                .side(ESide.SELL)
-                .type(EOrderType.LIMIT)
-                .quantity(currentQuantity)
-                .timeInForce(ETimeInForce.GTC)
-                .newOrderRespType(ENewOrderRespType.FULL)
-                .build();
-
-        OrderDto newCreatedOrder = orderStockMarketService.createOrder(requestForNewSellOrder);
-        OrderEntity savedOrderEntity = orderStorageService.save(newCreatedOrder).orElseThrow();
+        OrderDto newCreatedOrder = orderBrokerService.createOrder(requestForNewOrderDto);
+        OrderEntity savedOrderEntity = orderStorageService.save(newCreatedOrder);
         return convertOrderEntityToOrderDto(savedOrderEntity);
 
     }
 
     @Override
-    public OrderDto createSellOrderByAscPrice(OrderDto orderDtoToSell) {
-        String assetSymbol = orderDtoToSell.getSymbol();
-        BigDecimal ascPrice = assetFacade.getAskPrice(assetSymbol);
-
-        RequestForNewOrderDto requestForNewSellOrder = RequestForNewOrderDto.builder()
-                .symbol(assetSymbol)
-                .price(ascPrice)
-                .side(ESide.SELL)
-                .type(EOrderType.LIMIT)
-                .quantity(orderDtoToSell.getOrigQty())
-                .timeInForce(ETimeInForce.GTC)
-                .newOrderRespType(ENewOrderRespType.FULL)
-                .build();
-
-        OrderDto newCreatedOrder = orderStockMarketService.createOrder(requestForNewSellOrder);
-        OrderEntity savedOrderEntity = orderStorageService.save(newCreatedOrder).orElseThrow();
+    public OrderDto createSellLimitOrderByAskPrice(RequestForNewOrderDto requestForNewOrderDto) {
+        OrderDto newCreatedOrder = orderBrokerService.createOrder(requestForNewOrderDto);
+        OrderEntity savedOrderEntity = orderStorageService.save(newCreatedOrder);
         return convertOrderEntityToOrderDto(savedOrderEntity);
     }
 
     @Override
-    public OrderDto createSellOrderByMarketPrice(OrderDto orderDtoToSell) {
-
-        RequestForNewOrderDto requestForNewSellOrder = RequestForNewOrderDto.builder()
-                .symbol(orderDtoToSell.getSymbol())
-                .side(ESide.SELL)
-                .type(EOrderType.MARKET)
-                .quantity(orderDtoToSell.getOrigQty())
-                .timeInForce(ETimeInForce.GTC)
-                .newOrderRespType(ENewOrderRespType.FULL)
-                .build();
-
-        OrderDto newCreatedOrder = orderStockMarketService.createOrder(requestForNewSellOrder);
-        OrderEntity savedOrderEntity = orderStorageService.save(newCreatedOrder).orElseThrow();
+    public OrderDto createSellOrderByMarketPrice(RequestForNewOrderDto requestForNewSellOrder) {
+        OrderDto newCreatedOrder = orderBrokerService.createOrder(requestForNewSellOrder);
+        OrderEntity savedOrderEntity = orderStorageService.save(newCreatedOrder);
         return convertOrderEntityToOrderDto(savedOrderEntity);
     }
 
@@ -144,47 +65,40 @@ public class OrderFacadeImpl implements OrderFacade {
     }
 
     @Override
-    public OrderDto cancelOrder(OrderDto troubleOrder) {
-        CancelOrderRequestDto cancelOrderRequestDto = CancelOrderRequestDto.builder()
-                .symbol(troubleOrder.getSymbol())
-                .orderId(troubleOrder.getOrderId())
-                .build();
+    public OrderDto cancelOrder(CancelOrderRequestDto cancelOrderRequest) {
 
-        CancelOrderResponseDto cancelOrderResponseDto = orderStockMarketService.cancelOrder(cancelOrderRequestDto);
+        CancelOrderResponseDto cancelOrderResponseDto = orderBrokerService.cancelOrder(cancelOrderRequest);
         OrderEntity foundedOrderEntity = orderStorageService.getByOrderId(cancelOrderResponseDto.getOrderId()).orElseThrow(NoSuchEntityException::new);
         OrderDto canceledOrder = convertOrderEntityToOrderDto(foundedOrderEntity);
         canceledOrder.setStatus(EOrderStatus.CANCELED);
-        OrderEntity updatedOrderEntity = orderStorageService.update(canceledOrder).orElseThrow();
+        OrderEntity updatedOrderEntity = orderStorageService.update(canceledOrder);
         return convertOrderEntityToOrderDto(updatedOrderEntity);
     }
 
     @Override
-    public OrderDto updateStatus(OrderDto orderDto, EOrderStatus conditionalStatus) {
+    public OrderDto updateStatus(OrderDto orderDto, EOrderStatus expectedStatus) {
 
         QueryOrderDto queryOrder = QueryOrderDto.builder()
                 .symbol(orderDto.getSymbol())
                 .orderId(orderDto.getOrderId())
                 .build();
 
-        EOrderStatus updatedStatus = orderStockMarketService.getOrderStatus(queryOrder);
+        EOrderStatus updatedStatus = orderBrokerService.getOrderStatus(queryOrder);
 
         if (!orderDto.getStatus().equals(updatedStatus)) {
-
-            if (updatedStatus.equals(conditionalStatus)) {
+            if (updatedStatus.equals(expectedStatus)) {
                 orderDto.setStatus(updatedStatus);
-
-                OrderEntity updatedOrderEntity = orderStorageService.update(orderDto).orElseThrow();
+                OrderEntity updatedOrderEntity = orderStorageService.update(orderDto);
                 return convertOrderEntityToOrderDto(updatedOrderEntity);
-
             }
         }
-
+        // TODO ИСПРАВИТЬ (НЕЛЬЗЯ ВОЗВРАЩАТЬ NULL)
         return null;
     }
 
     @Override
     public List<OrderDto> getAllBySymbol(String symbol) {
-        return orderStorageService.getAllBySymbol(symbol).orElseThrow(NoSuchEntityException::new).stream()
+        return orderStorageService.getAllBySymbol(symbol).stream()
                 .map(this::convertOrderEntityToOrderDto)
                 .toList();
     }
@@ -208,27 +122,11 @@ public class OrderFacadeImpl implements OrderFacade {
     }
 
 
-    private BigDecimal getAssetQuantityUsingStepSize(BigDecimal quantity, BigDecimal stepSize) {
-        BigDecimal rest = quantity.remainder(stepSize);
-        return quantity.subtract(rest);
-    }
-
-    private OrderEntity convertOrderDtoToOrderEntity(OrderDto source) {
-        return conversionService.convert(source, OrderEntity.class);
-    }
-
     private OrderDto convertOrderEntityToOrderDto(OrderEntity source) {
-        return conversionService.convert(source, OrderDto.class);
+        return modelMapper.map(source, OrderDto.class);
     }
 
-    private BigDecimal getValueFromPercentage(BigDecimal value, BigDecimal percent) {
-        return value.multiply(percent).divide(new BigDecimal(100), RoundingMode.DOWN);
-    }
 
-    private BigDecimal getAssetPriceUsingStepSize(BigDecimal price, BigDecimal tickSize) {
-        BigDecimal rest = price.remainder(tickSize);
-        return price.subtract(rest);
-    }
 
 
 }

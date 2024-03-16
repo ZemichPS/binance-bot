@@ -2,7 +2,7 @@ package by.zemich.binancebot.endpoint.web.bot;
 
 import by.zemich.binancebot.config.properties.TelegramProperties;
 import by.zemich.binancebot.core.dto.EventDto;
-import by.zemich.binancebot.service.api.IConverter;
+import by.zemich.binancebot.service.api.Converter;
 import by.zemich.binancebot.service.api.INotifier;
 import org.springframework.stereotype.Component;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
@@ -14,9 +14,9 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 @Component
 public class TelegramBot extends TelegramLongPollingBot implements INotifier {
     private final TelegramProperties properties;
-    private final IConverter converter;
+    private final Converter converter;
 
-    public TelegramBot(TelegramProperties properties, IConverter converter) {
+    public TelegramBot(TelegramProperties properties, Converter converter) {
         this.properties = properties;
         this.converter = converter;
     }

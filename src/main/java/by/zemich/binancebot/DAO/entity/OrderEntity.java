@@ -18,55 +18,60 @@ import java.util.UUID;
 public class OrderEntity {
 
     @Id
-    @Column(name = "uuid")
     private UUID uuid;
     @Version
     @UpdateTimestamp(source = SourceType.VM)
     @Temporal(TemporalType.TIMESTAMP)
-    @Column(name = "dt_update")
     private Timestamp dtUpdate;
     @CreationTimestamp(source = SourceType.VM)
     @Temporal(TemporalType.TIMESTAMP)
-    @Column(name = "dt_create")
     private Timestamp dtCreate;
     private String symbol;
     @Column(name = "binance_order_id")
     private Long orderId;
-    @Column(name = "order_list_id")
     private Long orderListId;
-    @Column(name = "client_order_id")
     private String clientOrderId;
-    @Column(name = "transact_time")
     private Timestamp transactTime;
     private BigDecimal price;
-    @Column(name = "stop_price")
     private BigDecimal stopPrice;
-    @Column(name = "orig_qty")
     private BigDecimal origQty;
-    @Column(name = "executed_qty")
     private BigDecimal executedQty;
-    @Column(name = "cummulative_quote_qty")
     private BigDecimal cummulativeQuoteQty;
     @Enumerated(EnumType.STRING)
     private EOrderStatus status;
     @Enumerated(EnumType.STRING)
-    @Column(name = "time_in_force")
     private ETimeInForce timeInForce;
     @Enumerated(EnumType.STRING)
     private EOrderType type;
     @Enumerated(EnumType.STRING)
     private ESide side;
-    @Column(name = "is_working")
     private boolean isWorking;
-    @Column(name = "working_time")
     private Timestamp workingTime;
-    @Column(name = "self_trade_prevention_mode")
     private String selfTradePreventionMode;
-    @Column(name = "bargain_uuid")
     @ManyToOne(cascade = CascadeType.REFRESH)
     private BargainEntity bargain;
 
-    public OrderEntity(UUID uuid, Timestamp dtUpdate, Timestamp dtCreate, String symbol, Long orderId, Long orderListId, String clientOrderId, Timestamp transactTime, BigDecimal price, BigDecimal stopPrice, BigDecimal origQty, BigDecimal executedQty, BigDecimal cummulativeQuoteQty, EOrderStatus status, ETimeInForce timeInForce, EOrderType type, ESide side, boolean isWorking, Timestamp workingTime, String selfTradePreventionMode, BargainEntity bargain) {
+    public OrderEntity(UUID uuid,
+                       Timestamp dtUpdate,
+                       Timestamp dtCreate,
+                       String symbol,
+                       Long orderId,
+                       Long orderListId,
+                       String clientOrderId,
+                       Timestamp transactTime,
+                       BigDecimal price,
+                       BigDecimal stopPrice,
+                       BigDecimal origQty,
+                       BigDecimal executedQty,
+                       BigDecimal cummulativeQuoteQty,
+                       EOrderStatus status,
+                       ETimeInForce timeInForce,
+                       EOrderType type,
+                       ESide side,
+                       boolean isWorking,
+                       Timestamp workingTime,
+                       String selfTradePreventionMode,
+                       BargainEntity bargain) {
         this.uuid = uuid;
         this.dtUpdate = dtUpdate;
         this.dtCreate = dtCreate;

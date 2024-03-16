@@ -28,7 +28,7 @@ import java.util.*;
 @EnableScheduling
 @Log4j2
 public class BinanceTraderBotImpl implements ITraderBot {
-    private final IStockMarketService stockMarketService;
+    private final OrderBrokerService brokerOrderService;
     private final ITradeManager tradeManager;
     private final INotifier notifier;
     private final IEventManager eventManager;
@@ -48,7 +48,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
     private final String BARGAIN_EXISTS = "Bargain with such asset already exists";
 
 
-    public BinanceTraderBotImpl(IStockMarketService stockMarketService,
+    public BinanceTraderBotImpl(OrderBrokerService brokerOrderService,
                                 ITradeManager tradeManager,
                                 INotifier notifier,
                                 IEventManager eventManager,
@@ -56,7 +56,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
                                 ConversionService conversionService,
                                 IIndicatorReader indicatorReader,
                                 IAssetService assetService, RealTradeProperties tradeProperties) {
-        this.stockMarketService = stockMarketService;
+        this.brokerOrderService = brokerOrderService;
         this.tradeManager = tradeManager;
         this.notifier = notifier;
         this.eventManager = eventManager;
@@ -112,7 +112,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
 
                                         klinequeryDto.setSymbol(symbol.getSymbol());
                                         klinequeryDto.setInterval(stringInterval);
-                                        BarSeries series = stockMarketService.getBarSeries(klinequeryDto).orElseThrow(RuntimeException::new);
+                                        BarSeries series = brokerOrderService.getBarSeries(klinequeryDto).orElseThrow(RuntimeException::new);
 
                                         if (series.getBarCount() < 500) return;
 
@@ -163,7 +163,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
                                                                             .symbol(klinequeryDto.getSymbol())
                                                                             .limit(klinequeryDto.getLimit())
                                                                             .build();
-                                                                    additionalSeries = stockMarketService.getBarSeries(additionalKlineQuery).orElseThrow(RuntimeException::new);
+                                                                    additionalSeries = brokerOrderService.getBarSeries(additionalKlineQuery).orElseThrow(RuntimeException::new);
                                                                 }
 
                                                                 Rule additionalRule = additionalStrategy.getEnterRule(additionalSeries);
@@ -234,7 +234,7 @@ public class BinanceTraderBotImpl implements ITraderBot {
                 .map(this::convertBargainEntityToDto)
                 .forEach(bargainDto -> {
 
-                    BargainEntity finalizedBargainEntity = bargainService.finalize(bargainDto, EBargainStatus.FINISHED);
+                    BargainEntity finalizedBargainEntity = bargainService.finalize(bargainDto, EBargainStatus.COMPLETED_SUCCESSFULLY);
                     BargainDto finalizedBargainDto = conversionService.convert(finalizedBargainEntity, BargainDto.class);
                     notifyAboutEvent(EEventType.BARGAIN_WAS_COMPLETED_IN_THE_BLACK, finalizedBargainDto);
                     if (!accountHasInsufficientBalance) accountHasInsufficientBalance = true;

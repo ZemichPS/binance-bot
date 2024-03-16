@@ -30,6 +30,9 @@ spring:
     show-sql: true
     properties:
       hibernate.default_schema: app
+    hibernate:
+      naming:
+        physical-strategy: org.hibernate.boot.model.naming.CamelCaseToUnderscoresNamingStrategy
 
   config:
     import: private-config.yml
@@ -63,10 +66,10 @@ test:
     balance: 200
 
 trading:
-  gain: 0.5
-  taker: 0.1
-  maker: 0.1
-  deposit: 12
+  bargain-percentage-gain: 0.5
+  taker-fee: 0.1
+  maker-fee: 0.1
+  deposit-per-bargain: 12
   criticalLostTimeForBuying: 3
   criticalLostPercentage: 2
 

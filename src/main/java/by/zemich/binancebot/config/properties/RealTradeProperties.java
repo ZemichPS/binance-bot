@@ -1,67 +1,67 @@
 package by.zemich.binancebot.config.properties;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.math.BigDecimal;
 
 @ConfigurationProperties(prefix = "trading")
+
 public class RealTradeProperties {
-    private BigDecimal gain;
-    private BigDecimal deposit;
-    private BigDecimal taker;
-    private BigDecimal maker;
+    private BigDecimal bargainPercentageGain;
+    private BigDecimal depositPerBargain;
+    private BigDecimal takerFee;
+    private BigDecimal makerFee;
     private int criticalLostTimeForBuying;
     private BigDecimal criticalLostPercentage;
 
-    public RealTradeProperties(BigDecimal gain, BigDecimal deposit, BigDecimal taker, int criticalLostTimeForBuying, BigDecimal criticalLostPercentage) {
-        this.gain = gain;
-        this.deposit = deposit;
-        this.taker = taker;
+    public RealTradeProperties(BigDecimal bargainPercentageGain,
+                               BigDecimal depositPerBargain,
+                               BigDecimal takerFee,
+                               BigDecimal makerFee,
+                               int criticalLostTimeForBuying,
+                               BigDecimal criticalLostPercentage) {
+        this.bargainPercentageGain = bargainPercentageGain;
+        this.depositPerBargain = depositPerBargain;
+        this.takerFee = takerFee;
+        this.makerFee = makerFee;
         this.criticalLostTimeForBuying = criticalLostTimeForBuying;
         this.criticalLostPercentage = criticalLostPercentage;
     }
 
-    public RealTradeProperties() {
+    public BigDecimal getBargainPercentageGain() {
+        return bargainPercentageGain;
     }
 
-    public BigDecimal getGain() {
-        return gain;
+    public void setBargainPercentageGain(BigDecimal bargainPercentageGain) {
+        this.bargainPercentageGain = bargainPercentageGain;
     }
 
-    public void setGain(BigDecimal gain) {
-        this.gain = gain;
+    public BigDecimal getDepositPerBargain() {
+        return depositPerBargain;
     }
 
-    public BigDecimal getDeposit() {
-        return deposit;
+    public void setDepositPerBargain(BigDecimal depositPerBargain) {
+        this.depositPerBargain = depositPerBargain;
     }
 
-    public void setDeposit(BigDecimal deposit) {
-        this.deposit = deposit;
+    public BigDecimal getTakerFee() {
+        return takerFee;
     }
 
-    public BigDecimal getMaker() {
-        return maker;
+    public void setTakerFee(BigDecimal takerFee) {
+        this.takerFee = takerFee;
     }
 
-    public void setMaker(BigDecimal maker) {
-        this.maker = maker;
+    public BigDecimal getMakerFee() {
+        return makerFee;
     }
 
-    public BigDecimal getTaker() {
-        return taker;
-    }
-
-    public void setTaker(BigDecimal taker) {
-        this.taker = taker;
-    }
-
-    public BigDecimal getCriticalLostPercentage() {
-        return criticalLostPercentage;
-    }
-
-    public void setCriticalLostPercentage(BigDecimal criticalLostPercentage) {
-        this.criticalLostPercentage = criticalLostPercentage;
+    public void setMakerFee(BigDecimal makerFee) {
+        this.makerFee = makerFee;
     }
 
     public int getCriticalLostTimeForBuying() {
@@ -70,5 +70,13 @@ public class RealTradeProperties {
 
     public void setCriticalLostTimeForBuying(int criticalLostTimeForBuying) {
         this.criticalLostTimeForBuying = criticalLostTimeForBuying;
+    }
+
+    public BigDecimal getCriticalLostPercentage() {
+        return criticalLostPercentage;
+    }
+
+    public void setCriticalLostPercentage(BigDecimal criticalLostPercentage) {
+        this.criticalLostPercentage = criticalLostPercentage;
     }
 }
