@@ -6,61 +6,47 @@ import by.zemich.binancebot.core.dto.BargainDto;
 import by.zemich.binancebot.core.dto.OrderDto;
 import by.zemich.binancebot.core.enums.EBargainStatus;
 import by.zemich.binancebot.core.enums.EOrderStatus;
-import by.zemich.binancebot.core.exeption.NoSuchEntityException;
 import by.zemich.binancebot.service.api.BargainFacade;
 import by.zemich.binancebot.service.api.BargainService;
 import by.zemich.binancebot.service.api.OrderFacade;
-import org.springframework.core.convert.ConversionService;
+import org.modelmapper.ModelMapper;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
-import java.util.stream.Collectors;
 
 @Service
 public class BargainFacadeImplDeny implements BargainFacade {
 
     private final BargainService bargainServiceService;
-    private final ConversionService conversionService;
-
     private final OrderFacade orderFacade;
 
-    public BargainFacadeImplDeny(BargainService bargainServiceService, ConversionService conversionService, OrderFacade orderFacade) {
+    private final ModelMapper modelMapper;
+
+    public BargainFacadeImplDeny(BargainService bargainServiceService, OrderFacade orderFacade, ModelMapper modelMapper) {
         this.bargainServiceService = bargainServiceService;
-        this.conversionService = conversionService;
         this.orderFacade = orderFacade;
+        this.modelMapper = modelMapper;
     }
+
 
     @Override
     public BargainDto create(BargainCreateDto bargainCreateDto) {
-        BargainDto newBargainDto = new BargainDto();
-        newBargainDto.setUuid(UUID.randomUUID());
-        newBargainDto.setStatus(EBargainStatus.NEW);
-        newBargainDto.setStrategy(bargainCreateDto.getStrategy());
-        newBargainDto.setSymbol(bargainCreateDto.getSymbol().getSymbol());
-        newBargainDto.setInterest(bargainCreateDto.getPercentageAim());
-        BargainEntity savedBargainEntity = bargainServiceService.save(newBargainDto).orElseThrow();
+        BargainDto newBargainDto = BargainDto.builder()
+                .uuid(UUID.randomUUID())
+                .status(EBargainStatus.NEW)
+                .strategy(bargainCreateDto.getStrategy())
+                .symbol(bargainCreateDto.getAsset().getSymbol())
+                .interest(bargainCreateDto.getPercentageAim())
+                .build();
+
+        BargainEntity savedBargainEntity = bargainServiceService.save(newBargainDto);
         return convertBargainEntityToBargainDto(savedBargainEntity);
     }
 
     @Override
     public BargainDto update(BargainDto bargainDtoForUpdate) {
-        BargainEntity updatedBargainEntity = bargainServiceService.update(bargainDtoForUpdate).orElseThrow();
+        BargainEntity updatedBargainEntity = bargainServiceService.update(bargainDtoForUpdate);
         return convertBargainEntityToBargainDto(updatedBargainEntity);
-    }
-
-    @Override
-    public BargainDto addBuyOrder(BargainDto bargainDto, OrderDto buyOrder) {
-        return null;
-    }
-
-    @Override
-    public BargainDto addSellOrder(BargainDto bargainDto, OrderDto sellOrder) {
-        return null;
-    }
-
-    @Override
-    public BargainDto endByReasonExpired(BargainDto bargainDto) {
-        return null;
     }
 
     @Override
@@ -71,6 +57,11 @@ public class BargainFacadeImplDeny implements BargainFacade {
     @Override
     public BargainDto updateResult(BargainDto bargainDto) {
         return null;
+    }
+
+    @Override
+    public boolean checkOnFinish(BargainDto bargain) {
+        return false;
     }
 
     @Override
@@ -96,23 +87,14 @@ public class BargainFacadeImplDeny implements BargainFacade {
 
     @Override
     public List<BargainDto> getAllByStatus(EBargainStatus status) {
-        return Optional.of(bargainServiceService.getAllByStatus(status).orElseThrow(NoSuchEntityException::new).stream()
+        return bargainServiceService.getAllByStatus(status).stream()
                 .map(this::convertBargainEntityToBargainDto)
-                .collect(Collectors.toList()));
+                .toList();
     }
 
-    @Override
-    public List<BargainDto> getAllWithFilledBuyOrders() {
-        return null;
-    }
-
-    @Override
-    public BargainDto completeBargainByReasonTimeoutBuyOrder(BargainDto troubleBargain) {
-        return null;
-    }
 
     private BargainDto convertBargainEntityToBargainDto(BargainEntity source) {
-        return conversionService.convert(source, BargainDto.class);
+        return modelMapper.map(source, BargainDto.class);
     }
 
 }

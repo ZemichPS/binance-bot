@@ -93,7 +93,7 @@ public class AssetBrokerServiceImpl implements AssetBrokerService {
 
     @Override
     public BigDecimal getBidPrice(String assetSymbol) {
-        return return getAssetTicker(assetSymbol).getBidPrice();;
+        return getAssetTicker(assetSymbol).getBidPrice();;
     }
 
     @Override

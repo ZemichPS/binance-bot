@@ -12,4 +12,5 @@ public class BargainCreateDto {
     private String strategy;
     private Asset asset;
     private BigDecimal percentageAim;
+    private BigDecimal averagePrice;
 }

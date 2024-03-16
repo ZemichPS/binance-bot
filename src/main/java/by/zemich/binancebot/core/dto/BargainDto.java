@@ -1,6 +1,7 @@
 package by.zemich.binancebot.core.dto;
 
 import by.zemich.binancebot.core.enums.EBargainStatus;
+import lombok.Builder;
 import lombok.Data;
 import java.math.BigDecimal;
 import java.sql.Timestamp;
@@ -9,12 +10,14 @@ import java.util.List;
 import java.util.UUID;
 
 @Data
+@Builder
 public class BargainDto {
     private UUID uuid;
     private String strategy;
     private LocalDateTime dtCreate;
     private LocalDateTime dtUpdate;
     private BigDecimal percentageResult;
+    private BigDecimal averagePrice;
     private BigDecimal financeResult;
     private Long timeInWork;
     private Timestamp finishTime;

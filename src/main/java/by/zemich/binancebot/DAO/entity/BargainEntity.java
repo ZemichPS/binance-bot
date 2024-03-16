@@ -30,6 +30,7 @@ public class BargainEntity {
     @Enumerated(EnumType.STRING)
     private EBargainStatus status;
     private String symbol;
+    private BigDecimal averagePrice;
     private BigDecimal interest;
     private BigDecimal fee;
     @OneToMany(
@@ -51,7 +52,7 @@ public class BargainEntity {
                          Timestamp finishTime,
                          EBargainStatus status,
                          String symbol,
-                         BigDecimal interest,
+                         BigDecimal averagePrice, BigDecimal interest,
                          BigDecimal fee,
                          List<OrderEntity> orders) {
         this.uuid = uuid;
@@ -64,6 +65,7 @@ public class BargainEntity {
         this.finishTime = finishTime;
         this.status = status;
         this.symbol = symbol;
+        this.averagePrice = averagePrice;
         this.interest = interest;
         this.fee = fee;
         this.orders = orders;
@@ -174,5 +176,13 @@ public class BargainEntity {
 
     public void setOrders(List<OrderEntity> orders) {
         this.orders = orders;
+    }
+
+    public BigDecimal getAveragePrice() {
+        return averagePrice;
+    }
+
+    public void setAveragePrice(BigDecimal averagePrice) {
+        this.averagePrice = averagePrice;
     }
 }
