@@ -4,8 +4,8 @@
   #secretKey: 2SSsrmYgnQFk9gWPi7kCkK5ylq6WVjEGFTkcczpgvFvABwuP0uOWTyN56nzlf5st
 
 binance:
-  apiKey: 5HuOTl8uyFXdbXGmLfQjxam8Cmsd76Q6Fsaz5aCoHXpBBFQvFnDDnsCm9129ceFb
-  secretKey: MssC9TgPjLzYOz0Xf4lRq3tF8REALWtX9vun13DligrVdGHthIeDk74y1iZlko3E
+  apiKey: secret
+  secretKey: secret
 
 
 telegram:
